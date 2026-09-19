@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第二课 · 测试驱动开发 + 增量编译 · PPT+讲稿对照版</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f5; color: #1f2937; line-height: 1.7; }
+  .header { background: linear-gradient(135deg, #111827 0%, #2563eb 100%); color: #fff; padding: 32px 40px; }
+  .header h1 { font-size: 28px; margin-bottom: 8px; }
+  .header .meta { opacity: 0.85; font-size: 14px; }
+  .header .links { margin-top: 12px; }
+  .header .links a { color: #bfdbfe; margin-right: 20px; text-decoration: none; font-size: 14px; }
+  .header .links a:hover { text-decoration: underline; }
+  .nav { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 40px; display: flex; gap: 8px; overflow-x: auto; z-index: 100; }
+  .nav a { padding: 4px 10px; border-radius: 4px; font-size: 13px; color: #6b7280; text-decoration: none; white-space: nowrap; }
+  .nav a:hover { background: #eff6ff; color: #2563eb; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  .slide-block { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
+  .slide-block .block-header { padding: 12px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+  .slide-block .block-header .page-num { font-size: 13px; color: #9ca3af; }
+  .slide-block .block-header .ts { font-size: 13px; color: #2563eb; font-weight: 600; }
+  .slide-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .slide-image { background: #f9fafb; padding: 20px; text-align: center; }
+  .slide-image img { max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .slide-text { padding: 20px 24px; }
+  .slide-text h3 { font-size: 16px; color: #111827; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+  .slide-text .note { background: #fef3c7; padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #92400e; margin-bottom: 16px; }
+  .slide-text .transcript-item { margin-bottom: 12px; padding-left: 12px; border-left: 3px solid #dbeafe; }
+  .slide-text .transcript-item .ts { font-size: 12px; color: #2563eb; font-weight: 600; }
+  .slide-text .transcript-item .text { font-size: 14px; color: #374151; }
+  .cover-block { background: linear-gradient(135deg, #111827 0%, #2563eb 100%); color: #fff; padding: 60px 40px; text-align: center; border-radius: 12px; margin-bottom: 24px; }
+  .cover-block h1 { font-size: 36px; margin-bottom: 16px; }
+  .cover-block .meta { opacity: 0.8; font-size: 16px; margin-bottom: 24px; }
+  .cover-block .links a { color: #bfdbfe; margin: 0 12px; text-decoration: none; }
+  .tail-block { background: #fff; padding: 40px; text-align: center; border-radius: 12px; }
+  .tail-block h2 { font-size: 24px; margin-bottom: 16px; color: #111827; }
+  .tail-block a { color: #2563eb; }
+  @media (max-width: 900px) { .slide-body { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>第二课 · 测试驱动开发 + 增量编译</h1>
+  <div class="meta">视频时长 55:46 · PPT 59 页 · 逐字稿已清洗去口癖</div>
+  <div class="links">
+    <a href="https://rcnjxouk2ra0.feishu.cn/minutes/obcn2f8vo413gq245ro4r3pn" target="_blank">飞书妙记（逐字稿）</a>
+    <a href="https://my.feishu.cn/slides/YUozsGSMelOVBhdTgOyczgeYnJe" target="_blank">在线 PPT</a>
+  </div>
+</div>
+
+<div class="nav">
+<a href="#page-2">P02</a>
+<a href="#page-3">P03</a>
+<a href="#page-4">P04</a>
+<a href="#page-5">P05</a>
+<a href="#page-6">P06</a>
+<a href="#page-7">P07</a>
+<a href="#page-8">P08</a>
+<a href="#page-9">P09</a>
+<a href="#page-10">P10</a>
+<a href="#page-11">P11</a>
+<a href="#page-12">P12</a>
+<a href="#page-13">P13</a>
+<a href="#page-14">P14</a>
+<a href="#page-15">P15</a>
+<a href="#page-16">P16</a>
+<a href="#page-17">P17</a>
+<a href="#page-18">P18</a>
+<a href="#page-19">P19</a>
+<a href="#page-20">P20</a>
+<a href="#page-21">P21</a>
+<a href="#page-22">P22</a>
+<a href="#page-23">P23</a>
+<a href="#page-24">P24</a>
+<a href="#page-25">P25</a>
+<a href="#page-26">P26</a>
+<a href="#page-27">P27</a>
+<a href="#page-28">P28</a>
+<a href="#page-29">P29</a>
+<a href="#page-30">P30</a>
+<a href="#page-31">P31</a>
+<a href="#page-32">P32</a>
+<a href="#page-33">P33</a>
+<a href="#page-34">P34</a>
+<a href="#page-35">P35</a>
+<a href="#page-36">P36</a>
+<a href="#page-37">P37</a>
+<a href="#page-38">P38</a>
+<a href="#page-39">P39</a>
+<a href="#page-40">P40</a>
+<a href="#page-41">P41</a>
+<a href="#page-42">P42</a>
+<a href="#page-43">P43</a>
+<a href="#page-44">P44</a>
+<a href="#page-45">P45</a>
+<a href="#page-46">P46</a>
+<a href="#page-47">P47</a>
+<a href="#page-48">P48</a>
+<a href="#page-49">P49</a>
+<a href="#page-50">P50</a>
+<a href="#page-51">P51</a>
+<a href="#page-52">P52</a>
+<a href="#page-53">P53</a>
+<a href="#page-54">P54</a>
+<a href="#page-55">P55</a>
+<a href="#page-56">P56</a>
+<a href="#page-57">P57</a>
+<a href="#page-58">P58</a>
+<a href="#page-59">P59</a>
+<a href="#page-60">P60</a>
+</div>
+<div class="container">
+
+<div class="cover-block">
+  <h1>第二课 · 测试驱动开发 + 增量编译</h1>
+  <div class="meta">视频时长 55:46</div>
+  <div class="links">
+    <a href="https://rcnjxouk2ra0.feishu.cn/minutes/obcn2f8vo413gq245ro4r3pn" target="_blank">飞书妙记</a>
+    <a href="https://my.feishu.cn/slides/YUozsGSMelOVBhdTgOyczgeYnJe" target="_blank">在线PPT</a>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-2">
+  <div class="block-header">
+    <span class="page-num">第 2 页</span>
+    <span class="ts">[05:16]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p002_pTp.jpg" alt="第2页"></div>
+    <div class="slide-text">
+      <h3>GUI层面测试驱动开发实践讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 05:16 的画面，属于章节「GUI层面测试驱动开发实践讲解」。画面对应讲解要点：还有第三个的话，是另一方面的一些功能，整整体来说的话，我们要。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[05:26]</div><div class="text">我们链接应该昨天发在课程群里面了，然后通过你喜欢的方式，比如说，给它直接克隆下来，克隆到本地，最后再用你喜欢的这个编辑器， VS code 也好，或者 trae 或者其他的 IDE 都可以，在自己的这个本地，打开这个 lab 2 的这个目录，好？我希望达到这步的话是比较简单的，就是我们在工作群里面把我们今天用的这个仓库给打开，那么好，这是我们今天的第一步，就是首先我们需要大家都在这个代码上，是？然后，就是要看项目的这个readme，我们有些依赖安装，这步其实昨天你如果做过的话，那么今天就不需要了，但是你如果昨天还没有给自己单项目配置环境的话，看一下仓库里面我们附带了一个 readme 的参考文档，第一大环节就是教大家怎么配置这个环境，大家可以在上面根据自己的系统选择要下载安装方式，然后最终，我们要把这个 node 和 npm 给安装好，就这样安装好以后，你可以通过这样的一个，我在这个 readme 里面也写了，我看现在我搞太快的话，你可以自己看这个readme，就是通过这两个指令看确认一下这个版本是否都正确，什么一个是 24 的版本，一个是 11 的版本朝上，都都可以。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-3">
+  <div class="block-header">
+    <span class="page-num">第 3 页</span>
+    <span class="ts">[05:40]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p003_pTf.jpg" alt="第3页"></div>
+    <div class="slide-text">
+      <h3>GUI层面测试驱动开发实践讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 05:40 的画面，属于章节「GUI层面测试驱动开发实践讲解」。画面对应讲解要点：我们链接应该昨天发在课程群里面了，然后通过你喜欢的方式啊，比。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[06:04]</div><div class="text">这两个工具安装好以后，我们需要安装这个项目的依赖，那么就是运行。pmsol，我这边应该已经提前安装好了，输出可能和它稍微有点不一样，但是只要没有报错，那都是正常的。那么今天跟昨天，昨天做到这里，如果有人听过昨天，跟着昨天的练习，那么到这里都是一样的。今天的话，我们因为要用，需要，我们要测试网页，那么我们可能需要个工具能够来测试网页，那么在现在的这种网页开发过程中，我们一般有个叫做 playwright 的这个工具， playwright 的工具，它大概的原理就是通过一些代码来描述，就模仿人在这个网页上操作，比如说找到某个按钮，去点击，或者说找到某个输入框，然后输入一段指定文本，通过这种形式来描述这个测试的内容，那么通过，最后，我们就运营测试来了解当前网页是否能够正确的通过。</div></div><div class="transcript-item"><div class="ts">[06:30]</div><div class="text">OK，那么今天要多执行一步的指令，是 pms run，叫 set up process。OK，如果你是第一次的话，它会给你安装一个新的这个 chromium 的内核吧，可以这么理解，那么跟你原本是否有 Chrome 浏览器本身不相关，你有别的了解也可以，但是，我们这边统一用这个 chromium 内核给安装好。弄好以后，可能第一次需要点时间，大家可以自己稍微等一下，执行下这个操作，然后后续我们就可以开始跑测试了。ok。</div></div><div class="transcript-item"><div class="ts">[06:45]</div><div class="text">我这几步我刚都给大家展示过了，那么在正式开始运营前，还有调用模型，如果你昨天没有配置 ABIT 的话，今天可以根据这个PPT，或者说我项目里 review 重新配置一下。那么今天跟昨天课程不同的点在于，我们今天有幸有收到来自这个 Scope 国家社区的这个支持，如果大家现在上面注册账号的话，应该是注册就有初始的一定额度的积分可以使用，所以，你可以打开自己的 environment 文件，这个不好意思，但是这个，大家看左边是 environment 文件，如果你没有的话，你应该需要把 environment example 文件复制一份，复制一份，在这个里面，请大家注释掉上面这些，如果你昨天跟着做的话，应该注释掉上面这些。</div></div><div class="transcript-item"><div class="ts">[07:10]</div><div class="text">这些是我们 ArtFrench 给大家提供的这个API，那么如果你想使用尝试一下 ModelScope 的话，你在底下就帮你写好这个 base url，还有model，大家看看清楚了，然后这个 APIT ，就是需要你去魔搭社区，这个魔搭社区，现在就叫魔搭社区，注册一个账号，然后在自己的应该是设置，对，在设置的这个访问令牌里面新建一个访问令牌，然后复制下来粘贴到本地这个文件里面。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-4">
+  <div class="block-header">
+    <span class="page-num">第 4 页</span>
+    <span class="ts">[07:16]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p004_pTr.jpg" alt="第4页"></div>
+    <div class="slide-text">
+      <h3>GUI层面测试驱动开发实践讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 07:16 的画面，属于章节「GUI层面测试驱动开发实践讲解」。画面对应讲解要点：这些是我们 ArtFrench 给大家提供的这个API，那么。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[07:26]</div><div class="text">那我们今天重点是测试用，我就简单介绍这个如何配置，待会会有魔搭社区的专业技术老师来给大家展开这个魔搭社区有什么更加高级的用法，对大家比赛可能有所帮助。那么具体来说对于我们需要知道的就是你需要把这个 base url 设置好，然后把你的 APIT 申请一个，然后复制下来。那魔搭社区现在比较推荐是这两个模型，一个是智谱的 GMV 5.3 Flash，另一个是千问的 3.8 系列的 FlashMax 模型，大家可以从这里面选择任意一个，都能够完成今天的实验。好吗？那么这些就不来说了，我们来开始看这个要今天要做的事情。OK，希望大家能够先打开一个自己的。终端，或者你在 VS code 自带终端都可以。那么我们第一步，就是去运行一下这个脚本，我们来绕大模型。这个脚本在这里，这样一行，然后回车输入。这一步的作用，调太快了。在这个终端里面，这大家可以看一下内容，就是这一步，就是第0步，让大家看一下今天我们要做什么东西。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-5">
+  <div class="block-header">
+    <span class="page-num">第 5 页</span>
+    <span class="ts">[07:54]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p005_pTX.jpg" alt="第5页"></div>
+    <div class="slide-text">
+      <h3>GUI层面测试驱动开发实践讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 07:54 的画面，属于章节「GUI层面测试驱动开发实践讲解」。画面对应讲解要点：好，那我们今天重点是测试用，我就简单介绍这个如何配置，待会会。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[07:58]</div><div class="text">我刚提到了，我们今天要做的是一个带有界面的这个注册页面，那么这个注册页面，我刚提到了是要有 Username ，邮箱，还有我们昨天跟注册 API 一样的，就是要可选的这个出生日期，密码等等，最后还要能够提交这个表单。那么这是我们大致这个需求的内容，那么我这个脚本，会帮它自动的用这个浏览器打开参考的页面，就是这个页面是参考的，是我们想要做的，刚我们在浏览器里看到是，大概是类似这个样子，做的比较简单，我们可以在上面可以填一些东西，你也可以填。可以填个注册邮箱，你可以直接该填都填了，以后，你可以点一下这个 create account，应该会有个反馈，对？这是我们要做的一个东西，好，这第0步，让大家了解我们今天要做什么。</div></div><div class="transcript-item"><div class="ts">[08:24]</div><div class="text">如果你没有在浏览器自动打开的话，你可以手动下复制一下，这边有个链接，是你本地的一个链接，你可以在浏览器打开。下一步，就像我们刚说的，就是让大模型根据这个需求，我们直接调用模型去生成，直接生成这个实现，我们看这个实现的效果怎么样。好，我现在就在把上面这么一大段这个 prompt ，去发给这个大模型，去发给大模型，那么大模型生成这种页面，一般来说稍微需要等待一小会，如果你现在等待的话，可以跟着做一下。稍等一下，对，好，大家等待，我来找一下，昨天的PPT，我看 PPT 内容，对， PPT 的话，这是我们这才是第正式的第一步，我会把这段 prompt 发给大模型，大模型会把生成的文件，存在你这个路径下，所以，如果你想知道生成的这个网页到底是 HTML 里面是什么样子的，你可以在这个路径下啊找到。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-6">
+  <div class="block-header">
+    <span class="page-num">第 6 页</span>
+    <span class="ts">[08:46]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p006_pTN.jpg" alt="第6页"></div>
+    <div class="slide-text">
+      <h3>GUI层面测试驱动开发实践讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 08:46 的画面，属于章节「GUI层面测试驱动开发实践讲解」。画面对应讲解要点：如果你没有在浏览器自动打开的话，你可以手动下复制一下，这边有。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-7">
+  <div class="block-header">
+    <span class="page-num">第 7 页</span>
+    <span class="ts">[08:56]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p007_pTE.jpg" alt="第7页"></div>
+    <div class="slide-text">
+      <h3>GUI层面测试驱动开发实践讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 08:56 的画面，属于章节「GUI层面测试驱动开发实践讲解」。画面对应讲解要点：如果你没有在浏览器自动打开的话，你可以手动下复制一下，这边有。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[08:57]</div><div class="text">我这边已经刚刚调用生成好了，在浏览器里，也会帮你自动打开，我看生成的是这个样子，跟我们的参考网页稍微有一些区别，但是整体的这个字段，我们粗略的看上去，该有的还是都有的，邮箱这些必填的，边上有个红色的 asterisk 星号，然后可选的，就是没有的，还有这个该勾选端，这个东西只是看起来效果好，我们就说了，我们要知道它这个小端好不好，我们有随仓库给大家提供了一些测试，大家可以自己看一下这个代码，下一步，是要去跑一下这个测试，我们来看这个效果真的怎么样。</div></div><div class="transcript-item"><div class="ts">[09:17]</div><div class="text">OK，就回到终端里面，按一下回车，然后我们可以看，稍微往下翻一下，就是在这个仓库里，我给大家预先提供了 36 组针对这个 GUI 的测试，那么这 36 个测测试，我们现在的通过率是比较低的，大家看到我在底下，详细的列出来了。OK，那么首先，比如说这个第一条为什么没有通过？因为这些输入框，没有填。提供这个可访问的标签，大概意思就是说网页上，我们有时候需要，比如屏幕阅读器的这种工作，它需要通过一些隐藏的标签来标记，比如说当前是要输入这个框是输入用户名，还是输入密码等等。那么现在我们的实现是缺失的，大模型在第一版生成之后，没有从需求里面解读出来需要做这件事情，还没有考虑到。</div></div><div class="transcript-item"><div class="ts">[09:40]</div><div class="text">其他的，比如说表单的校验，我们有多个字段没有填的时候，我们去点击输入，我们点击注册，有没有成功的这个检测，检测所有的都有缺失的情况，现在也没有做到。那么有没有正确的校验长度或者字符的限制，现在也没有做，有些测试没有通过。大家在自己本地调用的时候，可能具体的错误因人而异，每次运行可能稍有些区别，但是整体来看的话，这个大模型现在对这种网页上一次性就生成出来，那么可能效果是不如预期的，会有很多看起来好用，但实际上，还没有完美实现这个需求的地方。OK，那么我们先观察好以后，下一步就像我们刚刚最开始说的，下一步就是要通过测试驱动开发的例子，测试驱动开发的这种范式来帮助大模型更好的实现。那么这个要做测试驱动开发第一步就是我们需要让大模型根据我们的需求去生成一版测试，通过测试来描述，反过来描述清楚这个需求。</div></div><div class="transcript-item"><div class="ts">[10:12]</div><div class="text">同样的在终端里面我们按下回车，现在呢第三步就是在调用大模型，去给它生成，让大模型来生成一些测试，这个要稍微等一下下，那么生成的测试是什么样子的？这里在调用大模型来生成这些测试，这些测试，这个测试的话有时候需要稍微的调整一下，有时候因为这个 playwright 的测试相对来说比昨天写的测试呢要复杂一些，对大模型来说即便生成的这个把握也不高，有时候可能需要修正一下。</div></div><div class="transcript-item"><div class="ts">[10:31]</div><div class="text">修正好的这个测试，现在是在这个路径下的，叫做workspace， GUI train register inspecting ts。不然大家都不知道大模型到底生成了什么东西。我们看一下它是这个文件。好，OK，我们看到大模型生成了很多很多的这个test，对？我们随便的找一个吧，简单的过一下，我并不想教大家 PHP 的语法，大家可以，但是可以对我们测试到底是要干什么来有印象。比如这条，8月 9 号开始的这个，就是在检验这个邮箱有没有被正确校验，我们先构造了各种各样不同的邮箱，比如这样的邮箱，它应该是有效的，只是它很简单而已。</div></div><div class="transcript-item"><div class="ts">[10:52]</div><div class="text">或者说像这种是无效的，因为你 atmARK 前面没有实际的账户名，对？等等等等，这种可能也是无效的，因为不可以有这样的一种域名，那么我们去把这些全都发给这个我们的网页来帮，我们用 PHP 这个框架来测试一下，用这个这些数据填进去以后，我们的网页到底有没有正确的校验这些输入格式？那么换句话说，如果这个测试待会通过，就说明我们网页满正确处理的需求，如果没有通过的话，就说明它在这方面实现是有欠缺的。我看一下我们现在这个情况是怎么样。OK，那么大家如果都生成好，这里可以按一下回车，它就会把这个测试给你帮它跑一遍。那么现在来看的话，这个第一遍的这个结果，是我们大模型刚生成了 41 个测试，其中只有 15 个是通过的，那么剩下的 26 个说明就是我们这个需求一开始没有做清楚的地方，对？下一步的话就是让大模型根据这个测试的反馈，根据这个测试的反馈我去迭代我们的开发。看，我们可以看到，在下面它会自动去运行这样一个 repair Agent 来，来修复我们的实现。</div></div><div class="transcript-item"><div class="ts">[11:29]</div><div class="text">我们第一轮的话修复了， 41 个里面还有 28 个通过，但还剩下 13 个没有通过，我再让大模型这样一轮，看到，这 41 个测试全部通过了，总共用了这么多用量。那么这个 TDD 到这一步的话，这个测试性开发就修复了，对？就让它修复好了，至少让它通过我们自己的设，根据需求设计出来的测试，那么生成的内容，我放在这个文件夹下，这个 index. html。</div></div><div class="transcript-item"><div class="ts">[11:44]</div><div class="text">对这个的话，我们最后的问题就是我们经过 TDD 驱动的或者说经过 TDD 引导的开发出来的效果，在我最一开始就最最严格的 validation test，最最严格的教师提供的测试集上的通过率具体怎么样？可以再回车看一下。诶，sorry，调到这个浏览器里面。</div></div><div class="transcript-item"><div class="ts">[11:57]</div><div class="text">OK，看一下，在我这边这一次的话，就是我们最终经过 TDD 开发的， 36 个测试呢全部通过，那么我们还如果还记得的话，最一开始的话应该是只有 10 个的案例是能够通过的，那么从这个例子当中，大家也可以感受到，经过这个测试驱动，我们这个模型第一开始虽然表现不好，但是，通过测试来彻底澄清了这个需求到底怎么样，那么就可以根据测试的反馈，比如说缺失了什么，或者什么需求没有做到，我们就可以让他们去进一步的迭代自己的这个。</div></div><div class="transcript-item"><div class="ts">[12:14]</div><div class="text">生成的代码。我往这里是在终端演示的，我们可以在 PPT 里我看一下，最重要的部分。这 PPT 里截图，大家可以自己看一下，是我之前本地测试的时候，它效果不太一样，但是，流程还是一样的。这个第一开始生成代码上，总共生成了 35 个测试，只有两个是第一遍就能通过的，那么剩下的，就代表是我们的实现是有问题的，确实，这是相当于测试帮我们抓住了代码里的 bug 也好， bug 也好，或者说把一些漏洞给发现了，那么发现漏洞以后，我们就让大模型来根据这个测试反馈来进行修复，修复直到这些测试都通过以后，我们再去看一下我们修复后的这个代码，在这个路径下，对？如果你感兴趣，可以仔细看一下填表里面是怎么写的。</div></div><div class="transcript-item"><div class="ts">[12:38]</div><div class="text">当时这个修复的，虽然他们最终的这个 TDD ，没有完成 36 个里面的全部测试，但是，整体上来说，从原本只能过 10 个到 27 个，也是比较大的进步。那么部分模型可能因为它本身能力，或者说我们这个测试的框架的限制，导致它没有办法一次性的就全部通过最终测试，但是整体来说，无论你用哪个模型，在经过这个测试驱动的引导，都是能够提高这个表现的。后续的话，我们也可以通过这个写写新的测试再来修复，然后再重新进行测试，这样这个 TDD 形成一个这个所谓的loop。那在这个录下，我们就可以不断地优化自己这个代码。这就是这个测试系统这个核心思想所在，就是通过写测试，观察到没有通过，修正实现，然后直到我这个测试能通过，这样就形成了这个代码这样一个提高，然后再不断的循环就可以。</div></div><div class="transcript-item"><div class="ts">[13:04]</div><div class="text">这是 GUI 这个 TDD 的这个例子的部分，那么我们这个 TDD 是开发的一种，怎么说，一种范式吧，是一种思想，是一种实践的方式。那么对于我们这个比赛来说，如果大家昨天听了讲座，我们研习的课程的话，大家知道我们比赛有一个要比的环节，并不仅仅是你要做的东西有多完美，另一方面我们希望在你做到比较好的状态下，谁的用的 Tokens 量，或者说这个金额的消耗是比较低的。昨天的话也给大家介绍了，如果你用的是我们 Artbench 给大家提供 API 的话，你可以在这个链接里面用你的 API 去登录，然后你就可以在一个后台的地方查看你每次调用模型的这个消耗的情况，然后你可以在调用前看一下是多少钱，在调用后再看一下多少钱，就知道你这一次这个调用中间到底花了多少钱，对？我们这边也有这些图表来帮助大家查看，如果你听了昨天的课，昨天我也演示了TDD，但当时是一个 API 的demo，在当时的课上，我给大家说了我平常我自己。准备备课的过程中，我就把这些模型都给平均的多跑了几次，然后取了平均值。</div></div><div class="transcript-item"><div class="ts">[13:39]</div><div class="text">大家可以看到我们传这些模型，最终都是完成全部的这个测试，直流模型，但是呢比较贵的这种 KimiK3 的模型，对？它消耗的金额就比较高，那么相信，这个是 Tokens 用量，但是后面是 RMB 的这个人民币的计价，相对来说可能弱一点的这种 Flash 模型，它本身比较便宜，那么它也能够去完成，对？最终这个消耗只有0.05，就能完成这样的一个流程过程。</div></div><div class="transcript-item"><div class="ts">[13:54]</div><div class="text">最终达成效果是一样的，只是它消耗更少，它可能需要多迭代几次，但是它消整体消耗是更少的，对？那么说明我们测试系统有有一定的潜力，能够帮助弱的模型在整个使用的完成度上，以较便宜的价格去实现同样的效果。同样的，今天的 GI 的话，大家可以这个样子，大家可以在本地这个 inference 文件里面，去把这个模型的名字给换一下，默认是 3.8 max，你也可以换成别的，如果你是 ArcBench 上的话，你如果用我们 ArcBench 提供的话，你可以使用这几个模型。</div></div><div class="transcript-item"><div class="ts">[14:10]</div><div class="text">今天的话，我们既然已经有了来自 ModelScope 市区的这个支持， ModelScope 的话现在有这样的两个模型是能够比较稳定的调用的。那么对于大家来说的话，大家可以尝试，比如说像这样，把这个智谱后面这个智谱的这个模型，智谱 GLM 5.3 flash。那么对于 ModelScope 的话，大家可以这样子，大家可以在你右上角，你的这个后台的右上角有个叫魔力值。</div></div><div class="transcript-item"><div class="ts">[14:24]</div><div class="text">具体的计价方式，或者说这个消费的统计的话，我待会交给来自 ModelScope 社区的郑老师来给大家讲解，我这边呢只是完成我这个，就是大家想替换不同模型，大家可以去跑。那么在跑的时候，大家可以在这个后台的消耗统计页面，看到自己这个调用的情况。</div></div><div class="transcript-item"><div class="ts">[14:33]</div><div class="text">对 ModelScope 社区来说，他们提供的模型一般来说是按照调用次数来计费的，那么比如我刚演示的话，大家看到这边有一些标准模型的调用情况，有些是我课前的，有些是我刚课中的这个调用，大家也是可以在 ModelScope 上看到你通过他们社区的提供模型调用的情况。</div></div><div class="transcript-item"><div class="ts">[14:43]</div><div class="text">对于 PPT 来说，大家可以要记得，但是要记得要在这个 8 分钟里面替换这个 base url、 api key 还有 model 这三个配置，然后把自己的这个大模型调用转向 model scope，就可以在他们的用使用他们的模型，看到他们的这个消耗这个消耗统计。</div></div><div class="transcript-item"><div class="ts">[14:52]</div><div class="text">OK，大家可以自己，如果感兴趣的话，可以课后花更多时间去跑一下这个完整的流程，可以去自己体会一下不同的模型在这个测试系统开发的加持下，它表现的效果是怎么样的。好吧，那么我们今天的关于这个 GUI 层面的这个 TTE 测试系统开发的演示差不多就到这里，然后。好，感谢明曦，然后我觉得讲得非常好，就是那接下来的话我们如果有问题的话，大家可以放在那个聊天对话当中，接下来的话我们请来自魔搭社区的郑专家，郑英杰专家来给我们讲一下，就是魔搭社区，如果大家想要用魔搭算社区的算力，可能是怎么做的？</div></div><div class="transcript-item"><div class="ts">[15:15]</div><div class="text">好的，谢谢林老师的介绍，还有谢谢明曦前面精彩的分享。我现在来介和大家介绍一下魔搭社区，以及魔搭社区在我们的课程和比赛中能够提供哪些支持？可能首先想修正一点，就魔搭社区不仅仅是个算力支持，算力社区，我们更多的是一个 AI 模型社区，比如在我们这里会有。有，一共有 20 多万个开源模型，也包括了最前沿的像DeepSeek、GLM、Kimi、千问等等的开源模型。我们可以在这里支持体验，勾选这个按钮就可以筛选出这些可以用魔搭的 API inference 进行推理的模型。比如说这个 qwen 3.8 flashnext，这个就是前两周千问开源的一个超高性价比的模型。那在这里会有标注，可以选择魔搭社区作为 API 提供方，如果有这个魔搭社区，我们就可以进行在线体验。在这里我们就可以跟它打个招呼，同时我们也可以使用刚刚明谢介绍了怎么去获得魔搭的 access token，然后通过 API 的方式去调用。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-8">
+  <div class="block-header">
+    <span class="page-num">第 8 页</span>
+    <span class="ts">[15:16]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p008_pTb.jpg" alt="第8页"></div>
+    <div class="slide-text">
+      <h3>魔搭社区及其在课程比赛中的相关支持介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 15:16 的画面，属于章节「魔搭社区及其在课程比赛中的相关支持介绍」。画面对应讲解要点：好好的，谢谢林老师的介绍，还有谢谢明曦前面精彩的分享。我现在。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-9">
+  <div class="block-header">
+    <span class="page-num">第 9 页</span>
+    <span class="ts">[15:46]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p009_pTQ.jpg" alt="第9页"></div>
+    <div class="slide-text">
+      <h3>魔搭社区及其在课程比赛中的相关支持介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 15:46 的画面，属于章节「魔搭社区及其在课程比赛中的相关支持介绍」。画面对应讲解要点：好好的，谢谢林老师的介绍，还有谢谢明曦前面精彩的分享。我现在。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[15:53]</div><div class="text">像像这种中等尺寸的模型，一般每次调用会消耗一个魔力，那刚刚就从 745 变成了744。同理也可以找到一些其他的开源模型，比如说 qwen 3.87B，还有 GLM 的 5.3 flash，这些也都是每次调用消耗一个魔力。如果像更大尺寸的模型，比如说 DeepSeek pro，那这一次一次体验可能就是消，是消耗两个魔力。所以大家可以根据自己的任务需要，还有根据模型的能力尺寸来去选择对应的模型。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-10">
+  <div class="block-header">
+    <span class="page-num">第 10 页</span>
+    <span class="ts">[15:56]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p010_pTe.jpg" alt="第10页"></div>
+    <div class="slide-text">
+      <h3>魔搭社区及其在课程比赛中的相关支持介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 15:56 的画面，属于章节「魔搭社区及其在课程比赛中的相关支持介绍」。画面对应讲解要点：像像这种中等尺寸的模型，一般每次调用会消耗一个魔力，那刚刚就。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-11">
+  <div class="block-header">
+    <span class="page-num">第 11 页</span>
+    <span class="ts">[16:08]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p011_pTs.jpg" alt="第11页"></div>
+    <div class="slide-text">
+      <h3>魔搭社区及其在课程比赛中的相关支持介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 16:08 的画面，属于章节「魔搭社区及其在课程比赛中的相关支持介绍」。画面对应讲解要点：像像这种中等尺寸的模型，一般每次调用会消耗一个魔力，那刚刚就。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-12">
+  <div class="block-header">
+    <span class="page-num">第 12 页</span>
+    <span class="ts">[16:12]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p012_pTK.jpg" alt="第12页"></div>
+    <div class="slide-text">
+      <h3>魔搭社区及其在课程比赛中的相关支持介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 16:12 的画面，属于章节「魔搭社区及其在课程比赛中的相关支持介绍」。画面对应讲解要点：像像这种中等尺寸的模型，一般每次调用会消耗一个魔力，那刚刚就。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[16:13]</div><div class="text">OK，那接下来除了模型库，我们还提供很多数据集，如果你的项目网站需要有一些，或者项目开发过程中需要有一些数据存储，可以上传到魔搭。同时我们更重要的是我们提供了超空间这个部署平台，你的参赛作品可以静态网页，可以以Docker，可以以 video 等等形式去部署到我们的超空间里。那。我们可以比如说随便打开一个像一些前沿模型的创空间，那大家这个应用就可以在浏览器中打开，并且很快的开始体验。</div></div><div class="transcript-item"><div class="ts">[16:35]</div><div class="text">除了我们的社区里，除了这个社区里已有的模型应用之外，我们还提供了非常多的Skill。在我们的智能工坊里有一个 Skill 中心，那 Skill 中心里我这次想介绍的 Skill 叫创空间开发Skill，创空间开发 Skill ，可以让你的 Agent 去去自动的帮你部署创空间，把你的本地应用部署到网大创空间，这样别人，就可以在在一个公网的，用一个公网的 URL 来去访问你的你的作比赛作品。像像这个Skill，你可以通过各种方式去安装到你的 CodingAgent 里面，那你的 CodingAgent 就能帮你自动化的部署啊、查看日志啊、 Debug 等等操作。</div></div><div class="transcript-item"><div class="ts">[17:02]</div><div class="text">网大上除了这些开模型、数据集、创空间，还有这个Skill、 MCP 这些开源内容以外，还提供了开发的环境和 API 的算力、 API 的资源。刚才 API 资源明细已经说过了，我这里特别想介绍一下魔搭Notebook。那魔搭 Notebook 它不仅仅是一个 Jupiter Notebook 形态，可以在首页，可以回到你的首页，然后找到我的Notebook，在这里选择一个实例来启动。这个实例呢有免费的CPU，不限时长的使用，它背后是一个乌班图的图的这个 Linux 环境，也可以选择GPU，只要你注册用户都有免费的额度，甚至还有 AMD 的GPU。如果你的应用需要用到 GPU 的话，你可以在这里找到一个开发环境。那启动 Notebook 之后，你就可以在会启动一个代码工作区，我们可以到这个已经启动好的，那它就是一个 Web IDE 的页面，同时有这个工作区，有这个终端，可以去打开或者折叠。</div></div><div class="transcript-item"><div class="ts">[17:34]</div><div class="text">那我们在这个终端里，还内置了内置了一个 vibe coding 的工具，叫 qwen code，这是千问官方出的一个类似 claude code 的 coding Agent，那你可以在这里通过 host 的方式。当然从 auth auth 的方式去选择 API provider，选择OpenAPI， OpenAI 格式的provider，输和刚刚明希的讲的类似，你输入这个 API 的endpoint，然后输入的 access token，就可以去去选择模型。在这里我我其实因为时间关系，我就不一一演示了，你可以在手把手从文档库里去找到详细的步骤，去怎么去安装一些 skill ，启动 qwen code，配置模大的 API inference，然后去选择对应的模型，比如说这样的太原的flash， 3.8 flash 模型和 GLM 的模型。那最后我想演示一下，就是在这里发 code 的一个结果。可以可以，因为为了节省，这个是我刚刚刚刚其实半个小时前开始运行的一个小任务，就是这个任务，就想想去尝试一下，用 code Agent 去部署自动化的部署一个个人主页和模大的存储空间。</div></div><div class="transcript-item"><div class="ts">[18:15]</div><div class="text">我首先我自己在环境变量里设置了 MULTIPLE_ TOKEN，那这个 TOKEN ，是有我的仓库的写入权限的。这个 TOKEN 可以在在这个账号设置。和访问令牌这里去创建，那我给了这个环境变量 token 之后，它就能够往我的魔搭的账号里去创建创空间写内容。同时我另一方面我加载了一个 Moscow Studio 这个技能，这样的话， Agent 就知道怎么去自动化地创建，怎么去用这个 OpenAPI 创建创建魔搭创空间。</div></div><div class="transcript-item"><div class="ts">[18:33]</div><div class="text">OK，它验证了我的 token 是有效的之后，我就给它一个任务，叫它，让它，对，让它根据我的个人主页的链接去创建一个个人主页，在这里，根据我个人主页的链接快速搭建一个前端个人网站，部署到创空间，设置为公开，就非常简单的一个提示词，然后给的信息呢是我自己的一些开源作品，然后它很快的就大概花了几分钟吧，把这个代码都完成了。OK。</div></div><div class="transcript-item"><div class="ts">[18:50]</div><div class="text">对，那比如说我们达要达到这个效果，我们应该怎么样注册魔搭空间的能讲一下吗？</div></div><div class="transcript-item"><div class="ts">[18:54]</div><div class="text">OK，那这个方式呢是通过Agent，让 Agent 自己去创建一个魔搭创空间，那这时候甚至不需要打开魔搭主页，这个创建。 URL 是这个，我们可以退出全屏的模式，这有各种刚刚我提供的内容，那也可以通过手动的方式去在这个魔搭创空间里点击我要创建，可以指定这个mypage，比如说。</div></div><div class="transcript-item"><div class="ts">[19:10]</div><div class="text">创空间其实就是申请魔力值，是？还是申请这个群的API？</div></div><div class="transcript-item"><div class="ts">[19:12]</div><div class="text">API 的话，创空间是一个部署应用的平台，如果是要涉及到算力的话，可以在这里看自己的魔力值。</div></div><div class="transcript-item"><div class="ts">[19:18]</div><div class="text">对，我们怎么去，比如注册，然后得到其中的 API ？比如 API 怎么访问？</div></div><div class="transcript-item"><div class="ts">[19:22]</div><div class="text">注册的话，可以在这，就访问这个 modelscope 点cn，就会提示你去注册，这样注册并登录每天都能获得 200 的魔力值。如果你绑定阿里云账号，如果你没绑定的话，在这个页面应该会有提示让你去绑定阿里云的账号，绑定之后每天可以获得更多 50 个魔力值。同时在魔搭进行一些开源贡献，比如说分享自己的 fakemusic 作品，分享模型数据集，以及发表评论啊、喜欢，或者收藏喜欢等等行为。都可以获得这个魔力值，比如说我自己会有很多开源的贡献，所以我的魔力值非常多。这是魔搭 API infer 怎么使用的方法，那具体怎么使用？刚刚那个明希已经演示过了，去找 access token，然后去指定模型。</div></div><div class="transcript-item"><div class="ts">[19:50]</div><div class="text">那我们在魔搭社区注册之后，我们从哪里获取 API ？这样的话可以在本地，然后进行实时调用。</div></div><div class="transcript-item"><div class="ts">[19:54]</div><div class="text">这是好问题。那注册之后，可以到，其实我们会有一个，就是有多种方式去找到，首先你可以在最直接的就是在回到你的首页，首页之后这里有一个账号设置，那在这，你可以找到这个访问令牌，那这里的话访问令牌你就可以创建，比如说创建写权限的访问令牌，那这个是只能做仓库的写入，比如说刚刚我创建了一个冲空间，那也可以选择细粒度的令牌，那细粒度令牌当前仅支持 API infer，也就是说这个令牌它可以并且只能可以用来做 API 的推理， LM 的调用。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-13">
+  <div class="block-header">
+    <span class="page-num">第 13 页</span>
+    <span class="ts">[20:10]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p013_pTq.jpg" alt="第13页"></div>
+    <div class="slide-text">
+      <h3>魔搭创空间部署及API使用相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 20:10 的画面，属于章节「魔搭创空间部署及API使用相关介绍」。画面对应讲解要点：哦，这是好问题啊。那注册之后呢，可以到，其实我们会有一个，就。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[20:19]</div><div class="text">这是我今天早上创建一个叫黑松的令牌，那我们就可以复制这个令牌，然后到你的 coding Agent 里，比如把这个令牌给粘贴。在，这就是使用的方法，那具体 endpoint 是什么？我们在 notebook 这里有写，就是 base url，只要你指定这个 base url，然后还有这个 api key，那你就能把魔搭的，把这个 moscope 的 API 调用放到任何一个 coding Agent 里去使用。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-14">
+  <div class="block-header">
+    <span class="page-num">第 14 页</span>
+    <span class="ts">[20:20]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p014_pTd.jpg" alt="第14页"></div>
+    <div class="slide-text">
+      <h3>魔搭创空间部署及API使用相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 20:20 的画面，属于章节「魔搭创空间部署及API使用相关介绍」。画面对应讲解要点：这是我今天早上创建一个叫黑松的令牌，那我们就可以复制这个令牌。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[20:36]</div><div class="text">那在。那我好，您说。</div></div><div class="transcript-item"><div class="ts">[20:38]</div><div class="text">所以除了，就是说在获得了这个 Agent info 之后，大家就可以去。去做自己的开发，我们作为一个开源内容平台，我们也非常欢迎开发者们以及参赛选手们能够把自己的软件可以部署到魔搭的创空间，诶，刚刚演示了一半，叫在这里，我们可以把你的内容上传到创空间，比如说刚刚讲 my page，可以去选择部署的方式，对，你可以把这个本地的文件夹拖拽上来，就去选择，稍等一下下，我刚刚，对，比如说把我刚刚写的这个 personal page 拖拽上来，去选择对应的部署设置，它可以，魔搭我们支持通过这个 gradio streamlet static 静态网页和Docker，如果是比较复杂软件，可以用 Docker 来去部署，点击这个确认并部署，它就会进入部署的流程，过几分钟一般就可以上线了，这样的话你的你的创空间就是一个在互联网上公开的状态，只要给一个URL，诶，比如说刚刚这个创空间的URL，别人就可以通过这个 URL 来访问到你的创空间。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-15">
+  <div class="block-header">
+    <span class="page-num">第 15 页</span>
+    <span class="ts">[20:58]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p015_pTz.jpg" alt="第15页"></div>
+    <div class="slide-text">
+      <h3>魔搭创空间部署及API使用相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 20:58 的画面，属于章节「魔搭创空间部署及API使用相关介绍」。画面对应讲解要点：所以除了，就是说在获得了这个 agent info 之后呢，。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[21:27]</div><div class="text">我们对比赛的优秀作品，也会会大力的帮参赛选手们进行宣传，帮助大家更好的扩展自己优秀作品的影响力。好，以上就是魔搭社区能够给各位学员和选手带来的算力资源以及平台部署的资源，谢谢各位老师。</div></div><div class="transcript-item"><div class="ts">[21:39]</div><div class="text">的，非常感谢。如果我们后续有对于比如魔搭社区魔搭社区的问题，我们也请请那个郑老师来，我们这边有个问题，就说您看一下他的那个问题，然后您帮解答一下。</div></div><div class="transcript-item"><div class="ts">[21:48]</div><div class="text">的，在这个提交 Agent 的时候，是不是也可以把 BCRL 改成魔搭？提交 Agent 这个是会记录你的使用数据吗？还是说只是用来做 API 的推理？</div></div><div class="transcript-item"><div class="ts">[21:56]</div><div class="text">我来解释一下，就是各位选手其实可以注册魔搭的那个账号，那账号可以得到，按照那个郑老师的和我们的讨论，其实我们会给所有的参赛选手 500 个魔力值，那这样可以对于在小型的 TTD 的一个演练上肯定是够用的。但是，说由于魔搭社区的 API 是独立的，所以并不接入我们的算力meter，所以到时候真的去大型的 demo 演练或者是比赛的话，就不，可能就不用魔搭的那个API，是需要用比我们在给大家的 API 来进行使用，我不知道解答清楚了没有？</div></div><div class="transcript-item"><div class="ts">[22:16]</div><div class="text">很清楚，我我这边很清楚，我们魔搭提供一些免费资源，就除了 500 的一次性的发放给参赛选手的资源，另外就是每，大家每天登录都能获取到的固定数量的魔力值，这个是每天都有的，同时还有每个同学他自己自己做开源贡献的赚取魔力值。所以鼓励大家多多在魔搭社区分享自己的开源作品。</div></div><div class="transcript-item"><div class="ts">[22:30]</div><div class="text">感谢郑老师，我觉得这个魔搭社区做贡献非常大，然后我们也多。请问可以听到吗？</div></div><div class="transcript-item"><div class="ts">[22:33]</div><div class="text">可以。林老师好，我想我想问的主要是我们在在那个平台上提交 Agent 的时候，如果把 base url 改成魔搭的那个 base url，就我不是说要，这是比赛的时候用，平时我们因为我们每个团队不是只有一个账号是注册了嘛，那比如说其他人如果想要练习的话，我通过这种方式是不是能够在这个平台上跑起来？</div></div><div class="transcript-item"><div class="ts">[22:47]</div><div class="text">呃，可以跑，可以跑起来，但是很快的魔力值被烧掉。</div></div><div class="transcript-item"><div class="ts">[22:49]</div><div class="text">魔力值就烧得很快，还有一个问题就是没有办法看到它的那个金额，对？</div></div><div class="transcript-item"><div class="ts">[22:51]</div><div class="text">对，就说你一个是扣的是魔力值，魔力值是按照那个调用次数来扣的，而我们最终比赛积分是按照你们消耗的人民币来计价的。</div></div><div class="transcript-item"><div class="ts">[22:57]</div><div class="text">好的，那就是我们大概体验一下，可以可以用这种方式在那个平台上体验一下，完全没问题。</div></div><div class="transcript-item"><div class="ts">[22:59]</div><div class="text">对对，但是我们最后也鼓励，比如说现在有魔搭平台，还有一些叫叫DataClawhub，这些都是一些开源的社区，然后到时候，就说尤其是优秀的选手的作品，然后到时候我们也非常鼓励大家上传到对应的社区，因为现在啊大家第一是练技术，然后其次呢是得到一些可见度，就visibility。这个对大家未来比如说就业，其实也是有帮助的。</div></div><div class="transcript-item"><div class="ts">[23:13]</div><div class="text">那我的理解就是这个上传 Agent 的时候要填的 base url，是，它是一个通用的，并不是说限制只能某几个平台对接，是？</div></div><div class="transcript-item"><div class="ts">[23:18]</div><div class="text">对，是的，是这样的。好，谢谢。好，挺好的问题。好，大家还有什么其他问题吗？对，我理解，林老师，我理解是不是就是练的时候可以用各种手段来？没错，就是因为有同学说能不能使用商业模型，比如ChatGPT，其实也是可以的，只不过，就是用我们给的key，就是我们会承担一些托管的费用，用魔搭的，魔搭可以有免费的那个魔力值，供大家使用。</div></div><div class="transcript-item"><div class="ts">[23:34]</div><div class="text">如果大家自己家里条件允，自己个人条件允许的话，那么这个时候 Cloud 和ChatGPT，我们也会允许，只不过这部分的费用，可能就尤其是我因为我们的大赛的主旨是开源社区和开源模型，大家用商业模型的话，可能就不做太多补贴了。好，行，那非常感谢郑老师，这个也是郑老师报告也非常精彩，让大家能学习到魔塔社区的各种设计，包括云服务呀，作品设，作作者个人空间呀，包括有个魔力值呀。好，那我们接下来我们请张晨阳同学来报告一下，怎么在需求编译过程当中做版本回溯？因为，智能体是一个长城的任务，在长城的任务上，我们以前调的是代码，现在是调试是智能体，然后我们怎么去分析智能体什么时候出错了？什么时候，这个 bug 是什么时候引入的？智能体什么时候引入这个 bug 的？并且我们怎么去形成很好的人机交互？最后，陈阳还会给我们介绍一下需求的增量编译，就如果我们真的增加一些需求，那么怎么去调整？我们肯定是希望以最低的成本来解决这个问题。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-16">
+  <div class="block-header">
+    <span class="page-num">第 16 页</span>
+    <span class="ts">[23:36]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p016_pTn.jpg" alt="第16页"></div>
+    <div class="slide-text">
+      <h3>参赛相关魔搭社区资源及提交agent问题解答</h3>
+      <div class="note">📝 讲者备注：本页为视频 23:36 的画面，属于章节「参赛相关魔搭社区资源及提交agent问题解答」。画面对应讲解要点：如果大家自己家里条件允，自己个人条件允许的话，那么这个时候 。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-17">
+  <div class="block-header">
+    <span class="page-num">第 17 页</span>
+    <span class="ts">[24:12]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p017_pTv.jpg" alt="第17页"></div>
+    <div class="slide-text">
+      <h3>实验五至七的介绍及实验材料环境准备说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 24:12 的画面，属于章节「实验五至七的介绍及实验材料环境准备说明」。画面对应讲解要点：好，这样。诶，好的各位啊，今天的话就由我来带领大家过一遍我们。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[24:12]</div><div class="text">这样。诶，好的各位，今天的话就由我来带领大家过一遍我们剩下的三个实验，就实验5、实验 6 和实验 7 哈。这三个实验就像刚刚林老师介绍的，我们主要的就是提供了一些在我们昨天 Lab 4 之后的端到端已经结束的过程中，有结束之后，我们还提供一些功能，然后来帮助大家进行的更进一步的模型能力的拓展与调整，包括如何更好地检查我们的结果，然后如何进行版本管理，当我们遇到新的需求该怎么处理？当我们对模型生成结果有所不满意的时候，我们要怎么干预？大概就是这样。</div></div><div class="transcript-item"><div class="ts">[24:33]</div><div class="text">实验内容，今天的话就相比昨天不是很多，可能大家就主要跟随，跟随着我，来领略一下我们这个 artificialize 的这个插件提供了一系列扩展功能，好？在正式开始介绍实验步骤前，我还是先说明一下实验材料和环境的问题哈。首先是这个环境配置，我我们实验 5 到 7 ，采用的环境是和我们的实验室完全一样的。如果各位昨天有或者昨天在那个线上，或者是通过录像的形式已经跟过了我们 Lab 4 的。这个环境配置，那么今天就不需要再做额外的比如说依赖安装了。如果各位昨天并没有并没有跟 lab 4 的话，那可能今天大家自己花一点时间，然后来完成一些环境的配置，主要是一些像node、 npm 等依赖安装，这个不需要花费大家大家这个时间，可能自行就解决一下。然后说完了环境依赖，那我这边来说明一下这个实验材料的问题哈。</div></div><div class="transcript-item"><div class="ts">[25:04]</div><div class="text">那首先，还是在我们，黑客松的这么一个 Git 仓库里面，我们已经更新了 lab 05 到 lab 06 的相关材料，可以看到主要是一些那个压缩包以及一些文件目录，还有我们这三个实验所使用的一个PPT，那希望大家呢能够自自行从这个库上把这些新的数据给拉下来，然后作为我们剩下的三个实验的这主材料。然后除此之外，我们还需要我们插件要运行，那我们还需要这个更新一下我们这个 ARK 的源代码。昨天呢我们端到端的实验呢是在 main 分支下进行的，那今天呢我们需要切换到这个 feat interactive 这一个分支，然后重新拉一下库，然后这边的差异呢主要在于呢我们在这个分支上的这个分支上代码，我们多支持了很多交互功能，这些交互功能呢接下来大家都可以在差异上用到，然后来更好帮助大家来处理我们智能体生成系统的这种结果，大家就自行拉一下库。</div></div><div class="transcript-item"><div class="ts">[25:37]</div><div class="text">还有一点，就是说我们的插件准备哈。插件还是使用昨天的同一个，就是 Activate 这个插件，但是，我们连夜又更新了一个新的版本哈。连夜更新了一个新的版本，就是 0.07 这个版本，那希望大家可以就是及时更新一下，然后以免就是用不到我们最新支持的一些交互功能哈。那如果大家没有自动更新的话，可以在这里选择安装特定版本，然后来更新到我们的0.07。</div></div><div class="transcript-item"><div class="ts">[25:54]</div><div class="text">OK，以上就是我们实验材料的准备步骤。我就开始进行具体时间介绍，我们从 Lab 05 开始，好？OK，我们 Lab 05 ，这边是主要是有两个功能要分享给大家，相当于一个是页面预览，这个我们昨天已经做了部分介绍，还有一个就是说我们如何使用插件提供的一些功能来进行一些更加便捷的版本管理。</div></div><div class="transcript-item"><div class="ts">[26:11]</div><div class="text">首先是页面预览，大家可以在那个IDE，或者说你自己 ID 里面先打开我们在 Lab 05 下提供了这么一个叫做 demo Git 的这么一个仓库，这里面是一个已经完成了端到端端到端运行的本系统，它所提的需求和昨天一模一样，还是我们一个火车票预定演示系统，然后提供了一个注册旅客账号的这么一个功能，可以先。</div></div><div class="transcript-item"><div class="ts">[26:28]</div><div class="text">我们就可以针对这个已经运行完的软件系统，进行一个预览，还是有一个方案，我们昨天已经介绍过了，单击我们 Canvas 上的 preview 按钮，它就会自动的部署，把这个外外软件运行起来，我们可以稍微等一下。OK，这就是我们预览界面，可以看到，这一次，它这个运行结果，它前面的这些界面做的，看起来比较完整，实际上因为我们只定义了这个注册功能，它这些都是没有的，就是主要以一个贴图为主，可以看一下这个注册功能，它里面的话就基本上实现了我们想要的这些东西。</div></div><div class="transcript-item"><div class="ts">[26:51]</div><div class="text">各位，可以直接从这个预览预览页面，观察我们想要的功能，到底有没有很好实现。我这边举个例子哈，我一下就发现了，它这个登录密码，下面这个警示条看起来很奇怪，就这个安全等级的这个条看起来很奇怪，我可以这个手动输入一下，然后看看它到底是怎么进行的哈，我先输入一个这个诶。我发现它的这个安全等级实际上存在，但是它做的特别小，这个的话就可能是我们通过 Preview 发现的一个问题，我们在后续，需要通过对代码进行干预，然后解决这个问题。好，那我们话说回来，还是来，还是来说明 Preview 的情况，那我们除了单击这个按钮之外，我们还提供另外一个命令，叫做。</div></div><div class="transcript-item"><div class="ts">[27:15]</div><div class="text">open web app preview，这个命令，那通过执行这个命令，我们可以来，我们可以实现与刚一单击量有一样的效果，那我这边就不多做演示了。我们可以通过这个来唤起预览界面，同时，我们还支持一个另一个相对应的命令叫 stop web app preview，然后来手动关闭预览界面。这是我们的第一部分的功能，页面预览。</div></div><div class="transcript-item"><div class="ts">[27:29]</div><div class="text">另外一部分，就是说我们，可以，其实还支持了版本版本回溯的功能，那我们可以在这边哈，在插件里面，然后打开我们插件提供的这个左侧，现在应该是在会，除了我们昨天已经很熟悉的这个，除了我们昨天已经很熟悉的。注册需求做了一个计算，实现了注册需求，然后实现了 root 相关的一些interface。对，每一个节点，然后我们可以通过这个 view diff，然后来看到每个节点它到底做了哪些代码修改，比如说在这个实现注册相关功能的时候，它就是前面是一些那个转参修改，然后可以看一下。哎比如说在这个 interface 简介层面，我们有注册了这么多的listen，那注册这么多的interface，然后呢这些 interface 具体代码也可以通过下拉来检查。如果我们想要看到特定文件的这个修改，我们也可以直接在这边点击，我这边随便举个例子，说test，我们可以看到在这个版本里面，它对这个 test 做了哪些修改。</div></div><div class="transcript-item"><div class="ts">[28:14]</div><div class="text">另一方面，我们也支持，就直接通过这个 move current branch here，然后来切换到那对应的对应的节点。比如说我这边举个例子，我们可以直接切换到它解散的这个阶段，点击一下让它pass，然后这边呢我们可能手动重启下代码，可以发现现在它已经回到了我们 in time 版本，之前所有的 test 它其实都都都没有经过测试驱动，也没有经过评估。那么？这如果大家对这个。我们就前一轮的版本的结果不满意，我们就可以通过move，然后 move 到这个节点，然后重新进行run，然后让它接着往下跑，这就是我们有版本回溯的一个主要的能力。那这边的话可能就是我们第一个实验 Lab 05 的主要内容，各位如果有什么问题的话，可以先来问一下，好？OK，那我看应该是没有什么问题了，那我们就前进到 Lab 06 ，下一个任务。我们 Lab 06。你这边能够快速切换回一个版本，然后看一下它的 website 吗？，可以，但是这边切换回去里面就已经没有什么内容了。行，到时候你可以补充一下，因为今天我们授课时间相对有限，对？我们之后你再把这个东西补充，我们还是需要就是因为这么多版本，对？然后我们是希望能够来回自主的切换，然后把中间的 pre 结果拿出来的。还可以看到，因为那个它确实很多interface，所以它就会报错。就中间结果会报错，是？对，行，好。</div></div><div class="transcript-item"><div class="ts">[29:08]</div><div class="text">的。那我们就回到这个 Lap 06 哈， Lap 06 的话其实是一个可能对于大家的目前初在练习没有太多帮助，但大家在那个后续的比赛，以及实际生活中会非常经，所以就非常频繁遇到一种情况哈，叫做增量编译。这个所谓增量编译是什么意思？就是说在我们实际的一个软件工程任务中哈，我们的需求往往不是就是一下子就全都写出来了，可能我一开始有一个很粗糙的版本，里面只描述了部分的需求，经过了几版的迭代，然后我突然发现，诶，我还需要把更多需求加进去，那么我们实际上只需要增加这一小段的需求，然后针对这一小段需求做一个增量的实现，那么这个操作就叫做增量编译哈，那我们以还是以这个注册需求为例子哈，我们可想而知哈，我们想要一个这个火车票预定系统，肯定不能只有注册，我们还希望和注册有同级的，比如说那个登录与账号管理系统，对？火车票订票系统，然后一系列的那个安全验证等等，这些都需求，那我们。</div></div><div class="transcript-item"><div class="ts">[29:44]</div><div class="text">这个 upgrader 就提供这么一个功能，来帮助大家把新增的或者需要修改的需求给它直接作为增量插入进去，只对这个增量需求进行一个单独的代码扩展。好，下面我来演示，下面我会在这个插件端，然后来演示一下这个具体的过程。哎，我们打开这个Lab，大家的 Lab 应该下载下来应该是只有这一个 Facebook quick service，这里面就提供了我们一个那个增量需求的一个示例，除了注册需求以外，还提供了一个登录需求的补充，那么我接下来演示就是如何将这个登录需求把它增量到我们这个之前跑版本里面。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-18">
+  <div class="block-header">
+    <span class="page-num">第 18 页</span>
+    <span class="ts">[29:56]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p018_pTF.jpg" alt="第18页"></div>
+    <div class="slide-text">
+      <h3>Lab 06增量编译功能操作演示讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 29:56 的画面，属于章节「Lab 06增量编译功能操作演示讲解」。画面对应讲解要点：这个 upgrader 就提供这么一个功能，来帮助大家把新增。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[30:07]</div><div class="text">我这边使用的基础基础版本就是这个 demo without reference，这个是我们在 Lab 4 里面就已经提供给大家的一个非常简单的版本哈，我们可以看一下，它大概是个什么样子。诶，可以看到这个的话，这个版本，因为它没有这个图像的变形，所以它的界面非常简单，就是一开始一个几乎空白首页提供一个注册按钮，这有注册相关的一些内容。我们就会，我接下来就带大家在这个基础上如何给它增量一个需求，增量一个登录的需求，然后让它把登录功能也实现出来，好？OK，我们就开始在这个界面上操作，首先第一步我们把我们新的需求给它加进去，我们可以先任意点击一个需求按钮，需求节点，在左侧栏的上方好像是有一个加号按钮，我们点下这个加号，我们就会进入到一个新的页面，叫做 requirement editor，就是专门用来编辑需求的页面，在这个页面里面我们就可以专对需求进行这个分享，可以直接阅读我们目前已经存在的需求，然后对它进行修改。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-19">
+  <div class="block-header">
+    <span class="page-num">第 19 页</span>
+    <span class="ts">[30:08]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p019_pTY.jpg" alt="第19页"></div>
+    <div class="slide-text">
+      <h3>Lab 06增量编译功能操作演示讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 30:08 的画面，属于章节「Lab 06增量编译功能操作演示讲解」。画面对应讲解要点：我这边使用的基础基础版本就是这个 demo without 。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[30:45]</div><div class="text">在右上角这个 more 按钮里面，我们也提供了，新增需求节点，创建新需求的这么一个功能，那么在这个例子中，我们希望对于这个注册需求节点，我们肯定要把它放一个同级的这个需求节点，用来写我们的登录需求。诶，我们可以在这边选中这个注册节点，然后在 more 里面选中这个 s base space，诶，这样的话它就增加了一个新的兄弟兄弟节点。那我们接下来要做的就是把我们对于登录这个需求的这个描述，把它填到我们的节点中，就是在左侧进行填写。那登录需求，其实已经在这个 lab 零六材料中发放给大家了，大家可以可以打开这个 tick booking quick start fix，里面这个 requirement 可以看到，就除了我们在之前已经确定了这个需求一以外，现在还有一个需求二，这需求二呢就是我们对登录的一个完整描述。</div></div><div class="transcript-item"><div class="ts">[31:15]</div><div class="text">此外，这边的 reference 还提供了这个登录界面可以参考图片，叫做 login 点png，这个大家可以通过自己的方式把它。迁移到迁移到我们的 lab 06 的文件目录下。好，那我这边就来简单的操作一下，把相关的我填进去，首先呢肯定是个标题，它会有一个登录和退出账号，这个依赖关系，我们这个需求，还有有哪些需求跟我们这个需求是相关的？我们这边怎么实现会依赖它？我们这边可以可想，很容易想到我们登录怎么设计，肯定跟我们的注册是密切相关的，所以我们就可以在下拉这边选中这个注册的对应需求，给它们先建立联系，这样模型在设计的时候也会考虑到这一层，使得两者不会完全的错开。</div></div><div class="transcript-item"><div class="ts">[31:43]</div><div class="text">这个 description ，可能就需要大家不管自己写好，使用我们提供的版本也好，然后可以写一段很长的这个description，然后描述我们的这个登录到底要怎么设计，可以再来看一下，它会就说我们要提供什么样的内容，根据密码正确错误等等各种情况，分别提供。不同跟不同的这个应对策略。</div></div><div class="transcript-item"><div class="ts">[31:55]</div><div class="text">大概是这样，哎，我们看这边的话，图是图是没有正确加载出来，我需要在文件里面，然后把它手动加进去，我这边先不加了。然后最下面一栏就是scenarios，我们要把这个每一个具体的 scenario 给它列出来，我们这边也稍微花点时间把它处理一下。比如说第一个场景，使用用户名登录并恢复会话，这边就是一个很简单的一个场景，就是说我们能够成功登录的时候应该怎么情况？那我们就把具体的这个流程内容填进去。系统中如果已经存在注册账号，并且还没有登录的话，当访客开始用正确的这个用户名和密码进行登录的时候，我们就会做一个什么事情？做一个就让他登录，首页显示保存的用户名，然后提供退出登录的这个功能。这是第一个场景，我们接下来可以把 234 一填入哈。</div></div><div class="transcript-item"><div class="ts">[32:25]</div><div class="text">第二个就是说除了我们的用户名密码登录之外，我们还希望它实现这个邮箱登录。OK，我这边就。第三个场景，就是拒绝无效凭据。当他的登录有，登录信息有问题的时候，我们把他拒绝掉。第四个就是说退出当前会话，我们的登录界面需要有个出口，大家可以参照我们提供的这个requirement，然后把这些信息都填入进去。我这边可能就先这样，我们把它 save 下去。OK，当我们 save 之后，可以看到我们首页已经多出了一个我们新定义的需求，就是这个登录退出账号，它的内容，现在目前它还没有任何的 interface 和test，这个的话就是我们要在接下来让它增量实现的内容。好，接下来我们就可以点击，还是点击我们右上角的run，把它跑起来。这个时候，这边应该是没有选中我们的ARK，我们把它注册一下。对，好的，我们把它跑起来哈。诶，这边可以看到，当我们出现这个命令的时候，就意味着我们已经进入了增量需求这么一个状态，在这个阶段里面，它就不，它就会直接跳过我们已经完全实现的这些整体的根系统和注册系统，然后直接对我们的登录进行一个计算和后续的处理。好，可以看到它已经开始设计了，这边的话还是要花点时间的，以我们目前的模型可能要花 2 分钟左右，来完成这个登录的实现。那么我这边呢可以以视频的形式，来带带大家先看一下生成过程，同样在这视频里面我们是剪辑状，然后这边就开始设计了，诶，伴随着设计，哦，你可以看到这边我们已经完成了 implement 和 interface 和 test 的设计，画面已经更新了，接下来就它就是自动的进行CAD，最终呢我们就可以得到一个登录界面的结果。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-20">
+  <div class="block-header">
+    <span class="page-num">第 20 页</span>
+    <span class="ts">[32:56]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p020_pTa.jpg" alt="第20页"></div>
+    <div class="slide-text">
+      <h3>Lab 06增量编译功能操作演示讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 32:56 的画面，属于章节「Lab 06增量编译功能操作演示讲解」。画面对应讲解要点：第二个就是说除了我们的用户名密码登录之外，我们还希望它实现这。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-21">
+  <div class="block-header">
+    <span class="page-num">第 21 页</span>
+    <span class="ts">[33:00]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p021_pTG.jpg" alt="第21页"></div>
+    <div class="slide-text">
+      <h3>Lab 06增量编译功能操作演示讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 33:00 的画面，属于章节「Lab 06增量编译功能操作演示讲解」。画面对应讲解要点：第二个就是说除了我们的用户名密码登录之外，我们还希望它实现这。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[33:38]</div><div class="text">OK，可以看到它已经完成了，我们可以通过 preview 来查一下，诶，现在它已经支持了这么一个登录的界面。那刚刚演示，这就是我们 Lab 06 的一个全过程，主要是教大家如何把我们的增增量的这个需求引入到我们的插件当中，然后让它进行增量的编译，然后来实现增量功能。好，可以看到这个我们 PPT 上有更详细的逐步说明哈。诶，到这里呢就是我们 Lab 06 的内容，如果大家有什么问题的话，可以现在记一下。诶，陈阳，你有准备，最后编完之后的结果能展示它的 Preview 吗？可以，可以，那我这边就先停一下。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-22">
+  <div class="block-header">
+    <span class="page-num">第 22 页</span>
+    <span class="ts">[34:06]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p022_pTu.jpg" alt="第22页"></div>
+    <div class="slide-text">
+      <h3>Lab 06增量编译功能操作演示讲解</h3>
+      <div class="note">📝 讲者备注：本页为视频 34:06 的画面，属于章节「Lab 06增量编译功能操作演示讲解」。画面对应讲解要点：OK，可以看到它已经完成了，我们可以通过 preview 来。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[34:09]</div><div class="text">OK，这个就是我们刚视频中展示出来的跑出来结果，可以看到对于我们新提供的一个登录与退出账号，它增加了这么多的，它增加了这么多测试，与这些 Interface 都建立了联系，我们可以还是要通过 Preview 的方式，然后来快速 check 一下我们的登录功能到底有没有正确实现。</div></div><div class="transcript-item"><div class="ts">[34:21]</div><div class="text">还是刚刚那个界面，然后这边的话就是注册之后，然后在这边输入用户名和密码，然后进行登录就可以了。我们这边什么都没填，它就显示这个账号或密码错误。OK，那我可能演示到这里就差不多了。对，还有一个那个，OK，那我继续说明，没事，这边没问题了。</div></div><div class="transcript-item"><div class="ts">[34:32]</div><div class="text">Lab 7 这边的话其实是和我们的这个增量需求有点类似哈，我们做的是一个测试的增量，那这边是一个怎么样的想法？比如说我们在跑一遍这个增删端之后，我们可能发现哈，我们的就生结果并不尽如人意，就比如说还记得我们刚刚那个安全密码，安全提示条的那边，它的提示条画得太短了，我们肉眼其实很容易忽略它，这个是一个不好的设计，那我们就希望它进行一些功能上的，它进行一些那个迭代，把这个相当于 bug 把它修掉。</div></div><div class="transcript-item"><div class="ts">[34:49]</div><div class="text">我们去改需求的话，其实就太太冗余了，我们其实是只想针对一个特定的功能细节，然后来对它进行描述，那么这时候呢我们就很自然的可以用我们测试驱动思想，给它增加一个小的测试，然后告诉它我们其实对这个安全这个提示条我们有我们自己的这个expectation。然后，你需要根据这个实现这个部件它的显示风格。</div></div><div class="transcript-item"><div class="ts">[35:03]</div><div class="text">我们 upgrade 也提供一些工具，让大家直接针对我们的这个测试内容去追加或者修改，要针对修改的，就针对新的测试内容，让它单独的跑测试驱动，来修改代码。我这边还是以一个简单例子作为演示，大家可以，大家可以来到我们的 lab 07 哈， lab 07，这边还是一个，我还是以刚刚的那个 demo without difference 为例子哈。诶，好，我们还是简单 preview 一下，我们还是来看到这个安全提示条，我们这边随便先输入一段密码哈，首先这是个一级密码，它这边是一个显示一格绿色，对？我再输入一个大写字母，它变成二级密码，是两个绿色。我再输入数字和字符，特殊字符，就一个我里面输入感叹号，它变成三级的，还是绿色。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-23">
+  <div class="block-header">
+    <span class="page-num">第 23 页</span>
+    <span class="ts">[35:14]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p023_pTU.jpg" alt="第23页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 35:14 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：好，然后呢，我们 upgrade 也提供一些工具，让大家直接。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-24">
+  <div class="block-header">
+    <span class="page-num">第 24 页</span>
+    <span class="ts">[35:16]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p024_pTB.jpg" alt="第24页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 35:16 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：好，然后呢，我们 upgrade 也提供一些工具，让大家直接。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-25">
+  <div class="block-header">
+    <span class="page-num">第 25 页</span>
+    <span class="ts">[35:18]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p025_pTZ.jpg" alt="第25页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 35:18 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：好，然后呢，我们 upgrade 也提供一些工具，让大家直接。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[35:34]</div><div class="text">那我就发现，其实这个是不太符合我们常识认知的，我们一般会希望可能它一级、二级、三级头才不同颜色，我就举个简单例子，就一级应该红色，然后我希望它二级是橙色，然后三级头才是绿色。这个的话，那我们就可以通过交互识别音的方法，然后把一个新的新的测试给它加进去，然后让它基于这个测试驱动，然后去修改代码，然后来实现我刚说的这个安全提示条变色这么一个小的功能，好？我我们这边呢还是来演示一下我们在插件上的操作。首先哈，还是我们选中一个选中一个需求节点，我们所有操作都会基于这个需求节点展开哈。我们希望在这个需求上增加一个新的test。来实现我刚功能，那我们这边呢就在这个 test 方面，我们可以看到我们提供了这三个按钮，我会一一介绍。首先就是中间这个加号按钮，就是我们现在需要用的，我们把一个新的 test 给它加进去。好，我这边会有一个，你这边会有一个输入框，就告诉你我这边需要实现一个怎么样测试。简单举简单简单举例子，我这边已经先写好了，大家可以看一下。</div></div><div class="transcript-item"><div class="ts">[36:10]</div><div class="text">就说，我们需要额外测试这个密码强度的颜色变化模式，我们会有一个这个准确给出的assurance，就是说我们 0 级的时候不管，然后 1 级的时候应该是红色，然后 2 级要橙色， 3 级是绿色。好，那么我们点一下confirm，诶，哦不对，对，又忘记那个 select 目录了哈，稍等一下。对，还是一样操作，我们把它 confirm 进去，然后这个时候，它就会针对针对我们提供的这一段文本，来进行一个专门的测试生成，然后生成完测试之后，我们理论上来说哈，这右边就会多出一个，或者说一系列的那么一个测试节点，我们看一下，这个的话根据模型的不同情况，它有时候会很快，就比如生成一个节点出来，有时候可能花一段时间，那么我这边还是准备了视频，先来看，我们先通过视频来看一下，生成完之后的结果应该怎么样。这边还在生成。好可以看到，在这个视频当中，我们就已经在这个位置，在这位置它就已经生成完了，看到它增加了一个这个灰色的这个test，专门用来评测我们的发布，可以看一下它代码。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-26">
+  <div class="block-header">
+    <span class="page-num">第 26 页</span>
+    <span class="ts">[36:20]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p026_pTH.jpg" alt="第26页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 36:20 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：就说呢，我们需要额外测试这个密码强度的颜色变化模式，我们会有。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-27">
+  <div class="block-header">
+    <span class="page-num">第 27 页</span>
+    <span class="ts">[36:24]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p027_pTA.jpg" alt="第27页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 36:24 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：就说呢，我们需要额外测试这个密码强度的颜色变化模式，我们会有。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[36:55]</div><div class="text">诶，看一下它代码，诶，这边就是这个 level 0 的时候，没有任何颜色，这是一个测试，这是它测试内部的某一个第一步，第二步看一级的时候是不是红色，看二级的时候是不是橙色，三级的时候是不是绿色，这么一个测试。基于这个测试，我们就可以做做专门的那个测试驱动，我们，这边的话，确认没问题之后，我们就可以来到右，来到右边，来到左侧栏，还是通过这个test，我们来到左侧栏，选中这一个，我们先点点击左边这个按钮，来启动这个启动这个TDD，点击之后，然后下面这些 test 就可以选择了，比如说我们单击我们要选的这个test，诶，它就会变成红色，那就意味着我们接下来，下一个 TDD 就会就会把这个测试。纳入我们提议的范围。</div></div><div class="transcript-item"><div class="ts">[37:22]</div><div class="text">选择完毕之后，我们再次点击上面的这个按钮，它就开始跑，这一轮的TDD，那么我们这个 TD ，就会针对这一个没有测，就是新加进去的测试去专门的做驱动，然后修改代码，然后这个呢同样也要花一点点时间，由于这里它生成一个测试点，就非常快。</div></div><div class="transcript-item"><div class="ts">[37:31]</div><div class="text">到这里，它就结束了，那结束之后，我们就可以，还是可以通过review，然后快速 check 一下我们的功能有没有好好实现。好，首先还是第一轮哈，我们先只输入小写字母，可以看到一级就变成了红色，对？然后输入一个大写字母，就变成了橙色，紧接着我们输入数字和特殊符号，就变成了绿色。哎，这就是完全这个符合了我们的想象，它已经好，它才能正确的把我们通过测试引入的这么一个新的细节给它引入进去。</div></div><div class="transcript-item"><div class="ts">[37:49]</div><div class="text">大概就是这样一个。哎，田洋，我还没看清楚那红色在哪？哪哪红色？好，比如你。没事，这边这边刚好也跑好，它这边生成了，我就以这边来继续演示，好？我们再演示一下，就是可以看到在左边三个按钮里面，我们有一个最左侧按钮叫做runTDD。工发达。那接下来，这时候，我们就可以开始选择了，比如说在这一轮，我想要跑这个测试，我们就单击一下它，然后它就标红了，就意味着我们已选中它。如果我有需要的话，我还可以任意选中其他的，比如把这两个也纳入进来，然后让它带一起跑，那我们这边就只选择一个，选中这一个之后，我们再次单击上面的 Run TTD，诶，好，它就进入了新一轮的测试驱动，然后这边的话，它就会进入可能会花点时间做这个 test driven develop，好？然后我也已经准备好了，已经跑完结果，你可以再看一下。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-28">
+  <div class="block-header">
+    <span class="page-num">第 28 页</span>
+    <span class="ts">[38:18]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p028_pTJ.jpg" alt="第28页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 38:18 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：好，大概就是这样一个。哎，田洋，我还没看清楚那红色在哪？哪哪。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-29">
+  <div class="block-header">
+    <span class="page-num">第 29 页</span>
+    <span class="ts">[38:22]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p029_pTD.jpg" alt="第29页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 38:22 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：好，大概就是这样一个。哎，田洋，我还没看清楚那红色在哪？哪哪。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[38:24]</div><div class="text">诶，这个就是我们视频中演示的地方，把它复制出来。对，只输入小写字母，然后增加一个大写字母，然后我们再增加数字和特殊字符，诶，完美实现了我们通过测试引入的这么一个新的细节功能。好，这个就是我们这个所谓交互式的编译与迭代，提供这么一个相当于是细粒度编辑代码功能。好，就是这边我可能补充一下，就这边陈阳展示的是我们的需求，你可以认为是个高编码态的一个自然语言，或者高商的一个编码态的一个高商的一种编码，但是呢我们要把这个需求把它变成代码，代码其实是一种低商的一种编码形态，所以在这过程中我们需要把可描述的需求转换成可执行的需求，所以我们这边你可以认为测试是一种可执行的需求，那么在这过程中大模型不一定百分百对，所以这个地方我们允许。</div></div><div class="transcript-item"><div class="ts">[38:56]</div><div class="text">这边的二允许大家额外的把自己认为的测试用例再补进去，那么在比赛的时候，我们其实也可以引导大家也可以尝试，比如构建一个 R1 级的系统，根据不同的需求，然后设计对应的测试生成的一个方案，这部分我觉得是比赛得到更高分的一个，比比赛得到更高分的一个非常关键的一个点。</div></div><div class="transcript-item"><div class="ts">[39:06]</div><div class="text">是的，我这里再补充一句，就是说这边的话，不但是我们可以细粒度编辑，还有一个重要优势是成本上优势哈。比如说我们 Lab 06，那个时候我们增加一个完整需求，其实可能会需要花费Disk、 Vispro 的可能要 5 块钱左右，但是我们这边只增加一个细的，就通过测试驱动的方式，我们手动添加测试，然后把它单独做一个驱动，其实我们可能只需要大概 0.3 元左右，就是这边是一个非常大的那个成本差异，就是如果我们遇到了一些小的局部的不通过测试，这种方法肯定是更有这个成本，更有效益的。</div></div><div class="transcript-item"><div class="ts">[39:27]</div><div class="text">行，那我这边的介绍可能大概就这样，然后关于这三个实验有什么问题可以提一下，然后如果没有。我觉得我们事后其实可以对于每一个视频分段会给出一个 B 站的一个更细致的，比如说哪一段，它到底是讲什么一个内容，分别就是各位选手可以针对性去看，如果在跑的时候，就是有任何的问题也欢迎大家提出来，然后陈阳啊、魏宇啊这边会第一时间帮大家解决，那个时候我们可以拉个线上会议，随时解决大家询问的问题，我们都是非常愿意的。</div></div><div class="transcript-item"><div class="ts">[39:46]</div><div class="text">那陈阳这边结束之后，我们就请魏宇再讲一下Arcbench，因为大家在自己演练的时候，其实都是个小demo，跑完之后比第一名。但是，在真正的比赛当中，我们是会面向，会产生更大的需求，那么这个时候我们会从 demo 态到真正的任务态，那么我们的模拟任务态就是由 Arcbench 来演示， Arcbench 其实是包含了一个六个 Webapp 的复杂需求的这样一个bench，所以大家的智能体就是在跑 Arcbench 的时候，其实这个时候是到了真正的能烧 token 的时候了。当然也是考验大家的智能体怎么去面对复杂需求，用一种更节省成本的方式构建出软件系统的时候。好，那么请魏宇来介绍一下。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-30">
+  <div class="block-header">
+    <span class="page-num">第 30 页</span>
+    <span class="ts">[39:52]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p030_pTc.jpg" alt="第30页"></div>
+    <div class="slide-text">
+      <h3>Lab7测试驱动迭代演示及Arcbench相关介绍</h3>
+      <div class="note">📝 讲者备注：本页为视频 39:52 的画面，属于章节「Lab7测试驱动迭代演示及Arcbench相关介绍」。画面对应讲解要点：好，那陈阳这边结束之后，我们就请魏宇再讲一下Arcbench。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[40:11]</div><div class="text">就是我做一个简单的补充吧，我们昨天的话是从一个 demo 上手，那个 demo 的话，我看到大家已经有跑出比较不错的结果。但是， demo 终归是demo，它只有几个小的需求点，真正的能模拟我们初赛赛题的这个体量和规模的，其实我们已经给大家准备了一个叫做 Arcbench 的这样一个应用集合，或者是赛题的集合。现在的话，在大家在这个那个网站上面，可以通过首页上的这个playground，它现在是目前是处于这个位置。接下来我们会把它作为一个就像模拟我们真实竞赛的这样的一个上传的方式，把它也打包成一个竞赛，大家在可以在这个上面去，拉上这些智能智能体，然后跑一遍，看一下分数是多少。</div></div><div class="transcript-item"><div class="ts">[40:36]</div><div class="text">简单的我介绍一下这个 ARKbench 的话，它目前是包含 6 个应用，然后这个应用的话都是一些我们基于真实的真实的一些网站，然后我们爬下来的一些它具体的功能点，以及我们编写的相应的这种端到端的测试。可以，可以大概看一眼，就比如说这个 train ticket booking，这个的话我们 demo 里面有一个非常非常小的这种严格版，但是这边的话我们基本上把这个 12306 或者是国外版的12306，它的一些核心的大的功能模块，就比如说登录注册呀，然后搜索订票，以及个人的这些个人中心，或者是一些乘客的管理，把这些核心的功能我们基本上都给包括在进来。可以看到这边这个总的模块数以及模块下面这个具体的需求点还是比较规模比较庞大。这个规模或者这个体量的话，就是和我们初赛的这个赛题是基本上是一致，包括它最后这个提交以及它那个评分的机制，评分的测试用例的形式都是和我们这个初赛是非常相似的。</div></div><div class="transcript-item"><div class="ts">[41:11]</div><div class="text">所以说大家在跑完 demo 之后， demo 可能就是简单熟悉一下这个网站，那在跑完 demo 之后，想看一下自己改过的智能体是不是真的发挥了作用，那就可以在这个 ArbBench 这个 website 子集里面去真实的跑一跑，然后相当于是一次模拟演练。</div></div><div class="transcript-item"><div class="ts">[41:21]</div><div class="text">除了这个 12306 的话，可能还有一些其他真实的项目，比如说这个BookStack，它是一个就是图书管理，这个就是比较相对来说比较简单的，但是简单只能说是它的功能简单，那它规模还是也是比较大的，比如说有这个 9 个模块，就包括。你图书模块呀，书架模块，包括你每个图书里面有各种各样的加标签、加书签，加一些章节这样的功能，都是都挺多的。包括还有最大规模的话是一个携程，就说它和这个 12306 是比较类似的，但是它是偏重于这个机票的搜索以及一些就是更多的注重于项目管理，这个旅行项目管理。包括还有一些就是前端，就比较前，偏向于前端的一些应用，就比如说这个 Google Keep 的 demo 版，它是偏向于，就之前的话可能更多的是在于一些信息的组成管理，那么这个的话我们偏向于一个前端的操作。同样的话就是关于一些前端的添加一个note，编辑一个note，然后关于这个 note 的增删改查，这些都是有列在里面。比如剩下还有一个 Segue workflow，大家可能比较也比较熟悉，还有个 Presale shop，就是模拟一个购物网站。 Segue workflow 的话就是一个典型的社区网站，大家可以看一下。</div></div><div class="transcript-item"><div class="ts">[42:08]</div><div class="text">值得注意的是，就是说我们这些这几个应用，或者说 Augbatch 里面应用，或者说是我们比赛的赛题或宗旨的话，就是它的输入是一个动物态需求。它不光有这个应用这个功能的描述，有具体场景的描述，它还有配套的一些参考的图片，供大家去使用。好，刚才介绍就是在这个目前这个 ArcBench 它所在的位置，大家可以进去先看一下，就是我们马上会把它上线到一个，就是把它提升为一个 competition 的这种级别，就类似于我们最后真实的这个赛题，大家可以点进去，然后上传自己的智能体，然后这边可能就会有 6 个任务，大家依次跑完每个任务之后，会在这个最后的 leaderboard 上面看到我们这个ArcBench，在 ArcBench 上你的这个通过率以及一些这个最后的性价比或者是模型的开销。</div></div><div class="transcript-item"><div class="ts">[42:40]</div><div class="text">今天晚上会尽快上线。对，然后这个 ArcBench 就基本上是模拟我们最终初赛和决赛的赛题，就是我们最后在那个决赛的时候，会给大家两个新的 web application，让大家可能需要用自己的智能体去打，去看就是自己的能生成的测试用例到底是多靠谱，然后怎么样通过迭代反馈使得整个。整个在整个 competition 当中得到领先。好。</div></div><div class="transcript-item"><div class="ts">[42:57]</div><div class="text">刚才就是说在这个网站上，大家可以上传到网站上去做，包括本地的话，这边有这个 Arduino 源码的链接，这个源码就包含了它这个需求文档呀，各种参考图片以及它的这个测试用例，就大家也可以顺便看一下这个测试用例的形式，也就是我们最后比赛怎么去评分，我们内部这个评分是执行什么样的测试用例，就基本上和 Arduino 是一致。好，那我就是简单分享到这里。</div></div><div class="transcript-item"><div class="ts">[43:13]</div><div class="text">接下来的话，文杰简单介绍一下，大家准备好 Agent 怎么上传，对？上传之后会长什么样子？对，目前来说，我觉控制在 3 到 5 分钟吧，之后就会由支持的专家李尧来授课另外一个技术路线。稍等，需要。好的，你一边放一边讲解一下。好好，这个是待讲解。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-31">
+  <div class="block-header">
+    <span class="page-num">第 31 页</span>
+    <span class="ts">[43:24]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p031_pTy.jpg" alt="第31页"></div>
+    <div class="slide-text">
+      <h3>Arcbench模拟赛题及智能体上传相关说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 43:24 的画面，属于章节「Arcbench模拟赛题及智能体上传相关说明」。画面对应讲解要点：好，接下来的话，文杰简单介绍一下，大家准备好 agent 怎。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[43:29]</div><div class="text">大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这个智能体代码。首先和普通赛道一样，得点击进入这个 competition 页面，在这个页面右侧这里可以查看，当前已经开放了这个比赛，需要注意的是，需求增量赛道的标题会在后面标注这个 evolution 字段，点击进入这个比赛详情页之后，这个代码的提交流程和普通的赛道是基本上是一样的，但这里你们需要注意的是，还需要你们再次点击这个 download Agent template 来下载，模板，然后基于这个模板实现你们的这个智能体代码。也就是因为这个平台上会自动使用你们在普通赛道中得分最高的应用，作为这次赛道的初始应用。也就是换句话说，这个需求增量赛道是在普通的赛道生成的应用基础上，继续进行功能开发。所以我这里以这个 R 模板为例，然后点击下载这个 download up template，并且在这个区域点击上传你们的智能体代码。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-32">
+  <div class="block-header">
+    <span class="page-num">第 32 页</span>
+    <span class="ts">[43:50]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p032_pTM.jpg" alt="第32页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 43:50 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-33">
+  <div class="block-header">
+    <span class="page-num">第 33 页</span>
+    <span class="ts">[44:04]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p033_pTS.jpg" alt="第33页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:04 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-34">
+  <div class="block-header">
+    <span class="page-num">第 34 页</span>
+    <span class="ts">[44:06]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p034_pTk.jpg" alt="第34页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:06 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-35">
+  <div class="block-header">
+    <span class="page-num">第 35 页</span>
+    <span class="ts">[44:08]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p035_pTI.jpg" alt="第35页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:08 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-36">
+  <div class="block-header">
+    <span class="page-num">第 36 页</span>
+    <span class="ts">[44:10]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p036_pTO.jpg" alt="第36页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:10 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[44:12]</div><div class="text">就和普通赛道一样，得提供一个 submission 名字，填入你们的密钥，并且选择你们想使用的模型，点击 save submission 就保存你们的智能体代码。保存好之后，可以点击选择赛道中的其中一个任务。然后点击 Run later submission，就可以提交你们的智能体代码，然后正式开始执行任务。执行好之后，也同样的在这个 competition 页面这里，可以查看你们这个排行榜上的分数。然后点击追测这个下拉框，可以选择就是不同赛道上，就是当前的排行榜的这个情况。我的演示就到这里。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-37">
+  <div class="block-header">
+    <span class="page-num">第 37 页</span>
+    <span class="ts">[44:14]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p037_pTh.jpg" alt="第37页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:14 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：然后呢，就和普通赛道一样，得提供一个 submission 。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-38">
+  <div class="block-header">
+    <span class="page-num">第 38 页</span>
+    <span class="ts">[44:38]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p038_pTR.jpg" alt="第38页"></div>
+    <div class="slide-text">
+      <h3>需求增量赛道智能体代码提交流程演示</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:38 的画面，属于章节「需求增量赛道智能体代码提交流程演示」。画面对应讲解要点：好，那就谢谢文杰和希文，因为希文今天有事来不了。那最后我们就。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[44:38]</div><div class="text">那就谢谢文杰和希文，因为希文今天有事来不了。那最后我们就把这个压轴的舞台交给来自飞书维的技术专家李瑶。就过去啊我们展现的是一个 opAgent 这条技术路线，但它并不是唯一的路线，它也未必一定是最好的路线，所以我们是希望就是大家进来之后，它只是给大家一个抛砖引玉的起点。那么接下来我们由那个来自于飞书维的开源技术专家李瑶给大家讲述一下另外一条叫 Octus 的一个技术路线。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-39">
+  <div class="block-header">
+    <span class="page-num">第 39 页</span>
+    <span class="ts">[44:54]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p039_pTP.jpg" alt="第39页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 44:54 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：好，那就谢谢文杰和希文，因为希文今天有事来不了。那最后我们就。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[45:01]</div><div class="text">李老师过奖了，稍等，我，诶，大家能听到我讲话？</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-40">
+  <div class="block-header">
+    <span class="page-num">第 40 页</span>
+    <span class="ts">[45:02]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p040_pTL.jpg" alt="第40页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 45:02 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：李老师过奖了，稍等啊，我，诶，大家能听到我讲话吧？。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-41">
+  <div class="block-header">
+    <span class="page-num">第 41 页</span>
+    <span class="ts">[45:04]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p041_pTo.jpg" alt="第41页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 45:04 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：啊，可以。。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[45:05]</div><div class="text">OK，OK。好的，我稍等我投一下我的PPT。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-42">
+  <div class="block-header">
+    <span class="page-num">第 42 页</span>
+    <span class="ts">[45:22]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p042_pTC.jpg" alt="第42页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 45:22 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：OK，OK。好的，我稍等我投一下我的PPT。。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[45:23]</div><div class="text">我今天这个，OK，那我们开始，我今天这个介绍，大概我们应该会分两部分。我们相当于，是给 ARC 提供了一个新的 Arcbench 提供了一个新的技术路线，就是你首先你可以像之前的专家们讲到的一些使用 Arc 官方的 Agent 去进行更改调错，然后去提交到 Arcbench 上面的这个方案。然后我们其实还可以通过Office，就是我们自研的另一个。智能体，智能体系统吧，可以可以说是一个系统。我们可以借助它，基于它去进行扩展开发，对自己需求的，针对自己需求的一些魔改，你做完这些更改之后，也可以接入到 ARK 上面，进行进行一个评分，然后得到自己的成绩。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-43">
+  <div class="block-header">
+    <span class="page-num">第 43 页</span>
+    <span class="ts">[45:24]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p043_pTx.jpg" alt="第43页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 45:24 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：我今天这个，OK，那我们开始，我今天这个介绍呢，大概我们应该。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[45:49]</div><div class="text">首先什么是，什么是August？首先 August 是一个嵌入式的 Agent harness kernel，它是用 Rust 写的。我们可以，我可以先简单的 demo 一下，这个东西，首先它是怎么用？诶，不好意思，我这个地方。对，首先它有很多的功能，首先它有类似于一个 Google 跟 hook 的这种，你可以在里面去创造内容。其次，对，它还支持接入matrices，就像你在像 floc 这类产品一样，你可以在里面去直接的调用 Agent 去跟它讲话。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-44">
+  <div class="block-header">
+    <span class="page-num">第 44 页</span>
+    <span class="ts">[45:50]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p044_pTW.jpg" alt="第44页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 45:50 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：首先什么是，什么是August？首先 August 是一个嵌。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-45">
+  <div class="block-header">
+    <span class="page-num">第 45 页</span>
+    <span class="ts">[45:58]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p045_pTi.jpg" alt="第45页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 45:58 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：首先什么是，什么是August？首先 August 是一个嵌。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-46">
+  <div class="block-header">
+    <span class="page-num">第 46 页</span>
+    <span class="ts">[46:04]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p046_pTj.jpg" alt="第46页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 46:04 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：首先什么是，什么是August？首先 August 是一个嵌。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-47">
+  <div class="block-header">
+    <span class="page-num">第 47 页</span>
+    <span class="ts">[46:08]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p047_pTV.jpg" alt="第47页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 46:08 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：首先什么是，什么是August？首先 August 是一个嵌。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[46:13]</div><div class="text">August 它是code，这个我觉得有点类似于 DeepSeek harness 那种感觉，DeepSeek。你可以在这里直接跟他去。就是Coding，所以基本上所有的代码的，你的开发的流程，还有你的内容的这个流程，它都可以去帮你去完成。还有一些别的扩展，就是一些 Lear 之类的，因为它是模块化的，它是可扩展的，所以我这里只是放了一些例子在上面，然后你可以在对应的地方去做设置。所以这个就是August。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-48">
+  <div class="block-header">
+    <span class="page-num">第 48 页</span>
+    <span class="ts">[46:32]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p048_pTw.jpg" alt="第48页"></div>
+    <div class="slide-text">
+      <h3>飞书维专家介绍Octus智能体技术路线</h3>
+      <div class="note">📝 讲者备注：本页为视频 46:32 的画面，属于章节「飞书维专家介绍Octus智能体技术路线」。画面对应讲解要点：August 它是code，这个我觉得有点类似于 DeepS。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[46:33]</div><div class="text">我们接下来可以，我们接下来会演示一下怎么把 August 本身，把 August 的 Coding 的能力对接到我们的 ArcBench 上面，然后完成我们需求编译，以及增量需求编译，这些这些内容的一个基本的展示。首先我们要尝试把 August 提交到ArcBench，然后跑通一个任务，然后我们去理解一下它的评测反馈。首先。首先我们的 R- GAN，我们刚刚也讲了很多，就是。它分为左边是右边是比赛的赛道，然后还有这个playground，我们先从比赛赛道这边开始，首先因为 Alcos 它是一个你可以理解为像 Clang code 或者 Codex 这种标准的 Coin Agent，所以它是需要一个adapter。我们的评测它需要上，因为我们评测的它的入口是一个 Python 的这么一个评测入口，所以它需要一个，我们会提供这样一个适配，然后你直接去把这个适配上传上去，就可以去把 Alcos 上传到 Rbench 上面，然后参与所有的这个评测。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-49">
+  <div class="block-header">
+    <span class="page-num">第 49 页</span>
+    <span class="ts">[47:18]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p049_pTm.jpg" alt="第49页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 47:18 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：我们接下来可以，我们接下来会演示一下怎么把 August 本。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[47:19]</div><div class="text">所以基本的流程就是流转的流程就是，首先我们， Rbench 这边我们提供赛题里面的这些需求验证标准，这些东西去交给adapter，然后它去读题、编排辑，然后由 Alcos 去调用这些一切的这些东西去生成代码，然后完成一个完整的这个。软软件的这么一个成品。我们上传的，应该是一个 Agent 的适配包，我们交付给 Augment 的是一个完整的前后端齐全的应用。所以我们待会我我待会会带着大家过一遍，首先你整个的这个怎么？你注册注册这一块大家可能都刚刚已经讲过了，就是怎么写一个这个包，然后怎么去配模型，然后怎么去确认目标，然后去上传这个东西。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-50">
+  <div class="block-header">
+    <span class="page-num">第 50 页</span>
+    <span class="ts">[47:36]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p050_pTt.jpg" alt="第50页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 47:36 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：所以基本的流程就是流转的流程就是，首先我们， Rbench 。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[47:46]</div><div class="text">首先我们在步骤，我先大概的过一下我先大概的过一下我们这个网站，我们第0步开始，首先去找到你想想要去参加的赛道，比方说我们刚开始的话，可能都是Smoke，你去注册，注册之后去上传，在网页上去上传一个适配包，上传之后，我们去保存快照，去启动和运行。现在再去打开，我这个会过很快，因为我等下会去做一个实操的演示，然后去打开任务的详情，然后看清楚他的要求，去启动运行。然后如果代码生成代码生成成功之后，会有平台的验收的全过程，好，我们接下来进入一个简单的演示。</div></div><div class="transcript-item"><div class="ts">[48:17]</div><div class="text">的，OK，这个调大一点。首先我们可以到一个目录下，然后我这里就是把 August 的 bundle 给它拽下来。啊对，我我所有敲过的命令，等下我会放一个教程，然后大伙在网页上可以直接拷贝配置，然后可以拉起来跑。首先我把 August 的二进制拿下来，然后我去新建文件夹，然后把它放到对应的地方，然后我去，你看我跑了一下它的二进制，它确实是有这东西。好，那就算我们就拉好了。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-51">
+  <div class="block-header">
+    <span class="page-num">第 51 页</span>
+    <span class="ts">[48:18]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p051_pTg.jpg" alt="第51页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 48:18 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：好的，OK，这个调大一点。首先我们可以到一个目录下，然后我这。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-52">
+  <div class="block-header">
+    <span class="page-num">第 52 页</span>
+    <span class="ts">[48:20]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p052_pTl.jpg" alt="第52页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 48:20 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：好的，OK，这个调大一点。首先我们可以到一个目录下，然后我这。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[48:39]</div><div class="text">还有一些必备的环境配置，这个之前专家没讲过，首先我们要配置Node.js，我这个电脑是完全干净，所以它都没有，所以你需要先配置Node.js。你要配，你要去配置所有相关的这些东西。我这个是通过 pro 引出的，这些命令我也都会放上去，这是基本环境配置。</div></div><div class="transcript-item"><div class="ts">[48:55]</div><div class="text">在配置之后，在配置之后我们就可以到 office 一个 demo 这个阶段了。我这里是配置了一个 API key，当你配置好 API key 之后，你就跟它说，就是调用这个二进制，我们调用一个简单的check，发发一条消息，它在打印一些日志之后。他在打接日志之后，可以看到他说连接成功，就是说明这个 Agent 已经在工作了，接下来我们这个是在命令行里面去操作，我刚刚也有演示一个很简单的，在网页里面去点击， dcparties 那种用户友好的界面，但是因为我们是要去给 Apache 评分的，所以接下来我们会给 AUDITOS 在命令行里面去发送指令。</div></div><div class="transcript-item"><div class="ts">[49:31]</div><div class="text">首先我们去选择这个二进制，然后我们去输入我们的prompt，我在这里输入，我们 smoke 里面第一个测试就是一个counter，我给 Agent 的指令就是创建一个 counter 项目，然后初始值是0，有 increment 和 decrement 两个选项，我对一些技术上的这些要求，当我输进去之后，在我第一次的报错，为什么没有配PRT？当我返回这里去配好 PRT 之后，我去跟他重新去说一下这个指令，OK，他跑完了之后，我去打开这个网页。就可以看到它生成出来的这么一个东西，因为我是之前生成过的，我不耽误大家时间，我就直接把我就拽过来，对，我这里是到这里跑了一下，然后让它在这里能看到它。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-53">
+  <div class="block-header">
+    <span class="page-num">第 53 页</span>
+    <span class="ts">[49:56]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p053_ppT.jpg" alt="第53页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 49:56 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：首先我们去选择这个二进制，然后我们去输入我们的prompt，。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-54">
+  <div class="block-header">
+    <span class="page-num">第 54 页</span>
+    <span class="ts">[50:00]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p054_ppp.jpg" alt="第54页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 50:00 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：首先我们去选择这个二进制，然后我们去输入我们的prompt，。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[50:05]</div><div class="text">接下来，刚刚是我自己，相当于是全都是我自己去写 prompt 让它去写的一个示例。接下来我们会直接去把我们的中间的层，你看我这里的仓库变成了ARKadapter， ARKadapter 就是包在我们标准 Agent 外，标准 Novel Agent 外面的一层，专门用于给我们 ARK 提交，然后方便大家二次之后二次开发，把自己的功能打包进 argos 之后，再通过我们 Arange 去提交的这么一个小工具，那你去把它拉下来之后，你就看到里面其实很简单，就是一些 python 的脚本，还有一些 sh 的脚本，你去创建好虚拟环境，去把它跑起来之后，这里是不是让它安装一下这些东西？OK，适配层已经就绪了之后，我们接下来让，就是明确告诉适配包使用我们刚刚安装的这个官方的argos，在我执行了这个 export 后面这一堆命令之后，这里说明它找对了运行时。</div></div><div class="transcript-item"><div class="ts">[50:54]</div><div class="text">在这个之后，我们去，你看，在这里，我们去把 Arc 里面的 counter 的一个 ta- task，给它拉下来。我让他去，接下来就是一个执行的命令，然后我让他去把这个需求打出来，题目需求文件运行时交互目录，完成之后，完成之后，我让适配包去接受，等一下后面，完成之后对，我们去本地去把它跑起来，跑起来之后因为 Agent 它会有随机性，然后我这边跑起来之后，大家可以看这个 UI 它变了，因为我只是重新生成了一次，然后打开了之后我们就我们就可以说这个东西符合我们的需求，大家可以认为这个操作系统在本地已经可以用打工就把这个事情做完，到我们本地演示走通之后，我们就可以去尝试这个打包一个适配的代码，然后准备上传。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-55">
+  <div class="block-header">
+    <span class="page-num">第 55 页</span>
+    <span class="ts">[51:20]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p055_ppf.jpg" alt="第55页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 51:20 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：在这个之后，我们去，你看，在这里，我们去把 Arc 里面的 。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-56">
+  <div class="block-header">
+    <span class="page-num">第 56 页</span>
+    <span class="ts">[51:26]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p056_ppr.jpg" alt="第56页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 51:26 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：在这个之后，我们去，你看，在这里，我们去把 Arc 里面的 。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-57">
+  <div class="block-header">
+    <span class="page-num">第 57 页</span>
+    <span class="ts">[51:30]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p057_ppX.jpg" alt="第57页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 51:30 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：在这个之后，我们去，你看，在这里，我们去把 Arc 里面的 。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[51:33]</div><div class="text">就是首先我们去把这个东西，在我这个页面上打包的，如果大家用系统这个直接图形化右键打包，可一样的，就是我们现在因为我现在都是默认状态， app 是默认的， options 本身我没有做一些奇怪的更改，所以它也是默认，我现在打出来之后，我会打一个 zip 包，打完这个 zip 包之后，我们在网页上面去我们在网页上面去打开打开 competition 的页面，我把这个稍微大一点，我们打开这个 competition 的页面，我们选择 smoke competition，然后这里我们去把刚刚的刚刚的这个东西，刚刚我们打的这个包给它丢进来，这里去 save submission，这里填好对应的东西，这里是这样对应的东西， mission name 我们去写成这个，对，然后接下来的东西这个浏览器帮我都挺好的，这个 p 的话就是大家那个用户里面能看到那个p，就是在在这里，对，能看到自己的p，这里，然后填进去之后，我这个返回一下，我要重新点，我上传，然后把我的集中那个点，OK，然后这样子的话，它就上传了，这是我上次有一个，我的 average pass 和这个 token 消耗，还有 model cost，诶，那个 run 在。这是我之前的一些，当上传去，上传上去之后，我们就去点击run，它就可以把大盘。把这次的评测区域跑起来，我们找一下有没有我，对，这个是我，我是这个，这次是，试验它 average pass rate 是50，就这样子的话，算是完成了一次最简单的上传。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-58">
+  <div class="block-header">
+    <span class="page-num">第 58 页</span>
+    <span class="ts">[51:50]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p058_ppN.jpg" alt="第58页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 51:50 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：就是首先我们去把这个东西，在我这个页面上打包的，如果大家用系。如需上下文可回看逐字稿对应时间段。</div>
+      <p style="color:#9ca3af;font-size:13px">该时间段暂无详细讲稿</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-59">
+  <div class="block-header">
+    <span class="page-num">第 59 页</span>
+    <span class="ts">[51:52]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p059_ppE.jpg" alt="第59页"></div>
+    <div class="slide-text">
+      <h3>August对接Archbench实操演示及后续安排说明</h3>
+      <div class="note">📝 讲者备注：本页为视频 51:52 的画面，属于章节「August对接Archbench实操演示及后续安排说明」。画面对应讲解要点：就是首先我们去把这个东西，在我这个页面上打包的，如果大家用系。如需上下文可回看逐字稿对应时间段。</div>
+      <div class="transcript-item"><div class="ts">[52:57]</div><div class="text">所以总结一下，从零开始的一个最简单的流程就是，首先你部署部署好Git、python、node、 npm 这些环境，然后去安装我们的 office Agent，然后去配配置一个你最主要用的一个模型，比如说我这里用的是DeepSeek，去让 office 在本地去创建一个你想要的创建应用，确认它能跑通，然后确认它的性能是符合了预期的。</div></div><div class="transcript-item"><div class="ts">[53:12]</div><div class="text">之后你去给 hub 去克隆我们给你提供的这个适配包，然后把适配包扔给把原题扔给适配包，然后它会帮你调用 office 去干活，就可以。达到一个可提交状态，就可以把它交上去，交上去之后就可以获取自己的分数。基本上我再过一遍这个流程，首先我用基础任务去跑通，在跑通之后可以看到网页上会有这个流水线，这也是 ARKit 的特性。大家可以根据我这个怎么放大，有点小，不好意思，大家可以根据网网页上的日志去出错，但是我推荐还是大家在本地先去跑一下，然后去得到一个最最低手的测试吧，等差不多了再提交到网页上面去测。常见的报错的话，基本上是要么是入口问题，要么是上传的时候这个打包可能说一些路径的问题，或者是还有功能上可能 platform 那里没有写清楚，它。你的 Agent 在做一件事情的时候， skip 了一些步骤，所以它可能会产生一些问题。我们接下来如果大家有时间，可以去用自己的账号，去试一下，用 August 去执行，去产生这个网站，去自己用一下这网站，看有没有什么问题。如果完全没有问题的话，就可以交上去，然后验收，可以得到自己的最简单的成绩。我们的二次开发以及后面的打榜要不要留到下一次？我这次演示就先到这里。</div></div><div class="transcript-item"><div class="ts">[54:11]</div><div class="text">的，我觉得李瑶讲的我觉得也是非常的细节，也非常的深入。而且我们这个可以看到就是ArcAgent，包括就是我们这边的Octus，其实都是两个参考的实践，主要目的呢是让大家不要从零开始，有个比较好的起点。但是有很多，但是有的时候就是心一利则生一弊，就大家沿着比如前人探索过的一个技术路线，有可能也容易把大家带到一个某个方向上去。</div></div><div class="transcript-item"><div class="ts">[54:26]</div><div class="text">所以我觉得大家在这个比赛当中，我觉得首先我觉得可以先按部就班的，先按照已经探索过的一些 Agent 来做。但是我也相信，就是在整个 leaderboard 的一个打榜上，很多选手，很多同学肯定能够发明发明自己的发动机的聪明才智，因为我已经看到了，在 demo 这个榜上， Arc 已经是排到第六了，对？前面好像还有好多很厉害的选手已经排到前面了，就是说在 token 的有效利用上呀，在整个架构的设计上呀，甚至在怎么样更好通过更多测试用例上呀，其实都已经展现出了一个非常好的成果。</div></div><div class="transcript-item"><div class="ts">[54:45]</div><div class="text">那我在这，我在这里，就大家有任何问题都欢迎在企微的社区上，在微信群里面，来找我们，我们包括就是像飞书为的吴老师，吴东环老师，还有李瑶瑶，包括我们自己团队的一些博士生，博士后呀，都会第一时间，尽大努力，以第一时间来回答的问题。好，关于今天的授课我们到这，大家还有什么问题吗？好，接下来的话，我明天，因为这次我们看到有很多同学他那个学习热情很高，所以明天的话我在想，我们其实还是会到时候李瑶有可能还会为 Octo- the Octopus 再准备再准备一节增量需求增量编译的一个内容。</div></div><div class="transcript-item"><div class="ts">[55:09]</div><div class="text">同时，我们明天也会给出 ARKbench 上的 Agent 的参考实现，因为现在这段时间大家是手把手跟着一个 demo 走一遍，但是到了未来，就是大家要打榜ARK，就是ARKbench，甚至打榜那个未知的一个软件系统，那么这个时候我们会把对应的一个参考实现也给大家爆出来，然后这样的话大家可以拿到参考实现看一看，就目前这些参考实现是不是花了没有用的token，是不是在本该能够通过的测试用例它没通过，什么是生成的 train 的testcase，什么是通过以及没有通过的 validation testcase，那这样的话可以给大家一个更加直观，但是呢由简入难的这样一个阶梯。</div></div><div class="transcript-item"><div class="ts">[55:30]</div><div class="text">大家还有什么问题吗？明天我们还是设在 1: 30，对，明天可能也是设在 1: 30，对。好。好，好，那就感谢大家，就是有任何问题也欢迎提出，然后我们最后的视频还是会放在 B 站上，也欢迎大家不管在 B 站上呀，在极客社区上呀，在微信群上呀，都提出大家自己的想法和意见，好，谢谢大家。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide-block" id="page-60">
+  <div class="block-header">
+    <span class="page-num">第 60 页</span>
+    <span class="ts">[None]</span>
+  </div>
+  <div class="slide-body">
+    <div class="slide-image"><img src="shots/YUozsGSMelOVBhdTgOyczgeYnJe_p060_ppb.jpg" alt="第60页"></div>
+    <div class="slide-text">
+      <h3>全课核心结论</h3>
+      <div class="note">📝 讲者备注：结尾总结本课核心结论，作为整份逐帧速览的收束。</div>
+      <div class="transcript-item"><div class="ts">[00:00]</div><div class="text">那我们今天还是延续我们昨天的课程，那我们在开始之前，我觉得可能还是再感谢一下各位给我们赛事进行合作和支撑的各位伙伴，有华云给我们支撑了非常庞大的云计算的基础设施，然后亚信和数联给我们很好的 token 赞，很好的那个奖金赞助，淘 Token 呀， MediaMax 呀，包括中国电信，还有那个魔搭社区给我们很好的 token 的基础设施建设，然后 Trae 呢是我们推荐的那个 DE 1，然后我们之后我们也跟那个字节联系，给给大家在那个开发自己的智能体软件的时候，能够有一定的智能编程辅助。</div></div><div class="transcript-item"><div class="ts">[00:22]</div><div class="text">最后的话，我们也是跟奇物社区和 DataClub 社区，进行连接，当然我们也会跟魔搭社区进行连接，我们之后的作品也期望这个学生不是各位选手，就成功的作品不只是在我们赛事能成功，能够在这些社区上能够持续的产生属于你们自己的影响力。好，那么接下来我就说一下，回顾一下我们上节课的一个。基本的概念，我们上节课讲了智能体软件工程，讲需求编译，首先我们有孔卫宇同学讲了可视化的需求编译过程，它是个demo。之后，吕明希同学和张晨阳同学分别讲了测试驱动是怎么弄的，智能基于智能智能体的测试驱动是怎么弄的，形成几轮反馈之后，它的模型所产生背后的预算和它的 token 消耗是什么样子的。</div></div><div class="transcript-item"><div class="ts">[00:51]</div><div class="text">那个张晨阳同学，我们展现了那个需求编译的可视化过程，同时我们也会有个排行榜，当时，张文杰博士和邱希文同学，也是展现了整个过程。大家有任何问题，我们都期待大家在不管是微信群里面，就是赛事的交流区里面，讨论区里面进行展示。这边，我觉得有很多同学问出了很多高质量的问题，但很多时候高质量问题因为大家在群里面比较讨论比较热烈，很容易被就是冲淡了这个讨论，所以我觉得如果大家觉得这个问题其实非常重要，并且能够让很多其他选手也能够了解，但我也没鼓励大家这么做。其实大家可以把非常有意思，非常问的问出来的非常，不只是有意思，问出非常好的问题，能够把它放在这个企务的。</div></div><div class="transcript-item"><div class="ts">[01:18]</div><div class="text">课程交流和赛事交流群里面。好，那我们今天呢其实会有几位从，会有些调整，会有些新的一些专家会进来跟我们一起授课，首先我们的今天的安排是这样，首先吕明希同学还是会把测试驱动这样的一个demo，会引领大家再走一遍。我们跟上节课不一样的点是，上节课其实是脚本，基于脚本的那个测试，生成脚本测试，然后由此来生成代码。而我们这次赛事，很多时候都是 GUI 的一个程序，所以怎么样生成额外的 GUI 测试，使得它的那个界面代码能对？今天吕明希同学会给我们展示一下。</div></div><div class="transcript-item"><div class="ts">[01:42]</div><div class="text">其次，我们非常荣幸的也邀请了，就是来自于魔搭社区的技术专家，郑义伟，郑义杰，专家，来给我们授课，因为我们知道就是魔搭社区其实是国家支撑的一个算力，算力，算力社区，大家在这个，在在魔搭社区上，不仅可以贡献自己非常闪亮的作品。同时也能得到一些魔力值，以魔力值计价的算力，那么这个时候大家可以看，就是很多时候的算力计价不只是以人民币计价，不只是以美金计价，其实也可以用一个，在魔搭社区上其实还有一个专门的魔力值，其实本质上是以调用次数计价，这个时候，我们也跟魔魔搭社区合作，就是他社区也愿意给我们赞助比较大量的免费试用的token，然后也是在一些比较好的模型上给了我们支持。</div></div><div class="transcript-item"><div class="ts">[02:08]</div><div class="text">我们是由张晨阳同学会进一步介绍，基于需求编译的这样想法，我们怎么去做智能体的版本，就智能体做完代码，调完代码，怎么对代码做版本回溯？那么这个地方其实对大家可能预先我们认为大家对 Git 管理有所了解，那么智能体在写代码的时候，是一个源源不断的长城任务，永远是需要中间有个版本的checkpoint，那么这个时候我们怎么利用 Git 这样的版本管理器来追溯过去的版本？同时我们也引入，就说在写代码的时候，智能体出幻觉的时候，永远需要人机交互，那么这个时候人在。</div></div><div class="transcript-item"><div class="ts">[02:26]</div><div class="text">我们怎么去发现最关键的点？引入人机交互的一个方式，同时张晨同学也会讲一下，就说增量需求编译会怎么样？然后，孔伟同学会接下来会讲，就说我们会有一个 Arcbench 这样的排行榜，因为我们在大家我看在群里面有些同学已经试了，就是把自己的作品就提交到那个 leaderboard 上，已经排名第一第二，这样都会有。</div></div><div class="transcript-item"><div class="ts">[02:39]</div><div class="text">那个是 demo 版本的问题，那么在比赛时候，我们其实会有更复杂的需求文档，那么这部分的话，我们就把，就是Arcbench，这里面会有 12306 呀，携程网站呀， bookstore 呀，就这些知名网站的需求文档都会列在这个 Arcbench 里面，那这个时候大家智能体不仅，我们是希望大家智能体不仅是能够在 demo 上能够成立，同时也能在这个 Arcbench 上这么复杂的这么多样这么复杂的需求场景下也能成立。</div></div><div class="transcript-item"><div class="ts">[02:56]</div><div class="text">最后，张文杰博士，不是最后，就张文博士会简单介绍一下大家的。作品怎么上传，然后怎么在里面打榜。最后压轴的，其实是来自于 Future 维的技术专家李瑶，然后我们 ARK 其实只是一个一种技术路线，然后李瑶会介绍 Octus 的智能体技术路线，并且我们明天，如果会进一步去展示，就是 Octus 怎么样在 Upper Bench 上，达到一个非常高效能的，非常非常高效的，或者说非常强悍的一个性能，之后李瑶会作为技术专家会进行展示。</div></div><div class="transcript-item"><div class="ts">[03:15]</div><div class="text">那我就因为时间有限，我就不继续，我这边打个总纲，我们把更多的那个时间交给这个具体的lab，我们也期待看大家能够通过这个课程，首先是成长，其次是把自己的作品展示出来，能达到一个非常好的高度。好，那么接下来就请那个吕明希同学，推推下屏。希望大家都能看到屏幕上内容，今天由我来给大家继续讲这个关于测试性开发，但是，跟昨天不一样是，我们今天换一个场景，这个场景的话是 GI 层面的一些测试性开发，那么希望通过这样一个新的例子，能够加深一下大家对测试性开发的这个理解及体会，在后续的这个正式比赛过程中，能够将这个开发的范式呢继续发展，继续使用下去，运用下去，提高自己的这个 Agent 的能力。</div></div><div class="transcript-item"><div class="ts">[03:43]</div><div class="text">今天的话，这个需求是这样的，其实跟昨天整体上还是比较类似的，我们再，我们可以先看下PPT，待会会带大家动手这个实践一下。我们要做的，是一个像网页上有一个，我们一般叫这个 form 表单，那么注册或者登录都需要这样说，我们今天只专注这个注册的页面，在注册页面上，我们大概需要让用户填写用户名、邮箱、密码，等等等等，一些常见的这种注册表单相关的工作。那么就像我昨天提到的，在今天，在这样的一个课上，我们这样的一个 lab 演示过程中，我们会先让大模型根据左边的这样的一个原始需求的描述，以及我们这样的一个图片，或者说一个参，一个参考的这个网页，去直接这个生成这个对应的我们实现的一个注册页面，这是大模型根据自己的需求理解直接实现的一版代码。</div></div><div class="transcript-item"><div class="ts">[04:08]</div><div class="text">我们可以看到在之前的一些测试当中，这个明文这些密码，它没有做到这个加密的显示，它可能直接就明文输入，显示在上面，那么我们一般现代的网页的话，在注册输入密码上，一般来说，默认是隐藏的。那么或者说，如果没有勾选这个同意条款，这个下一步按钮，其实应该是不会点击的，现在它没有做到这个隐藏或者说禁用的一个状态，那么这可能跟我们预想的一个完美网页是稍有些差别的。那么如果你昨天听过我们关于测试用开发课程的话，你知道，你就会知道我们要测试用开发，就是它的目的，就是将原始的需求用这种代码的测试的形式表达出来。比如说现在左下角这个测试，就是在描述密码登录密码的时候，或者注册密码必须应该是要隐藏的，我们提供一个我们提供一个按钮，提供一个button，它可以点击，像在右边，我们这种密码上点击以后可以切换这个显示还是隐藏，这就是一个测试来描述清楚自己的这个需求，那么我们待会会看到大模型能根据这种测试去迭代自己的这个生成的网页效果，然后加完善这些功能。</div></div><div class="transcript-item"><div class="ts">[04:45]</div><div class="text">同样的，我们这个网页上刚还提到还有很多别的问题，比如说未勾选服务时，我们希望其实右边的样子，那么给大模型描述的时候，我们就需要用这个左边的这个测试代码，或者说不用我们给它描述，是大模型自己要根据需求理解出来这样的一个测试，然后通过这个测试去约束自己的最终的这个实现。</div></div><div class="transcript-item"><div class="ts">[04:56]</div><div class="text">还有第三个的话，是另一方面的一些功能，整整体来说的话，我们要看到这个测试驱动开发，我们需要先写测试，让这个测试来约束大模型生成的这个实现的代码，最终让我们这个显示效果达到预期的，做出来的这个效果达到预期。好，那么这是今天的主要的这个TDD，或者说测试驱动开发，在这个 GUI 层面是怎么应用的？那么跟昨天的核心思想还是比较类似的，那我们可以今天再一起再动手做一遍，来这个加深一下自己的这个理解。好，那么首先第一步的话，如果你昨天已经把仓库克隆到本地的话，我的建议是你在，不好意思，你在这个仓库里面，去执行一下 Git pull，去更新一下这个仓库。如果，你没有更，你没有昨天没有跟我们课程一起做这个 lab 2 的内容的话，你现在可以到 GitHub 的网页上，打开我们这个项目，或者我们这个课程的这个 lab 的仓库。</div></div><div class="transcript-item"><div class="ts">[05:26]</div><div class="text">我们链接应该昨天发在课程群里面了，然后通过你喜欢的方式，比如说，给它直接克隆下来，克隆到本地，最后再用你喜欢的这个编辑器， VS code 也好，或者 trae 或者其他的 IDE 都可以，在自己的这个本地，打开这个 lab 2 的这个目录，好？我希望达到这步的话是比较简单的，就是我们在工作群里面把我们今天用的这个仓库给打开，那么好，这是我们今天的第一步，就是首先我们需要大家都在这个代码上，是？然后，就是要看项目的这个readme，我们有些依赖安装，这步其实昨天你如果做过的话，那么今天就不需要了，但是你如果昨天还没有给自己单项目配置环境的话，看一下仓库里面我们附带了一个 readme 的参考文档，第一大环节就是教大家怎么配置这个环境，大家可以在上面根据自己的系统选择要下载安装方式，然后最终，我们要把这个 node 和 npm 给安装好，就这样安装好以后，你可以通过这样的一个，我在这个 readme 里面也写了，我看现在我搞太快的话，你可以自己看这个readme，就是通过这两个指令看确认一下这个版本是否都正确，什么一个是 24 的版本，一个是 11 的版本朝上，都都可以。</div></div><div class="transcript-item"><div class="ts">[06:04]</div><div class="text">这两个工具安装好以后，我们需要安装这个项目的依赖，那么就是运行。pmsol，我这边应该已经提前安装好了，输出可能和它稍微有点不一样，但是只要没有报错，那都是正常的。那么今天跟昨天，昨天做到这里，如果有人听过昨天，跟着昨天的练习，那么到这里都是一样的。今天的话，我们因为要用，需要，我们要测试网页，那么我们可能需要个工具能够来测试网页，那么在现在的这种网页开发过程中，我们一般有个叫做 playwright 的这个工具， playwright 的工具，它大概的原理就是通过一些代码来描述，就模仿人在这个网页上操作，比如说找到某个按钮，去点击，或者说找到某个输入框，然后输入一段指定文本，通过这种形式来描述这个测试的内容，那么通过，最后，我们就运营测试来了解当前网页是否能够正确的通过。</div></div><div class="transcript-item"><div class="ts">[06:30]</div><div class="text">OK，那么今天要多执行一步的指令，是 pms run，叫 set up process。OK，如果你是第一次的话，它会给你安装一个新的这个 chromium 的内核吧，可以这么理解，那么跟你原本是否有 Chrome 浏览器本身不相关，你有别的了解也可以，但是，我们这边统一用这个 chromium 内核给安装好。弄好以后，可能第一次需要点时间，大家可以自己稍微等一下，执行下这个操作，然后后续我们就可以开始跑测试了。ok。</div></div><div class="transcript-item"><div class="ts">[06:45]</div><div class="text">我这几步我刚都给大家展示过了，那么在正式开始运营前，还有调用模型，如果你昨天没有配置 ABIT 的话，今天可以根据这个PPT，或者说我项目里 review 重新配置一下。那么今天跟昨天课程不同的点在于，我们今天有幸有收到来自这个 Scope 国家社区的这个支持，如果大家现在上面注册账号的话，应该是注册就有初始的一定额度的积分可以使用，所以，你可以打开自己的 environment 文件，这个不好意思，但是这个，大家看左边是 environment 文件，如果你没有的话，你应该需要把 environment example 文件复制一份，复制一份，在这个里面，请大家注释掉上面这些，如果你昨天跟着做的话，应该注释掉上面这些。</div></div><div class="transcript-item"><div class="ts">[07:10]</div><div class="text">这些是我们 ArtFrench 给大家提供的这个API，那么如果你想使用尝试一下 ModelScope 的话，你在底下就帮你写好这个 base url，还有model，大家看看清楚了，然后这个 APIT ，就是需要你去魔搭社区，这个魔搭社区，现在就叫魔搭社区，注册一个账号，然后在自己的应该是设置，对，在设置的这个访问令牌里面新建一个访问令牌，然后复制下来粘贴到本地这个文件里面。</div></div><div class="transcript-item"><div class="ts">[07:26]</div><div class="text">那我们今天重点是测试用，我就简单介绍这个如何配置，待会会有魔搭社区的专业技术老师来给大家展开这个魔搭社区有什么更加高级的用法，对大家比赛可能有所帮助。那么具体来说对于我们需要知道的就是你需要把这个 base url 设置好，然后把你的 APIT 申请一个，然后复制下来。那魔搭社区现在比较推荐是这两个模型，一个是智谱的 GMV 5.3 Flash，另一个是千问的 3.8 系列的 FlashMax 模型，大家可以从这里面选择任意一个，都能够完成今天的实验。好吗？那么这些就不来说了，我们来开始看这个要今天要做的事情。OK，希望大家能够先打开一个自己的。终端，或者你在 VS code 自带终端都可以。那么我们第一步，就是去运行一下这个脚本，我们来绕大模型。这个脚本在这里，这样一行，然后回车输入。这一步的作用，调太快了。在这个终端里面，这大家可以看一下内容，就是这一步，就是第0步，让大家看一下今天我们要做什么东西。</div></div><div class="transcript-item"><div class="ts">[07:58]</div><div class="text">我刚提到了，我们今天要做的是一个带有界面的这个注册页面，那么这个注册页面，我刚提到了是要有 Username ，邮箱，还有我们昨天跟注册 API 一样的，就是要可选的这个出生日期，密码等等，最后还要能够提交这个表单。那么这是我们大致这个需求的内容，那么我这个脚本，会帮它自动的用这个浏览器打开参考的页面，就是这个页面是参考的，是我们想要做的，刚我们在浏览器里看到是，大概是类似这个样子，做的比较简单，我们可以在上面可以填一些东西，你也可以填。可以填个注册邮箱，你可以直接该填都填了，以后，你可以点一下这个 create account，应该会有个反馈，对？这是我们要做的一个东西，好，这第0步，让大家了解我们今天要做什么。</div></div><div class="transcript-item"><div class="ts">[08:24]</div><div class="text">如果你没有在浏览器自动打开的话，你可以手动下复制一下，这边有个链接，是你本地的一个链接，你可以在浏览器打开。下一步，就像我们刚说的，就是让大模型根据这个需求，我们直接调用模型去生成，直接生成这个实现，我们看这个实现的效果怎么样。好，我现在就在把上面这么一大段这个 prompt ，去发给这个大模型，去发给大模型，那么大模型生成这种页面，一般来说稍微需要等待一小会，如果你现在等待的话，可以跟着做一下。稍等一下，对，好，大家等待，我来找一下，昨天的PPT，我看 PPT 内容，对， PPT 的话，这是我们这才是第正式的第一步，我会把这段 prompt 发给大模型，大模型会把生成的文件，存在你这个路径下，所以，如果你想知道生成的这个网页到底是 HTML 里面是什么样子的，你可以在这个路径下啊找到。</div></div><div class="transcript-item"><div class="ts">[08:57]</div><div class="text">我这边已经刚刚调用生成好了，在浏览器里，也会帮你自动打开，我看生成的是这个样子，跟我们的参考网页稍微有一些区别，但是整体的这个字段，我们粗略的看上去，该有的还是都有的，邮箱这些必填的，边上有个红色的 asterisk 星号，然后可选的，就是没有的，还有这个该勾选端，这个东西只是看起来效果好，我们就说了，我们要知道它这个小端好不好，我们有随仓库给大家提供了一些测试，大家可以自己看一下这个代码，下一步，是要去跑一下这个测试，我们来看这个效果真的怎么样。</div></div><div class="transcript-item"><div class="ts">[09:17]</div><div class="text">OK，就回到终端里面，按一下回车，然后我们可以看，稍微往下翻一下，就是在这个仓库里，我给大家预先提供了 36 组针对这个 GUI 的测试，那么这 36 个测测试，我们现在的通过率是比较低的，大家看到我在底下，详细的列出来了。OK，那么首先，比如说这个第一条为什么没有通过？因为这些输入框，没有填。提供这个可访问的标签，大概意思就是说网页上，我们有时候需要，比如屏幕阅读器的这种工作，它需要通过一些隐藏的标签来标记，比如说当前是要输入这个框是输入用户名，还是输入密码等等。那么现在我们的实现是缺失的，大模型在第一版生成之后，没有从需求里面解读出来需要做这件事情，还没有考虑到。</div></div><div class="transcript-item"><div class="ts">[09:40]</div><div class="text">其他的，比如说表单的校验，我们有多个字段没有填的时候，我们去点击输入，我们点击注册，有没有成功的这个检测，检测所有的都有缺失的情况，现在也没有做到。那么有没有正确的校验长度或者字符的限制，现在也没有做，有些测试没有通过。大家在自己本地调用的时候，可能具体的错误因人而异，每次运行可能稍有些区别，但是整体来看的话，这个大模型现在对这种网页上一次性就生成出来，那么可能效果是不如预期的，会有很多看起来好用，但实际上，还没有完美实现这个需求的地方。OK，那么我们先观察好以后，下一步就像我们刚刚最开始说的，下一步就是要通过测试驱动开发的例子，测试驱动开发的这种范式来帮助大模型更好的实现。那么这个要做测试驱动开发第一步就是我们需要让大模型根据我们的需求去生成一版测试，通过测试来描述，反过来描述清楚这个需求。</div></div><div class="transcript-item"><div class="ts">[10:12]</div><div class="text">同样的在终端里面我们按下回车，现在呢第三步就是在调用大模型，去给它生成，让大模型来生成一些测试，这个要稍微等一下下，那么生成的测试是什么样子的？这里在调用大模型来生成这些测试，这些测试，这个测试的话有时候需要稍微的调整一下，有时候因为这个 playwright 的测试相对来说比昨天写的测试呢要复杂一些，对大模型来说即便生成的这个把握也不高，有时候可能需要修正一下。</div></div><div class="transcript-item"><div class="ts">[10:31]</div><div class="text">修正好的这个测试，现在是在这个路径下的，叫做workspace， GUI train register inspecting ts。不然大家都不知道大模型到底生成了什么东西。我们看一下它是这个文件。好，OK，我们看到大模型生成了很多很多的这个test，对？我们随便的找一个吧，简单的过一下，我并不想教大家 PHP 的语法，大家可以，但是可以对我们测试到底是要干什么来有印象。比如这条，8月 9 号开始的这个，就是在检验这个邮箱有没有被正确校验，我们先构造了各种各样不同的邮箱，比如这样的邮箱，它应该是有效的，只是它很简单而已。</div></div><div class="transcript-item"><div class="ts">[10:52]</div><div class="text">或者说像这种是无效的，因为你 atmARK 前面没有实际的账户名，对？等等等等，这种可能也是无效的，因为不可以有这样的一种域名，那么我们去把这些全都发给这个我们的网页来帮，我们用 PHP 这个框架来测试一下，用这个这些数据填进去以后，我们的网页到底有没有正确的校验这些输入格式？那么换句话说，如果这个测试待会通过，就说明我们网页满正确处理的需求，如果没有通过的话，就说明它在这方面实现是有欠缺的。我看一下我们现在这个情况是怎么样。OK，那么大家如果都生成好，这里可以按一下回车，它就会把这个测试给你帮它跑一遍。那么现在来看的话，这个第一遍的这个结果，是我们大模型刚生成了 41 个测试，其中只有 15 个是通过的，那么剩下的 26 个说明就是我们这个需求一开始没有做清楚的地方，对？下一步的话就是让大模型根据这个测试的反馈，根据这个测试的反馈我去迭代我们的开发。看，我们可以看到，在下面它会自动去运行这样一个 repair Agent 来，来修复我们的实现。</div></div><div class="transcript-item"><div class="ts">[11:29]</div><div class="text">我们第一轮的话修复了， 41 个里面还有 28 个通过，但还剩下 13 个没有通过，我再让大模型这样一轮，看到，这 41 个测试全部通过了，总共用了这么多用量。那么这个 TDD 到这一步的话，这个测试性开发就修复了，对？就让它修复好了，至少让它通过我们自己的设，根据需求设计出来的测试，那么生成的内容，我放在这个文件夹下，这个 index. html。</div></div><div class="transcript-item"><div class="ts">[11:44]</div><div class="text">对这个的话，我们最后的问题就是我们经过 TDD 驱动的或者说经过 TDD 引导的开发出来的效果，在我最一开始就最最严格的 validation test，最最严格的教师提供的测试集上的通过率具体怎么样？可以再回车看一下。诶，sorry，调到这个浏览器里面。</div></div><div class="transcript-item"><div class="ts">[11:57]</div><div class="text">OK，看一下，在我这边这一次的话，就是我们最终经过 TDD 开发的， 36 个测试呢全部通过，那么我们还如果还记得的话，最一开始的话应该是只有 10 个的案例是能够通过的，那么从这个例子当中，大家也可以感受到，经过这个测试驱动，我们这个模型第一开始虽然表现不好，但是，通过测试来彻底澄清了这个需求到底怎么样，那么就可以根据测试的反馈，比如说缺失了什么，或者什么需求没有做到，我们就可以让他们去进一步的迭代自己的这个。</div></div><div class="transcript-item"><div class="ts">[12:14]</div><div class="text">生成的代码。我往这里是在终端演示的，我们可以在 PPT 里我看一下，最重要的部分。这 PPT 里截图，大家可以自己看一下，是我之前本地测试的时候，它效果不太一样，但是，流程还是一样的。这个第一开始生成代码上，总共生成了 35 个测试，只有两个是第一遍就能通过的，那么剩下的，就代表是我们的实现是有问题的，确实，这是相当于测试帮我们抓住了代码里的 bug 也好， bug 也好，或者说把一些漏洞给发现了，那么发现漏洞以后，我们就让大模型来根据这个测试反馈来进行修复，修复直到这些测试都通过以后，我们再去看一下我们修复后的这个代码，在这个路径下，对？如果你感兴趣，可以仔细看一下填表里面是怎么写的。</div></div><div class="transcript-item"><div class="ts">[12:38]</div><div class="text">当时这个修复的，虽然他们最终的这个 TDD ，没有完成 36 个里面的全部测试，但是，整体上来说，从原本只能过 10 个到 27 个，也是比较大的进步。那么部分模型可能因为它本身能力，或者说我们这个测试的框架的限制，导致它没有办法一次性的就全部通过最终测试，但是整体来说，无论你用哪个模型，在经过这个测试驱动的引导，都是能够提高这个表现的。后续的话，我们也可以通过这个写写新的测试再来修复，然后再重新进行测试，这样这个 TDD 形成一个这个所谓的loop。那在这个录下，我们就可以不断地优化自己这个代码。这就是这个测试系统这个核心思想所在，就是通过写测试，观察到没有通过，修正实现，然后直到我这个测试能通过，这样就形成了这个代码这样一个提高，然后再不断的循环就可以。</div></div><div class="transcript-item"><div class="ts">[13:04]</div><div class="text">这是 GUI 这个 TDD 的这个例子的部分，那么我们这个 TDD 是开发的一种，怎么说，一种范式吧，是一种思想，是一种实践的方式。那么对于我们这个比赛来说，如果大家昨天听了讲座，我们研习的课程的话，大家知道我们比赛有一个要比的环节，并不仅仅是你要做的东西有多完美，另一方面我们希望在你做到比较好的状态下，谁的用的 Tokens 量，或者说这个金额的消耗是比较低的。昨天的话也给大家介绍了，如果你用的是我们 Artbench 给大家提供 API 的话，你可以在这个链接里面用你的 API 去登录，然后你就可以在一个后台的地方查看你每次调用模型的这个消耗的情况，然后你可以在调用前看一下是多少钱，在调用后再看一下多少钱，就知道你这一次这个调用中间到底花了多少钱，对？我们这边也有这些图表来帮助大家查看，如果你听了昨天的课，昨天我也演示了TDD，但当时是一个 API 的demo，在当时的课上，我给大家说了我平常我自己。准备备课的过程中，我就把这些模型都给平均的多跑了几次，然后取了平均值。</div></div><div class="transcript-item"><div class="ts">[13:39]</div><div class="text">大家可以看到我们传这些模型，最终都是完成全部的这个测试，直流模型，但是呢比较贵的这种 KimiK3 的模型，对？它消耗的金额就比较高，那么相信，这个是 Tokens 用量，但是后面是 RMB 的这个人民币的计价，相对来说可能弱一点的这种 Flash 模型，它本身比较便宜，那么它也能够去完成，对？最终这个消耗只有0.05，就能完成这样的一个流程过程。</div></div><div class="transcript-item"><div class="ts">[13:54]</div><div class="text">最终达成效果是一样的，只是它消耗更少，它可能需要多迭代几次，但是它消整体消耗是更少的，对？那么说明我们测试系统有有一定的潜力，能够帮助弱的模型在整个使用的完成度上，以较便宜的价格去实现同样的效果。同样的，今天的 GI 的话，大家可以这个样子，大家可以在本地这个 inference 文件里面，去把这个模型的名字给换一下，默认是 3.8 max，你也可以换成别的，如果你是 ArcBench 上的话，你如果用我们 ArcBench 提供的话，你可以使用这几个模型。</div></div><div class="transcript-item"><div class="ts">[14:10]</div><div class="text">今天的话，我们既然已经有了来自 ModelScope 市区的这个支持， ModelScope 的话现在有这样的两个模型是能够比较稳定的调用的。那么对于大家来说的话，大家可以尝试，比如说像这样，把这个智谱后面这个智谱的这个模型，智谱 GLM 5.3 flash。那么对于 ModelScope 的话，大家可以这样子，大家可以在你右上角，你的这个后台的右上角有个叫魔力值。</div></div><div class="transcript-item"><div class="ts">[14:24]</div><div class="text">具体的计价方式，或者说这个消费的统计的话，我待会交给来自 ModelScope 社区的郑老师来给大家讲解，我这边呢只是完成我这个，就是大家想替换不同模型，大家可以去跑。那么在跑的时候，大家可以在这个后台的消耗统计页面，看到自己这个调用的情况。</div></div><div class="transcript-item"><div class="ts">[14:33]</div><div class="text">对 ModelScope 社区来说，他们提供的模型一般来说是按照调用次数来计费的，那么比如我刚演示的话，大家看到这边有一些标准模型的调用情况，有些是我课前的，有些是我刚课中的这个调用，大家也是可以在 ModelScope 上看到你通过他们社区的提供模型调用的情况。</div></div><div class="transcript-item"><div class="ts">[14:43]</div><div class="text">对于 PPT 来说，大家可以要记得，但是要记得要在这个 8 分钟里面替换这个 base url、 api key 还有 model 这三个配置，然后把自己的这个大模型调用转向 model scope，就可以在他们的用使用他们的模型，看到他们的这个消耗这个消耗统计。</div></div><div class="transcript-item"><div class="ts">[14:52]</div><div class="text">OK，大家可以自己，如果感兴趣的话，可以课后花更多时间去跑一下这个完整的流程，可以去自己体会一下不同的模型在这个测试系统开发的加持下，它表现的效果是怎么样的。好吧，那么我们今天的关于这个 GUI 层面的这个 TTE 测试系统开发的演示差不多就到这里，然后。好，感谢明曦，然后我觉得讲得非常好，就是那接下来的话我们如果有问题的话，大家可以放在那个聊天对话当中，接下来的话我们请来自魔搭社区的郑专家，郑英杰专家来给我们讲一下，就是魔搭社区，如果大家想要用魔搭算社区的算力，可能是怎么做的？</div></div><div class="transcript-item"><div class="ts">[15:15]</div><div class="text">好的，谢谢林老师的介绍，还有谢谢明曦前面精彩的分享。我现在来介和大家介绍一下魔搭社区，以及魔搭社区在我们的课程和比赛中能够提供哪些支持？可能首先想修正一点，就魔搭社区不仅仅是个算力支持，算力社区，我们更多的是一个 AI 模型社区，比如在我们这里会有。有，一共有 20 多万个开源模型，也包括了最前沿的像DeepSeek、GLM、Kimi、千问等等的开源模型。我们可以在这里支持体验，勾选这个按钮就可以筛选出这些可以用魔搭的 API inference 进行推理的模型。比如说这个 qwen 3.8 flashnext，这个就是前两周千问开源的一个超高性价比的模型。那在这里会有标注，可以选择魔搭社区作为 API 提供方，如果有这个魔搭社区，我们就可以进行在线体验。在这里我们就可以跟它打个招呼，同时我们也可以使用刚刚明谢介绍了怎么去获得魔搭的 access token，然后通过 API 的方式去调用。</div></div><div class="transcript-item"><div class="ts">[15:53]</div><div class="text">像像这种中等尺寸的模型，一般每次调用会消耗一个魔力，那刚刚就从 745 变成了744。同理也可以找到一些其他的开源模型，比如说 qwen 3.87B，还有 GLM 的 5.3 flash，这些也都是每次调用消耗一个魔力。如果像更大尺寸的模型，比如说 DeepSeek pro，那这一次一次体验可能就是消，是消耗两个魔力。所以大家可以根据自己的任务需要，还有根据模型的能力尺寸来去选择对应的模型。</div></div><div class="transcript-item"><div class="ts">[16:13]</div><div class="text">OK，那接下来除了模型库，我们还提供很多数据集，如果你的项目网站需要有一些，或者项目开发过程中需要有一些数据存储，可以上传到魔搭。同时我们更重要的是我们提供了超空间这个部署平台，你的参赛作品可以静态网页，可以以Docker，可以以 video 等等形式去部署到我们的超空间里。那。我们可以比如说随便打开一个像一些前沿模型的创空间，那大家这个应用就可以在浏览器中打开，并且很快的开始体验。</div></div><div class="transcript-item"><div class="ts">[16:35]</div><div class="text">除了我们的社区里，除了这个社区里已有的模型应用之外，我们还提供了非常多的Skill。在我们的智能工坊里有一个 Skill 中心，那 Skill 中心里我这次想介绍的 Skill 叫创空间开发Skill，创空间开发 Skill ，可以让你的 Agent 去去自动的帮你部署创空间，把你的本地应用部署到网大创空间，这样别人，就可以在在一个公网的，用一个公网的 URL 来去访问你的你的作比赛作品。像像这个Skill，你可以通过各种方式去安装到你的 CodingAgent 里面，那你的 CodingAgent 就能帮你自动化的部署啊、查看日志啊、 Debug 等等操作。</div></div><div class="transcript-item"><div class="ts">[17:02]</div><div class="text">网大上除了这些开模型、数据集、创空间，还有这个Skill、 MCP 这些开源内容以外，还提供了开发的环境和 API 的算力、 API 的资源。刚才 API 资源明细已经说过了，我这里特别想介绍一下魔搭Notebook。那魔搭 Notebook 它不仅仅是一个 Jupiter Notebook 形态，可以在首页，可以回到你的首页，然后找到我的Notebook，在这里选择一个实例来启动。这个实例呢有免费的CPU，不限时长的使用，它背后是一个乌班图的图的这个 Linux 环境，也可以选择GPU，只要你注册用户都有免费的额度，甚至还有 AMD 的GPU。如果你的应用需要用到 GPU 的话，你可以在这里找到一个开发环境。那启动 Notebook 之后，你就可以在会启动一个代码工作区，我们可以到这个已经启动好的，那它就是一个 Web IDE 的页面，同时有这个工作区，有这个终端，可以去打开或者折叠。</div></div><div class="transcript-item"><div class="ts">[17:34]</div><div class="text">那我们在这个终端里，还内置了内置了一个 vibe coding 的工具，叫 qwen code，这是千问官方出的一个类似 claude code 的 coding Agent，那你可以在这里通过 host 的方式。当然从 auth auth 的方式去选择 API provider，选择OpenAPI， OpenAI 格式的provider，输和刚刚明希的讲的类似，你输入这个 API 的endpoint，然后输入的 access token，就可以去去选择模型。在这里我我其实因为时间关系，我就不一一演示了，你可以在手把手从文档库里去找到详细的步骤，去怎么去安装一些 skill ，启动 qwen code，配置模大的 API inference，然后去选择对应的模型，比如说这样的太原的flash， 3.8 flash 模型和 GLM 的模型。那最后我想演示一下，就是在这里发 code 的一个结果。可以可以，因为为了节省，这个是我刚刚刚刚其实半个小时前开始运行的一个小任务，就是这个任务，就想想去尝试一下，用 code Agent 去部署自动化的部署一个个人主页和模大的存储空间。</div></div><div class="transcript-item"><div class="ts">[18:15]</div><div class="text">我首先我自己在环境变量里设置了 MULTIPLE_ TOKEN，那这个 TOKEN ，是有我的仓库的写入权限的。这个 TOKEN 可以在在这个账号设置。和访问令牌这里去创建，那我给了这个环境变量 token 之后，它就能够往我的魔搭的账号里去创建创空间写内容。同时我另一方面我加载了一个 Moscow Studio 这个技能，这样的话， Agent 就知道怎么去自动化地创建，怎么去用这个 OpenAPI 创建创建魔搭创空间。</div></div><div class="transcript-item"><div class="ts">[18:33]</div><div class="text">OK，它验证了我的 token 是有效的之后，我就给它一个任务，叫它，让它，对，让它根据我的个人主页的链接去创建一个个人主页，在这里，根据我个人主页的链接快速搭建一个前端个人网站，部署到创空间，设置为公开，就非常简单的一个提示词，然后给的信息呢是我自己的一些开源作品，然后它很快的就大概花了几分钟吧，把这个代码都完成了。OK。</div></div><div class="transcript-item"><div class="ts">[18:50]</div><div class="text">对，那比如说我们达要达到这个效果，我们应该怎么样注册魔搭空间的能讲一下吗？</div></div><div class="transcript-item"><div class="ts">[18:54]</div><div class="text">OK，那这个方式呢是通过Agent，让 Agent 自己去创建一个魔搭创空间，那这时候甚至不需要打开魔搭主页，这个创建。 URL 是这个，我们可以退出全屏的模式，这有各种刚刚我提供的内容，那也可以通过手动的方式去在这个魔搭创空间里点击我要创建，可以指定这个mypage，比如说。</div></div><div class="transcript-item"><div class="ts">[19:10]</div><div class="text">创空间其实就是申请魔力值，是？还是申请这个群的API？</div></div><div class="transcript-item"><div class="ts">[19:12]</div><div class="text">API 的话，创空间是一个部署应用的平台，如果是要涉及到算力的话，可以在这里看自己的魔力值。</div></div><div class="transcript-item"><div class="ts">[19:18]</div><div class="text">对，我们怎么去，比如注册，然后得到其中的 API ？比如 API 怎么访问？</div></div><div class="transcript-item"><div class="ts">[19:22]</div><div class="text">注册的话，可以在这，就访问这个 modelscope 点cn，就会提示你去注册，这样注册并登录每天都能获得 200 的魔力值。如果你绑定阿里云账号，如果你没绑定的话，在这个页面应该会有提示让你去绑定阿里云的账号，绑定之后每天可以获得更多 50 个魔力值。同时在魔搭进行一些开源贡献，比如说分享自己的 fakemusic 作品，分享模型数据集，以及发表评论啊、喜欢，或者收藏喜欢等等行为。都可以获得这个魔力值，比如说我自己会有很多开源的贡献，所以我的魔力值非常多。这是魔搭 API infer 怎么使用的方法，那具体怎么使用？刚刚那个明希已经演示过了，去找 access token，然后去指定模型。</div></div><div class="transcript-item"><div class="ts">[19:50]</div><div class="text">那我们在魔搭社区注册之后，我们从哪里获取 API ？这样的话可以在本地，然后进行实时调用。</div></div><div class="transcript-item"><div class="ts">[19:54]</div><div class="text">这是好问题。那注册之后，可以到，其实我们会有一个，就是有多种方式去找到，首先你可以在最直接的就是在回到你的首页，首页之后这里有一个账号设置，那在这，你可以找到这个访问令牌，那这里的话访问令牌你就可以创建，比如说创建写权限的访问令牌，那这个是只能做仓库的写入，比如说刚刚我创建了一个冲空间，那也可以选择细粒度的令牌，那细粒度令牌当前仅支持 API infer，也就是说这个令牌它可以并且只能可以用来做 API 的推理， LM 的调用。</div></div><div class="transcript-item"><div class="ts">[20:19]</div><div class="text">这是我今天早上创建一个叫黑松的令牌，那我们就可以复制这个令牌，然后到你的 coding Agent 里，比如把这个令牌给粘贴。在，这就是使用的方法，那具体 endpoint 是什么？我们在 notebook 这里有写，就是 base url，只要你指定这个 base url，然后还有这个 api key，那你就能把魔搭的，把这个 moscope 的 API 调用放到任何一个 coding Agent 里去使用。</div></div><div class="transcript-item"><div class="ts">[20:36]</div><div class="text">那在。那我好，您说。</div></div><div class="transcript-item"><div class="ts">[20:38]</div><div class="text">所以除了，就是说在获得了这个 Agent info 之后，大家就可以去。去做自己的开发，我们作为一个开源内容平台，我们也非常欢迎开发者们以及参赛选手们能够把自己的软件可以部署到魔搭的创空间，诶，刚刚演示了一半，叫在这里，我们可以把你的内容上传到创空间，比如说刚刚讲 my page，可以去选择部署的方式，对，你可以把这个本地的文件夹拖拽上来，就去选择，稍等一下下，我刚刚，对，比如说把我刚刚写的这个 personal page 拖拽上来，去选择对应的部署设置，它可以，魔搭我们支持通过这个 gradio streamlet static 静态网页和Docker，如果是比较复杂软件，可以用 Docker 来去部署，点击这个确认并部署，它就会进入部署的流程，过几分钟一般就可以上线了，这样的话你的你的创空间就是一个在互联网上公开的状态，只要给一个URL，诶，比如说刚刚这个创空间的URL，别人就可以通过这个 URL 来访问到你的创空间。</div></div><div class="transcript-item"><div class="ts">[21:27]</div><div class="text">我们对比赛的优秀作品，也会会大力的帮参赛选手们进行宣传，帮助大家更好的扩展自己优秀作品的影响力。好，以上就是魔搭社区能够给各位学员和选手带来的算力资源以及平台部署的资源，谢谢各位老师。</div></div><div class="transcript-item"><div class="ts">[21:39]</div><div class="text">的，非常感谢。如果我们后续有对于比如魔搭社区魔搭社区的问题，我们也请请那个郑老师来，我们这边有个问题，就说您看一下他的那个问题，然后您帮解答一下。</div></div><div class="transcript-item"><div class="ts">[21:48]</div><div class="text">的，在这个提交 Agent 的时候，是不是也可以把 BCRL 改成魔搭？提交 Agent 这个是会记录你的使用数据吗？还是说只是用来做 API 的推理？</div></div><div class="transcript-item"><div class="ts">[21:56]</div><div class="text">我来解释一下，就是各位选手其实可以注册魔搭的那个账号，那账号可以得到，按照那个郑老师的和我们的讨论，其实我们会给所有的参赛选手 500 个魔力值，那这样可以对于在小型的 TTD 的一个演练上肯定是够用的。但是，说由于魔搭社区的 API 是独立的，所以并不接入我们的算力meter，所以到时候真的去大型的 demo 演练或者是比赛的话，就不，可能就不用魔搭的那个API，是需要用比我们在给大家的 API 来进行使用，我不知道解答清楚了没有？</div></div><div class="transcript-item"><div class="ts">[22:16]</div><div class="text">很清楚，我我这边很清楚，我们魔搭提供一些免费资源，就除了 500 的一次性的发放给参赛选手的资源，另外就是每，大家每天登录都能获取到的固定数量的魔力值，这个是每天都有的，同时还有每个同学他自己自己做开源贡献的赚取魔力值。所以鼓励大家多多在魔搭社区分享自己的开源作品。</div></div><div class="transcript-item"><div class="ts">[22:30]</div><div class="text">感谢郑老师，我觉得这个魔搭社区做贡献非常大，然后我们也多。请问可以听到吗？</div></div><div class="transcript-item"><div class="ts">[22:33]</div><div class="text">可以。林老师好，我想我想问的主要是我们在在那个平台上提交 Agent 的时候，如果把 base url 改成魔搭的那个 base url，就我不是说要，这是比赛的时候用，平时我们因为我们每个团队不是只有一个账号是注册了嘛，那比如说其他人如果想要练习的话，我通过这种方式是不是能够在这个平台上跑起来？</div></div><div class="transcript-item"><div class="ts">[22:47]</div><div class="text">呃，可以跑，可以跑起来，但是很快的魔力值被烧掉。</div></div><div class="transcript-item"><div class="ts">[22:49]</div><div class="text">魔力值就烧得很快，还有一个问题就是没有办法看到它的那个金额，对？</div></div><div class="transcript-item"><div class="ts">[22:51]</div><div class="text">对，就说你一个是扣的是魔力值，魔力值是按照那个调用次数来扣的，而我们最终比赛积分是按照你们消耗的人民币来计价的。</div></div><div class="transcript-item"><div class="ts">[22:57]</div><div class="text">好的，那就是我们大概体验一下，可以可以用这种方式在那个平台上体验一下，完全没问题。</div></div><div class="transcript-item"><div class="ts">[22:59]</div><div class="text">对对，但是我们最后也鼓励，比如说现在有魔搭平台，还有一些叫叫DataClawhub，这些都是一些开源的社区，然后到时候，就说尤其是优秀的选手的作品，然后到时候我们也非常鼓励大家上传到对应的社区，因为现在啊大家第一是练技术，然后其次呢是得到一些可见度，就visibility。这个对大家未来比如说就业，其实也是有帮助的。</div></div><div class="transcript-item"><div class="ts">[23:13]</div><div class="text">那我的理解就是这个上传 Agent 的时候要填的 base url，是，它是一个通用的，并不是说限制只能某几个平台对接，是？</div></div><div class="transcript-item"><div class="ts">[23:18]</div><div class="text">对，是的，是这样的。好，谢谢。好，挺好的问题。好，大家还有什么其他问题吗？对，我理解，林老师，我理解是不是就是练的时候可以用各种手段来？没错，就是因为有同学说能不能使用商业模型，比如ChatGPT，其实也是可以的，只不过，就是用我们给的key，就是我们会承担一些托管的费用，用魔搭的，魔搭可以有免费的那个魔力值，供大家使用。</div></div><div class="transcript-item"><div class="ts">[23:34]</div><div class="text">如果大家自己家里条件允，自己个人条件允许的话，那么这个时候 Cloud 和ChatGPT，我们也会允许，只不过这部分的费用，可能就尤其是我因为我们的大赛的主旨是开源社区和开源模型，大家用商业模型的话，可能就不做太多补贴了。好，行，那非常感谢郑老师，这个也是郑老师报告也非常精彩，让大家能学习到魔塔社区的各种设计，包括云服务呀，作品设，作作者个人空间呀，包括有个魔力值呀。好，那我们接下来我们请张晨阳同学来报告一下，怎么在需求编译过程当中做版本回溯？因为，智能体是一个长城的任务，在长城的任务上，我们以前调的是代码，现在是调试是智能体，然后我们怎么去分析智能体什么时候出错了？什么时候，这个 bug 是什么时候引入的？智能体什么时候引入这个 bug 的？并且我们怎么去形成很好的人机交互？最后，陈阳还会给我们介绍一下需求的增量编译，就如果我们真的增加一些需求，那么怎么去调整？我们肯定是希望以最低的成本来解决这个问题。</div></div><div class="transcript-item"><div class="ts">[24:12]</div><div class="text">这样。诶，好的各位，今天的话就由我来带领大家过一遍我们剩下的三个实验，就实验5、实验 6 和实验 7 哈。这三个实验就像刚刚林老师介绍的，我们主要的就是提供了一些在我们昨天 Lab 4 之后的端到端已经结束的过程中，有结束之后，我们还提供一些功能，然后来帮助大家进行的更进一步的模型能力的拓展与调整，包括如何更好地检查我们的结果，然后如何进行版本管理，当我们遇到新的需求该怎么处理？当我们对模型生成结果有所不满意的时候，我们要怎么干预？大概就是这样。</div></div><div class="transcript-item"><div class="ts">[24:33]</div><div class="text">实验内容，今天的话就相比昨天不是很多，可能大家就主要跟随，跟随着我，来领略一下我们这个 artificialize 的这个插件提供了一系列扩展功能，好？在正式开始介绍实验步骤前，我还是先说明一下实验材料和环境的问题哈。首先是这个环境配置，我我们实验 5 到 7 ，采用的环境是和我们的实验室完全一样的。如果各位昨天有或者昨天在那个线上，或者是通过录像的形式已经跟过了我们 Lab 4 的。这个环境配置，那么今天就不需要再做额外的比如说依赖安装了。如果各位昨天并没有并没有跟 lab 4 的话，那可能今天大家自己花一点时间，然后来完成一些环境的配置，主要是一些像node、 npm 等依赖安装，这个不需要花费大家大家这个时间，可能自行就解决一下。然后说完了环境依赖，那我这边来说明一下这个实验材料的问题哈。</div></div><div class="transcript-item"><div class="ts">[25:04]</div><div class="text">那首先，还是在我们，黑客松的这么一个 Git 仓库里面，我们已经更新了 lab 05 到 lab 06 的相关材料，可以看到主要是一些那个压缩包以及一些文件目录，还有我们这三个实验所使用的一个PPT，那希望大家呢能够自自行从这个库上把这些新的数据给拉下来，然后作为我们剩下的三个实验的这主材料。然后除此之外，我们还需要我们插件要运行，那我们还需要这个更新一下我们这个 ARK 的源代码。昨天呢我们端到端的实验呢是在 main 分支下进行的，那今天呢我们需要切换到这个 feat interactive 这一个分支，然后重新拉一下库，然后这边的差异呢主要在于呢我们在这个分支上的这个分支上代码，我们多支持了很多交互功能，这些交互功能呢接下来大家都可以在差异上用到，然后来更好帮助大家来处理我们智能体生成系统的这种结果，大家就自行拉一下库。</div></div><div class="transcript-item"><div class="ts">[25:37]</div><div class="text">还有一点，就是说我们的插件准备哈。插件还是使用昨天的同一个，就是 Activate 这个插件，但是，我们连夜又更新了一个新的版本哈。连夜更新了一个新的版本，就是 0.07 这个版本，那希望大家可以就是及时更新一下，然后以免就是用不到我们最新支持的一些交互功能哈。那如果大家没有自动更新的话，可以在这里选择安装特定版本，然后来更新到我们的0.07。</div></div><div class="transcript-item"><div class="ts">[25:54]</div><div class="text">OK，以上就是我们实验材料的准备步骤。我就开始进行具体时间介绍，我们从 Lab 05 开始，好？OK，我们 Lab 05 ，这边是主要是有两个功能要分享给大家，相当于一个是页面预览，这个我们昨天已经做了部分介绍，还有一个就是说我们如何使用插件提供的一些功能来进行一些更加便捷的版本管理。</div></div><div class="transcript-item"><div class="ts">[26:11]</div><div class="text">首先是页面预览，大家可以在那个IDE，或者说你自己 ID 里面先打开我们在 Lab 05 下提供了这么一个叫做 demo Git 的这么一个仓库，这里面是一个已经完成了端到端端到端运行的本系统，它所提的需求和昨天一模一样，还是我们一个火车票预定演示系统，然后提供了一个注册旅客账号的这么一个功能，可以先。</div></div><div class="transcript-item"><div class="ts">[26:28]</div><div class="text">我们就可以针对这个已经运行完的软件系统，进行一个预览，还是有一个方案，我们昨天已经介绍过了，单击我们 Canvas 上的 preview 按钮，它就会自动的部署，把这个外外软件运行起来，我们可以稍微等一下。OK，这就是我们预览界面，可以看到，这一次，它这个运行结果，它前面的这些界面做的，看起来比较完整，实际上因为我们只定义了这个注册功能，它这些都是没有的，就是主要以一个贴图为主，可以看一下这个注册功能，它里面的话就基本上实现了我们想要的这些东西。</div></div><div class="transcript-item"><div class="ts">[26:51]</div><div class="text">各位，可以直接从这个预览预览页面，观察我们想要的功能，到底有没有很好实现。我这边举个例子哈，我一下就发现了，它这个登录密码，下面这个警示条看起来很奇怪，就这个安全等级的这个条看起来很奇怪，我可以这个手动输入一下，然后看看它到底是怎么进行的哈，我先输入一个这个诶。我发现它的这个安全等级实际上存在，但是它做的特别小，这个的话就可能是我们通过 Preview 发现的一个问题，我们在后续，需要通过对代码进行干预，然后解决这个问题。好，那我们话说回来，还是来，还是来说明 Preview 的情况，那我们除了单击这个按钮之外，我们还提供另外一个命令，叫做。</div></div><div class="transcript-item"><div class="ts">[27:15]</div><div class="text">open web app preview，这个命令，那通过执行这个命令，我们可以来，我们可以实现与刚一单击量有一样的效果，那我这边就不多做演示了。我们可以通过这个来唤起预览界面，同时，我们还支持一个另一个相对应的命令叫 stop web app preview，然后来手动关闭预览界面。这是我们的第一部分的功能，页面预览。</div></div><div class="transcript-item"><div class="ts">[27:29]</div><div class="text">另外一部分，就是说我们，可以，其实还支持了版本版本回溯的功能，那我们可以在这边哈，在插件里面，然后打开我们插件提供的这个左侧，现在应该是在会，除了我们昨天已经很熟悉的这个，除了我们昨天已经很熟悉的。注册需求做了一个计算，实现了注册需求，然后实现了 root 相关的一些interface。对，每一个节点，然后我们可以通过这个 view diff，然后来看到每个节点它到底做了哪些代码修改，比如说在这个实现注册相关功能的时候，它就是前面是一些那个转参修改，然后可以看一下。哎比如说在这个 interface 简介层面，我们有注册了这么多的listen，那注册这么多的interface，然后呢这些 interface 具体代码也可以通过下拉来检查。如果我们想要看到特定文件的这个修改，我们也可以直接在这边点击，我这边随便举个例子，说test，我们可以看到在这个版本里面，它对这个 test 做了哪些修改。</div></div><div class="transcript-item"><div class="ts">[28:14]</div><div class="text">另一方面，我们也支持，就直接通过这个 move current branch here，然后来切换到那对应的对应的节点。比如说我这边举个例子，我们可以直接切换到它解散的这个阶段，点击一下让它pass，然后这边呢我们可能手动重启下代码，可以发现现在它已经回到了我们 in time 版本，之前所有的 test 它其实都都都没有经过测试驱动，也没有经过评估。那么？这如果大家对这个。我们就前一轮的版本的结果不满意，我们就可以通过move，然后 move 到这个节点，然后重新进行run，然后让它接着往下跑，这就是我们有版本回溯的一个主要的能力。那这边的话可能就是我们第一个实验 Lab 05 的主要内容，各位如果有什么问题的话，可以先来问一下，好？OK，那我看应该是没有什么问题了，那我们就前进到 Lab 06 ，下一个任务。我们 Lab 06。你这边能够快速切换回一个版本，然后看一下它的 website 吗？，可以，但是这边切换回去里面就已经没有什么内容了。行，到时候你可以补充一下，因为今天我们授课时间相对有限，对？我们之后你再把这个东西补充，我们还是需要就是因为这么多版本，对？然后我们是希望能够来回自主的切换，然后把中间的 pre 结果拿出来的。还可以看到，因为那个它确实很多interface，所以它就会报错。就中间结果会报错，是？对，行，好。</div></div><div class="transcript-item"><div class="ts">[29:08]</div><div class="text">的。那我们就回到这个 Lap 06 哈， Lap 06 的话其实是一个可能对于大家的目前初在练习没有太多帮助，但大家在那个后续的比赛，以及实际生活中会非常经，所以就非常频繁遇到一种情况哈，叫做增量编译。这个所谓增量编译是什么意思？就是说在我们实际的一个软件工程任务中哈，我们的需求往往不是就是一下子就全都写出来了，可能我一开始有一个很粗糙的版本，里面只描述了部分的需求，经过了几版的迭代，然后我突然发现，诶，我还需要把更多需求加进去，那么我们实际上只需要增加这一小段的需求，然后针对这一小段需求做一个增量的实现，那么这个操作就叫做增量编译哈，那我们以还是以这个注册需求为例子哈，我们可想而知哈，我们想要一个这个火车票预定系统，肯定不能只有注册，我们还希望和注册有同级的，比如说那个登录与账号管理系统，对？火车票订票系统，然后一系列的那个安全验证等等，这些都需求，那我们。</div></div><div class="transcript-item"><div class="ts">[29:44]</div><div class="text">这个 upgrader 就提供这么一个功能，来帮助大家把新增的或者需要修改的需求给它直接作为增量插入进去，只对这个增量需求进行一个单独的代码扩展。好，下面我来演示，下面我会在这个插件端，然后来演示一下这个具体的过程。哎，我们打开这个Lab，大家的 Lab 应该下载下来应该是只有这一个 Facebook quick service，这里面就提供了我们一个那个增量需求的一个示例，除了注册需求以外，还提供了一个登录需求的补充，那么我接下来演示就是如何将这个登录需求把它增量到我们这个之前跑版本里面。</div></div><div class="transcript-item"><div class="ts">[30:07]</div><div class="text">我这边使用的基础基础版本就是这个 demo without reference，这个是我们在 Lab 4 里面就已经提供给大家的一个非常简单的版本哈，我们可以看一下，它大概是个什么样子。诶，可以看到这个的话，这个版本，因为它没有这个图像的变形，所以它的界面非常简单，就是一开始一个几乎空白首页提供一个注册按钮，这有注册相关的一些内容。我们就会，我接下来就带大家在这个基础上如何给它增量一个需求，增量一个登录的需求，然后让它把登录功能也实现出来，好？OK，我们就开始在这个界面上操作，首先第一步我们把我们新的需求给它加进去，我们可以先任意点击一个需求按钮，需求节点，在左侧栏的上方好像是有一个加号按钮，我们点下这个加号，我们就会进入到一个新的页面，叫做 requirement editor，就是专门用来编辑需求的页面，在这个页面里面我们就可以专对需求进行这个分享，可以直接阅读我们目前已经存在的需求，然后对它进行修改。</div></div><div class="transcript-item"><div class="ts">[30:45]</div><div class="text">在右上角这个 more 按钮里面，我们也提供了，新增需求节点，创建新需求的这么一个功能，那么在这个例子中，我们希望对于这个注册需求节点，我们肯定要把它放一个同级的这个需求节点，用来写我们的登录需求。诶，我们可以在这边选中这个注册节点，然后在 more 里面选中这个 s base space，诶，这样的话它就增加了一个新的兄弟兄弟节点。那我们接下来要做的就是把我们对于登录这个需求的这个描述，把它填到我们的节点中，就是在左侧进行填写。那登录需求，其实已经在这个 lab 零六材料中发放给大家了，大家可以可以打开这个 tick booking quick start fix，里面这个 requirement 可以看到，就除了我们在之前已经确定了这个需求一以外，现在还有一个需求二，这需求二呢就是我们对登录的一个完整描述。</div></div><div class="transcript-item"><div class="ts">[31:15]</div><div class="text">此外，这边的 reference 还提供了这个登录界面可以参考图片，叫做 login 点png，这个大家可以通过自己的方式把它。迁移到迁移到我们的 lab 06 的文件目录下。好，那我这边就来简单的操作一下，把相关的我填进去，首先呢肯定是个标题，它会有一个登录和退出账号，这个依赖关系，我们这个需求，还有有哪些需求跟我们这个需求是相关的？我们这边怎么实现会依赖它？我们这边可以可想，很容易想到我们登录怎么设计，肯定跟我们的注册是密切相关的，所以我们就可以在下拉这边选中这个注册的对应需求，给它们先建立联系，这样模型在设计的时候也会考虑到这一层，使得两者不会完全的错开。</div></div><div class="transcript-item"><div class="ts">[31:43]</div><div class="text">这个 description ，可能就需要大家不管自己写好，使用我们提供的版本也好，然后可以写一段很长的这个description，然后描述我们的这个登录到底要怎么设计，可以再来看一下，它会就说我们要提供什么样的内容，根据密码正确错误等等各种情况，分别提供。不同跟不同的这个应对策略。</div></div><div class="transcript-item"><div class="ts">[31:55]</div><div class="text">大概是这样，哎，我们看这边的话，图是图是没有正确加载出来，我需要在文件里面，然后把它手动加进去，我这边先不加了。然后最下面一栏就是scenarios，我们要把这个每一个具体的 scenario 给它列出来，我们这边也稍微花点时间把它处理一下。比如说第一个场景，使用用户名登录并恢复会话，这边就是一个很简单的一个场景，就是说我们能够成功登录的时候应该怎么情况？那我们就把具体的这个流程内容填进去。系统中如果已经存在注册账号，并且还没有登录的话，当访客开始用正确的这个用户名和密码进行登录的时候，我们就会做一个什么事情？做一个就让他登录，首页显示保存的用户名，然后提供退出登录的这个功能。这是第一个场景，我们接下来可以把 234 一填入哈。</div></div><div class="transcript-item"><div class="ts">[32:25]</div><div class="text">第二个就是说除了我们的用户名密码登录之外，我们还希望它实现这个邮箱登录。OK，我这边就。第三个场景，就是拒绝无效凭据。当他的登录有，登录信息有问题的时候，我们把他拒绝掉。第四个就是说退出当前会话，我们的登录界面需要有个出口，大家可以参照我们提供的这个requirement，然后把这些信息都填入进去。我这边可能就先这样，我们把它 save 下去。OK，当我们 save 之后，可以看到我们首页已经多出了一个我们新定义的需求，就是这个登录退出账号，它的内容，现在目前它还没有任何的 interface 和test，这个的话就是我们要在接下来让它增量实现的内容。好，接下来我们就可以点击，还是点击我们右上角的run，把它跑起来。这个时候，这边应该是没有选中我们的ARK，我们把它注册一下。对，好的，我们把它跑起来哈。诶，这边可以看到，当我们出现这个命令的时候，就意味着我们已经进入了增量需求这么一个状态，在这个阶段里面，它就不，它就会直接跳过我们已经完全实现的这些整体的根系统和注册系统，然后直接对我们的登录进行一个计算和后续的处理。好，可以看到它已经开始设计了，这边的话还是要花点时间的，以我们目前的模型可能要花 2 分钟左右，来完成这个登录的实现。那么我这边呢可以以视频的形式，来带带大家先看一下生成过程，同样在这视频里面我们是剪辑状，然后这边就开始设计了，诶，伴随着设计，哦，你可以看到这边我们已经完成了 implement 和 interface 和 test 的设计，画面已经更新了，接下来就它就是自动的进行CAD，最终呢我们就可以得到一个登录界面的结果。</div></div><div class="transcript-item"><div class="ts">[33:38]</div><div class="text">OK，可以看到它已经完成了，我们可以通过 preview 来查一下，诶，现在它已经支持了这么一个登录的界面。那刚刚演示，这就是我们 Lab 06 的一个全过程，主要是教大家如何把我们的增增量的这个需求引入到我们的插件当中，然后让它进行增量的编译，然后来实现增量功能。好，可以看到这个我们 PPT 上有更详细的逐步说明哈。诶，到这里呢就是我们 Lab 06 的内容，如果大家有什么问题的话，可以现在记一下。诶，陈阳，你有准备，最后编完之后的结果能展示它的 Preview 吗？可以，可以，那我这边就先停一下。</div></div><div class="transcript-item"><div class="ts">[34:09]</div><div class="text">OK，这个就是我们刚视频中展示出来的跑出来结果，可以看到对于我们新提供的一个登录与退出账号，它增加了这么多的，它增加了这么多测试，与这些 Interface 都建立了联系，我们可以还是要通过 Preview 的方式，然后来快速 check 一下我们的登录功能到底有没有正确实现。</div></div><div class="transcript-item"><div class="ts">[34:21]</div><div class="text">还是刚刚那个界面，然后这边的话就是注册之后，然后在这边输入用户名和密码，然后进行登录就可以了。我们这边什么都没填，它就显示这个账号或密码错误。OK，那我可能演示到这里就差不多了。对，还有一个那个，OK，那我继续说明，没事，这边没问题了。</div></div><div class="transcript-item"><div class="ts">[34:32]</div><div class="text">Lab 7 这边的话其实是和我们的这个增量需求有点类似哈，我们做的是一个测试的增量，那这边是一个怎么样的想法？比如说我们在跑一遍这个增删端之后，我们可能发现哈，我们的就生结果并不尽如人意，就比如说还记得我们刚刚那个安全密码，安全提示条的那边，它的提示条画得太短了，我们肉眼其实很容易忽略它，这个是一个不好的设计，那我们就希望它进行一些功能上的，它进行一些那个迭代，把这个相当于 bug 把它修掉。</div></div><div class="transcript-item"><div class="ts">[34:49]</div><div class="text">我们去改需求的话，其实就太太冗余了，我们其实是只想针对一个特定的功能细节，然后来对它进行描述，那么这时候呢我们就很自然的可以用我们测试驱动思想，给它增加一个小的测试，然后告诉它我们其实对这个安全这个提示条我们有我们自己的这个expectation。然后，你需要根据这个实现这个部件它的显示风格。</div></div><div class="transcript-item"><div class="ts">[35:03]</div><div class="text">我们 upgrade 也提供一些工具，让大家直接针对我们的这个测试内容去追加或者修改，要针对修改的，就针对新的测试内容，让它单独的跑测试驱动，来修改代码。我这边还是以一个简单例子作为演示，大家可以，大家可以来到我们的 lab 07 哈， lab 07，这边还是一个，我还是以刚刚的那个 demo without difference 为例子哈。诶，好，我们还是简单 preview 一下，我们还是来看到这个安全提示条，我们这边随便先输入一段密码哈，首先这是个一级密码，它这边是一个显示一格绿色，对？我再输入一个大写字母，它变成二级密码，是两个绿色。我再输入数字和字符，特殊字符，就一个我里面输入感叹号，它变成三级的，还是绿色。</div></div><div class="transcript-item"><div class="ts">[35:34]</div><div class="text">那我就发现，其实这个是不太符合我们常识认知的，我们一般会希望可能它一级、二级、三级头才不同颜色，我就举个简单例子，就一级应该红色，然后我希望它二级是橙色，然后三级头才是绿色。这个的话，那我们就可以通过交互识别音的方法，然后把一个新的新的测试给它加进去，然后让它基于这个测试驱动，然后去修改代码，然后来实现我刚说的这个安全提示条变色这么一个小的功能，好？我我们这边呢还是来演示一下我们在插件上的操作。首先哈，还是我们选中一个选中一个需求节点，我们所有操作都会基于这个需求节点展开哈。我们希望在这个需求上增加一个新的test。来实现我刚功能，那我们这边呢就在这个 test 方面，我们可以看到我们提供了这三个按钮，我会一一介绍。首先就是中间这个加号按钮，就是我们现在需要用的，我们把一个新的 test 给它加进去。好，我这边会有一个，你这边会有一个输入框，就告诉你我这边需要实现一个怎么样测试。简单举简单简单举例子，我这边已经先写好了，大家可以看一下。</div></div><div class="transcript-item"><div class="ts">[36:10]</div><div class="text">就说，我们需要额外测试这个密码强度的颜色变化模式，我们会有一个这个准确给出的assurance，就是说我们 0 级的时候不管，然后 1 级的时候应该是红色，然后 2 级要橙色， 3 级是绿色。好，那么我们点一下confirm，诶，哦不对，对，又忘记那个 select 目录了哈，稍等一下。对，还是一样操作，我们把它 confirm 进去，然后这个时候，它就会针对针对我们提供的这一段文本，来进行一个专门的测试生成，然后生成完测试之后，我们理论上来说哈，这右边就会多出一个，或者说一系列的那么一个测试节点，我们看一下，这个的话根据模型的不同情况，它有时候会很快，就比如生成一个节点出来，有时候可能花一段时间，那么我这边还是准备了视频，先来看，我们先通过视频来看一下，生成完之后的结果应该怎么样。这边还在生成。好可以看到，在这个视频当中，我们就已经在这个位置，在这位置它就已经生成完了，看到它增加了一个这个灰色的这个test，专门用来评测我们的发布，可以看一下它代码。</div></div><div class="transcript-item"><div class="ts">[36:55]</div><div class="text">诶，看一下它代码，诶，这边就是这个 level 0 的时候，没有任何颜色，这是一个测试，这是它测试内部的某一个第一步，第二步看一级的时候是不是红色，看二级的时候是不是橙色，三级的时候是不是绿色，这么一个测试。基于这个测试，我们就可以做做专门的那个测试驱动，我们，这边的话，确认没问题之后，我们就可以来到右，来到右边，来到左侧栏，还是通过这个test，我们来到左侧栏，选中这一个，我们先点点击左边这个按钮，来启动这个启动这个TDD，点击之后，然后下面这些 test 就可以选择了，比如说我们单击我们要选的这个test，诶，它就会变成红色，那就意味着我们接下来，下一个 TDD 就会就会把这个测试。纳入我们提议的范围。</div></div><div class="transcript-item"><div class="ts">[37:22]</div><div class="text">选择完毕之后，我们再次点击上面的这个按钮，它就开始跑，这一轮的TDD，那么我们这个 TD ，就会针对这一个没有测，就是新加进去的测试去专门的做驱动，然后修改代码，然后这个呢同样也要花一点点时间，由于这里它生成一个测试点，就非常快。</div></div><div class="transcript-item"><div class="ts">[37:31]</div><div class="text">到这里，它就结束了，那结束之后，我们就可以，还是可以通过review，然后快速 check 一下我们的功能有没有好好实现。好，首先还是第一轮哈，我们先只输入小写字母，可以看到一级就变成了红色，对？然后输入一个大写字母，就变成了橙色，紧接着我们输入数字和特殊符号，就变成了绿色。哎，这就是完全这个符合了我们的想象，它已经好，它才能正确的把我们通过测试引入的这么一个新的细节给它引入进去。</div></div><div class="transcript-item"><div class="ts">[37:49]</div><div class="text">大概就是这样一个。哎，田洋，我还没看清楚那红色在哪？哪哪红色？好，比如你。没事，这边这边刚好也跑好，它这边生成了，我就以这边来继续演示，好？我们再演示一下，就是可以看到在左边三个按钮里面，我们有一个最左侧按钮叫做runTDD。工发达。那接下来，这时候，我们就可以开始选择了，比如说在这一轮，我想要跑这个测试，我们就单击一下它，然后它就标红了，就意味着我们已选中它。如果我有需要的话，我还可以任意选中其他的，比如把这两个也纳入进来，然后让它带一起跑，那我们这边就只选择一个，选中这一个之后，我们再次单击上面的 Run TTD，诶，好，它就进入了新一轮的测试驱动，然后这边的话，它就会进入可能会花点时间做这个 test driven develop，好？然后我也已经准备好了，已经跑完结果，你可以再看一下。</div></div><div class="transcript-item"><div class="ts">[38:24]</div><div class="text">诶，这个就是我们视频中演示的地方，把它复制出来。对，只输入小写字母，然后增加一个大写字母，然后我们再增加数字和特殊字符，诶，完美实现了我们通过测试引入的这么一个新的细节功能。好，这个就是我们这个所谓交互式的编译与迭代，提供这么一个相当于是细粒度编辑代码功能。好，就是这边我可能补充一下，就这边陈阳展示的是我们的需求，你可以认为是个高编码态的一个自然语言，或者高商的一个编码态的一个高商的一种编码，但是呢我们要把这个需求把它变成代码，代码其实是一种低商的一种编码形态，所以在这过程中我们需要把可描述的需求转换成可执行的需求，所以我们这边你可以认为测试是一种可执行的需求，那么在这过程中大模型不一定百分百对，所以这个地方我们允许。</div></div><div class="transcript-item"><div class="ts">[38:56]</div><div class="text">这边的二允许大家额外的把自己认为的测试用例再补进去，那么在比赛的时候，我们其实也可以引导大家也可以尝试，比如构建一个 R1 级的系统，根据不同的需求，然后设计对应的测试生成的一个方案，这部分我觉得是比赛得到更高分的一个，比比赛得到更高分的一个非常关键的一个点。</div></div><div class="transcript-item"><div class="ts">[39:06]</div><div class="text">是的，我这里再补充一句，就是说这边的话，不但是我们可以细粒度编辑，还有一个重要优势是成本上优势哈。比如说我们 Lab 06，那个时候我们增加一个完整需求，其实可能会需要花费Disk、 Vispro 的可能要 5 块钱左右，但是我们这边只增加一个细的，就通过测试驱动的方式，我们手动添加测试，然后把它单独做一个驱动，其实我们可能只需要大概 0.3 元左右，就是这边是一个非常大的那个成本差异，就是如果我们遇到了一些小的局部的不通过测试，这种方法肯定是更有这个成本，更有效益的。</div></div><div class="transcript-item"><div class="ts">[39:27]</div><div class="text">行，那我这边的介绍可能大概就这样，然后关于这三个实验有什么问题可以提一下，然后如果没有。我觉得我们事后其实可以对于每一个视频分段会给出一个 B 站的一个更细致的，比如说哪一段，它到底是讲什么一个内容，分别就是各位选手可以针对性去看，如果在跑的时候，就是有任何的问题也欢迎大家提出来，然后陈阳啊、魏宇啊这边会第一时间帮大家解决，那个时候我们可以拉个线上会议，随时解决大家询问的问题，我们都是非常愿意的。</div></div><div class="transcript-item"><div class="ts">[39:46]</div><div class="text">那陈阳这边结束之后，我们就请魏宇再讲一下Arcbench，因为大家在自己演练的时候，其实都是个小demo，跑完之后比第一名。但是，在真正的比赛当中，我们是会面向，会产生更大的需求，那么这个时候我们会从 demo 态到真正的任务态，那么我们的模拟任务态就是由 Arcbench 来演示， Arcbench 其实是包含了一个六个 Webapp 的复杂需求的这样一个bench，所以大家的智能体就是在跑 Arcbench 的时候，其实这个时候是到了真正的能烧 token 的时候了。当然也是考验大家的智能体怎么去面对复杂需求，用一种更节省成本的方式构建出软件系统的时候。好，那么请魏宇来介绍一下。</div></div><div class="transcript-item"><div class="ts">[40:11]</div><div class="text">就是我做一个简单的补充吧，我们昨天的话是从一个 demo 上手，那个 demo 的话，我看到大家已经有跑出比较不错的结果。但是， demo 终归是demo，它只有几个小的需求点，真正的能模拟我们初赛赛题的这个体量和规模的，其实我们已经给大家准备了一个叫做 Arcbench 的这样一个应用集合，或者是赛题的集合。现在的话，在大家在这个那个网站上面，可以通过首页上的这个playground，它现在是目前是处于这个位置。接下来我们会把它作为一个就像模拟我们真实竞赛的这样的一个上传的方式，把它也打包成一个竞赛，大家在可以在这个上面去，拉上这些智能智能体，然后跑一遍，看一下分数是多少。</div></div><div class="transcript-item"><div class="ts">[40:36]</div><div class="text">简单的我介绍一下这个 ARKbench 的话，它目前是包含 6 个应用，然后这个应用的话都是一些我们基于真实的真实的一些网站，然后我们爬下来的一些它具体的功能点，以及我们编写的相应的这种端到端的测试。可以，可以大概看一眼，就比如说这个 train ticket booking，这个的话我们 demo 里面有一个非常非常小的这种严格版，但是这边的话我们基本上把这个 12306 或者是国外版的12306，它的一些核心的大的功能模块，就比如说登录注册呀，然后搜索订票，以及个人的这些个人中心，或者是一些乘客的管理，把这些核心的功能我们基本上都给包括在进来。可以看到这边这个总的模块数以及模块下面这个具体的需求点还是比较规模比较庞大。这个规模或者这个体量的话，就是和我们初赛的这个赛题是基本上是一致，包括它最后这个提交以及它那个评分的机制，评分的测试用例的形式都是和我们这个初赛是非常相似的。</div></div><div class="transcript-item"><div class="ts">[41:11]</div><div class="text">所以说大家在跑完 demo 之后， demo 可能就是简单熟悉一下这个网站，那在跑完 demo 之后，想看一下自己改过的智能体是不是真的发挥了作用，那就可以在这个 ArbBench 这个 website 子集里面去真实的跑一跑，然后相当于是一次模拟演练。</div></div><div class="transcript-item"><div class="ts">[41:21]</div><div class="text">除了这个 12306 的话，可能还有一些其他真实的项目，比如说这个BookStack，它是一个就是图书管理，这个就是比较相对来说比较简单的，但是简单只能说是它的功能简单，那它规模还是也是比较大的，比如说有这个 9 个模块，就包括。你图书模块呀，书架模块，包括你每个图书里面有各种各样的加标签、加书签，加一些章节这样的功能，都是都挺多的。包括还有最大规模的话是一个携程，就说它和这个 12306 是比较类似的，但是它是偏重于这个机票的搜索以及一些就是更多的注重于项目管理，这个旅行项目管理。包括还有一些就是前端，就比较前，偏向于前端的一些应用，就比如说这个 Google Keep 的 demo 版，它是偏向于，就之前的话可能更多的是在于一些信息的组成管理，那么这个的话我们偏向于一个前端的操作。同样的话就是关于一些前端的添加一个note，编辑一个note，然后关于这个 note 的增删改查，这些都是有列在里面。比如剩下还有一个 Segue workflow，大家可能比较也比较熟悉，还有个 Presale shop，就是模拟一个购物网站。 Segue workflow 的话就是一个典型的社区网站，大家可以看一下。</div></div><div class="transcript-item"><div class="ts">[42:08]</div><div class="text">值得注意的是，就是说我们这些这几个应用，或者说 Augbatch 里面应用，或者说是我们比赛的赛题或宗旨的话，就是它的输入是一个动物态需求。它不光有这个应用这个功能的描述，有具体场景的描述，它还有配套的一些参考的图片，供大家去使用。好，刚才介绍就是在这个目前这个 ArcBench 它所在的位置，大家可以进去先看一下，就是我们马上会把它上线到一个，就是把它提升为一个 competition 的这种级别，就类似于我们最后真实的这个赛题，大家可以点进去，然后上传自己的智能体，然后这边可能就会有 6 个任务，大家依次跑完每个任务之后，会在这个最后的 leaderboard 上面看到我们这个ArcBench，在 ArcBench 上你的这个通过率以及一些这个最后的性价比或者是模型的开销。</div></div><div class="transcript-item"><div class="ts">[42:40]</div><div class="text">今天晚上会尽快上线。对，然后这个 ArcBench 就基本上是模拟我们最终初赛和决赛的赛题，就是我们最后在那个决赛的时候，会给大家两个新的 web application，让大家可能需要用自己的智能体去打，去看就是自己的能生成的测试用例到底是多靠谱，然后怎么样通过迭代反馈使得整个。整个在整个 competition 当中得到领先。好。</div></div><div class="transcript-item"><div class="ts">[42:57]</div><div class="text">刚才就是说在这个网站上，大家可以上传到网站上去做，包括本地的话，这边有这个 Arduino 源码的链接，这个源码就包含了它这个需求文档呀，各种参考图片以及它的这个测试用例，就大家也可以顺便看一下这个测试用例的形式，也就是我们最后比赛怎么去评分，我们内部这个评分是执行什么样的测试用例，就基本上和 Arduino 是一致。好，那我就是简单分享到这里。</div></div><div class="transcript-item"><div class="ts">[43:13]</div><div class="text">接下来的话，文杰简单介绍一下，大家准备好 Agent 怎么上传，对？上传之后会长什么样子？对，目前来说，我觉控制在 3 到 5 分钟吧，之后就会由支持的专家李尧来授课另外一个技术路线。稍等，需要。好的，你一边放一边讲解一下。好好，这个是待讲解。</div></div><div class="transcript-item"><div class="ts">[43:29]</div><div class="text">大家好，接下来我将演示如何在平台上，需求增量赛道提交你们的这个智能体代码。首先和普通赛道一样，得点击进入这个 competition 页面，在这个页面右侧这里可以查看，当前已经开放了这个比赛，需要注意的是，需求增量赛道的标题会在后面标注这个 evolution 字段，点击进入这个比赛详情页之后，这个代码的提交流程和普通的赛道是基本上是一样的，但这里你们需要注意的是，还需要你们再次点击这个 download Agent template 来下载，模板，然后基于这个模板实现你们的这个智能体代码。也就是因为这个平台上会自动使用你们在普通赛道中得分最高的应用，作为这次赛道的初始应用。也就是换句话说，这个需求增量赛道是在普通的赛道生成的应用基础上，继续进行功能开发。所以我这里以这个 R 模板为例，然后点击下载这个 download up template，并且在这个区域点击上传你们的智能体代码。</div></div><div class="transcript-item"><div class="ts">[44:12]</div><div class="text">就和普通赛道一样，得提供一个 submission 名字，填入你们的密钥，并且选择你们想使用的模型，点击 save submission 就保存你们的智能体代码。保存好之后，可以点击选择赛道中的其中一个任务。然后点击 Run later submission，就可以提交你们的智能体代码，然后正式开始执行任务。执行好之后，也同样的在这个 competition 页面这里，可以查看你们这个排行榜上的分数。然后点击追测这个下拉框，可以选择就是不同赛道上，就是当前的排行榜的这个情况。我的演示就到这里。</div></div><div class="transcript-item"><div class="ts">[44:38]</div><div class="text">那就谢谢文杰和希文，因为希文今天有事来不了。那最后我们就把这个压轴的舞台交给来自飞书维的技术专家李瑶。就过去啊我们展现的是一个 opAgent 这条技术路线，但它并不是唯一的路线，它也未必一定是最好的路线，所以我们是希望就是大家进来之后，它只是给大家一个抛砖引玉的起点。那么接下来我们由那个来自于飞书维的开源技术专家李瑶给大家讲述一下另外一条叫 Octus 的一个技术路线。</div></div><div class="transcript-item"><div class="ts">[45:01]</div><div class="text">李老师过奖了，稍等，我，诶，大家能听到我讲话？</div></div><div class="transcript-item"><div class="ts">[45:05]</div><div class="text">OK，OK。好的，我稍等我投一下我的PPT。</div></div><div class="transcript-item"><div class="ts">[45:23]</div><div class="text">我今天这个，OK，那我们开始，我今天这个介绍，大概我们应该会分两部分。我们相当于，是给 ARC 提供了一个新的 Arcbench 提供了一个新的技术路线，就是你首先你可以像之前的专家们讲到的一些使用 Arc 官方的 Agent 去进行更改调错，然后去提交到 Arcbench 上面的这个方案。然后我们其实还可以通过Office，就是我们自研的另一个。智能体，智能体系统吧，可以可以说是一个系统。我们可以借助它，基于它去进行扩展开发，对自己需求的，针对自己需求的一些魔改，你做完这些更改之后，也可以接入到 ARK 上面，进行进行一个评分，然后得到自己的成绩。</div></div><div class="transcript-item"><div class="ts">[45:49]</div><div class="text">首先什么是，什么是August？首先 August 是一个嵌入式的 Agent harness kernel，它是用 Rust 写的。我们可以，我可以先简单的 demo 一下，这个东西，首先它是怎么用？诶，不好意思，我这个地方。对，首先它有很多的功能，首先它有类似于一个 Google 跟 hook 的这种，你可以在里面去创造内容。其次，对，它还支持接入matrices，就像你在像 floc 这类产品一样，你可以在里面去直接的调用 Agent 去跟它讲话。</div></div><div class="transcript-item"><div class="ts">[46:13]</div><div class="text">August 它是code，这个我觉得有点类似于 DeepSeek harness 那种感觉，DeepSeek。你可以在这里直接跟他去。就是Coding，所以基本上所有的代码的，你的开发的流程，还有你的内容的这个流程，它都可以去帮你去完成。还有一些别的扩展，就是一些 Lear 之类的，因为它是模块化的，它是可扩展的，所以我这里只是放了一些例子在上面，然后你可以在对应的地方去做设置。所以这个就是August。</div></div><div class="transcript-item"><div class="ts">[46:33]</div><div class="text">我们接下来可以，我们接下来会演示一下怎么把 August 本身，把 August 的 Coding 的能力对接到我们的 ArcBench 上面，然后完成我们需求编译，以及增量需求编译，这些这些内容的一个基本的展示。首先我们要尝试把 August 提交到ArcBench，然后跑通一个任务，然后我们去理解一下它的评测反馈。首先。首先我们的 R- GAN，我们刚刚也讲了很多，就是。它分为左边是右边是比赛的赛道，然后还有这个playground，我们先从比赛赛道这边开始，首先因为 Alcos 它是一个你可以理解为像 Clang code 或者 Codex 这种标准的 Coin Agent，所以它是需要一个adapter。我们的评测它需要上，因为我们评测的它的入口是一个 Python 的这么一个评测入口，所以它需要一个，我们会提供这样一个适配，然后你直接去把这个适配上传上去，就可以去把 Alcos 上传到 Rbench 上面，然后参与所有的这个评测。</div></div><div class="transcript-item"><div class="ts">[47:19]</div><div class="text">所以基本的流程就是流转的流程就是，首先我们， Rbench 这边我们提供赛题里面的这些需求验证标准，这些东西去交给adapter，然后它去读题、编排辑，然后由 Alcos 去调用这些一切的这些东西去生成代码，然后完成一个完整的这个。软软件的这么一个成品。我们上传的，应该是一个 Agent 的适配包，我们交付给 Augment 的是一个完整的前后端齐全的应用。所以我们待会我我待会会带着大家过一遍，首先你整个的这个怎么？你注册注册这一块大家可能都刚刚已经讲过了，就是怎么写一个这个包，然后怎么去配模型，然后怎么去确认目标，然后去上传这个东西。</div></div><div class="transcript-item"><div class="ts">[47:46]</div><div class="text">首先我们在步骤，我先大概的过一下我先大概的过一下我们这个网站，我们第0步开始，首先去找到你想想要去参加的赛道，比方说我们刚开始的话，可能都是Smoke，你去注册，注册之后去上传，在网页上去上传一个适配包，上传之后，我们去保存快照，去启动和运行。现在再去打开，我这个会过很快，因为我等下会去做一个实操的演示，然后去打开任务的详情，然后看清楚他的要求，去启动运行。然后如果代码生成代码生成成功之后，会有平台的验收的全过程，好，我们接下来进入一个简单的演示。</div></div><div class="transcript-item"><div class="ts">[48:17]</div><div class="text">的，OK，这个调大一点。首先我们可以到一个目录下，然后我这里就是把 August 的 bundle 给它拽下来。啊对，我我所有敲过的命令，等下我会放一个教程，然后大伙在网页上可以直接拷贝配置，然后可以拉起来跑。首先我把 August 的二进制拿下来，然后我去新建文件夹，然后把它放到对应的地方，然后我去，你看我跑了一下它的二进制，它确实是有这东西。好，那就算我们就拉好了。</div></div><div class="transcript-item"><div class="ts">[48:39]</div><div class="text">还有一些必备的环境配置，这个之前专家没讲过，首先我们要配置Node.js，我这个电脑是完全干净，所以它都没有，所以你需要先配置Node.js。你要配，你要去配置所有相关的这些东西。我这个是通过 pro 引出的，这些命令我也都会放上去，这是基本环境配置。</div></div><div class="transcript-item"><div class="ts">[48:55]</div><div class="text">在配置之后，在配置之后我们就可以到 office 一个 demo 这个阶段了。我这里是配置了一个 API key，当你配置好 API key 之后，你就跟它说，就是调用这个二进制，我们调用一个简单的check，发发一条消息，它在打印一些日志之后。他在打接日志之后，可以看到他说连接成功，就是说明这个 Agent 已经在工作了，接下来我们这个是在命令行里面去操作，我刚刚也有演示一个很简单的，在网页里面去点击， dcparties 那种用户友好的界面，但是因为我们是要去给 Apache 评分的，所以接下来我们会给 AUDITOS 在命令行里面去发送指令。</div></div><div class="transcript-item"><div class="ts">[49:31]</div><div class="text">首先我们去选择这个二进制，然后我们去输入我们的prompt，我在这里输入，我们 smoke 里面第一个测试就是一个counter，我给 Agent 的指令就是创建一个 counter 项目，然后初始值是0，有 increment 和 decrement 两个选项，我对一些技术上的这些要求，当我输进去之后，在我第一次的报错，为什么没有配PRT？当我返回这里去配好 PRT 之后，我去跟他重新去说一下这个指令，OK，他跑完了之后，我去打开这个网页。就可以看到它生成出来的这么一个东西，因为我是之前生成过的，我不耽误大家时间，我就直接把我就拽过来，对，我这里是到这里跑了一下，然后让它在这里能看到它。</div></div><div class="transcript-item"><div class="ts">[50:05]</div><div class="text">接下来，刚刚是我自己，相当于是全都是我自己去写 prompt 让它去写的一个示例。接下来我们会直接去把我们的中间的层，你看我这里的仓库变成了ARKadapter， ARKadapter 就是包在我们标准 Agent 外，标准 Novel Agent 外面的一层，专门用于给我们 ARK 提交，然后方便大家二次之后二次开发，把自己的功能打包进 argos 之后，再通过我们 Arange 去提交的这么一个小工具，那你去把它拉下来之后，你就看到里面其实很简单，就是一些 python 的脚本，还有一些 sh 的脚本，你去创建好虚拟环境，去把它跑起来之后，这里是不是让它安装一下这些东西？OK，适配层已经就绪了之后，我们接下来让，就是明确告诉适配包使用我们刚刚安装的这个官方的argos，在我执行了这个 export 后面这一堆命令之后，这里说明它找对了运行时。</div></div><div class="transcript-item"><div class="ts">[50:54]</div><div class="text">在这个之后，我们去，你看，在这里，我们去把 Arc 里面的 counter 的一个 ta- task，给它拉下来。我让他去，接下来就是一个执行的命令，然后我让他去把这个需求打出来，题目需求文件运行时交互目录，完成之后，完成之后，我让适配包去接受，等一下后面，完成之后对，我们去本地去把它跑起来，跑起来之后因为 Agent 它会有随机性，然后我这边跑起来之后，大家可以看这个 UI 它变了，因为我只是重新生成了一次，然后打开了之后我们就我们就可以说这个东西符合我们的需求，大家可以认为这个操作系统在本地已经可以用打工就把这个事情做完，到我们本地演示走通之后，我们就可以去尝试这个打包一个适配的代码，然后准备上传。</div></div><div class="transcript-item"><div class="ts">[51:33]</div><div class="text">就是首先我们去把这个东西，在我这个页面上打包的，如果大家用系统这个直接图形化右键打包，可一样的，就是我们现在因为我现在都是默认状态， app 是默认的， options 本身我没有做一些奇怪的更改，所以它也是默认，我现在打出来之后，我会打一个 zip 包，打完这个 zip 包之后，我们在网页上面去我们在网页上面去打开打开 competition 的页面，我把这个稍微大一点，我们打开这个 competition 的页面，我们选择 smoke competition，然后这里我们去把刚刚的刚刚的这个东西，刚刚我们打的这个包给它丢进来，这里去 save submission，这里填好对应的东西，这里是这样对应的东西， mission name 我们去写成这个，对，然后接下来的东西这个浏览器帮我都挺好的，这个 p 的话就是大家那个用户里面能看到那个p，就是在在这里，对，能看到自己的p，这里，然后填进去之后，我这个返回一下，我要重新点，我上传，然后把我的集中那个点，OK，然后这样子的话，它就上传了，这是我上次有一个，我的 average pass 和这个 token 消耗，还有 model cost，诶，那个 run 在。这是我之前的一些，当上传去，上传上去之后，我们就去点击run，它就可以把大盘。把这次的评测区域跑起来，我们找一下有没有我，对，这个是我，我是这个，这次是，试验它 average pass rate 是50，就这样子的话，算是完成了一次最简单的上传。</div></div><div class="transcript-item"><div class="ts">[52:57]</div><div class="text">所以总结一下，从零开始的一个最简单的流程就是，首先你部署部署好Git、python、node、 npm 这些环境，然后去安装我们的 office Agent，然后去配配置一个你最主要用的一个模型，比如说我这里用的是DeepSeek，去让 office 在本地去创建一个你想要的创建应用，确认它能跑通，然后确认它的性能是符合了预期的。</div></div><div class="transcript-item"><div class="ts">[53:12]</div><div class="text">之后你去给 hub 去克隆我们给你提供的这个适配包，然后把适配包扔给把原题扔给适配包，然后它会帮你调用 office 去干活，就可以。达到一个可提交状态，就可以把它交上去，交上去之后就可以获取自己的分数。基本上我再过一遍这个流程，首先我用基础任务去跑通，在跑通之后可以看到网页上会有这个流水线，这也是 ARKit 的特性。大家可以根据我这个怎么放大，有点小，不好意思，大家可以根据网网页上的日志去出错，但是我推荐还是大家在本地先去跑一下，然后去得到一个最最低手的测试吧，等差不多了再提交到网页上面去测。常见的报错的话，基本上是要么是入口问题，要么是上传的时候这个打包可能说一些路径的问题，或者是还有功能上可能 platform 那里没有写清楚，它。你的 Agent 在做一件事情的时候， skip 了一些步骤，所以它可能会产生一些问题。我们接下来如果大家有时间，可以去用自己的账号，去试一下，用 August 去执行，去产生这个网站，去自己用一下这网站，看有没有什么问题。如果完全没有问题的话，就可以交上去，然后验收，可以得到自己的最简单的成绩。我们的二次开发以及后面的打榜要不要留到下一次？我这次演示就先到这里。</div></div><div class="transcript-item"><div class="ts">[54:11]</div><div class="text">的，我觉得李瑶讲的我觉得也是非常的细节，也非常的深入。而且我们这个可以看到就是ArcAgent，包括就是我们这边的Octus，其实都是两个参考的实践，主要目的呢是让大家不要从零开始，有个比较好的起点。但是有很多，但是有的时候就是心一利则生一弊，就大家沿着比如前人探索过的一个技术路线，有可能也容易把大家带到一个某个方向上去。</div></div><div class="transcript-item"><div class="ts">[54:26]</div><div class="text">所以我觉得大家在这个比赛当中，我觉得首先我觉得可以先按部就班的，先按照已经探索过的一些 Agent 来做。但是我也相信，就是在整个 leaderboard 的一个打榜上，很多选手，很多同学肯定能够发明发明自己的发动机的聪明才智，因为我已经看到了，在 demo 这个榜上， Arc 已经是排到第六了，对？前面好像还有好多很厉害的选手已经排到前面了，就是说在 token 的有效利用上呀，在整个架构的设计上呀，甚至在怎么样更好通过更多测试用例上呀，其实都已经展现出了一个非常好的成果。</div></div><div class="transcript-item"><div class="ts">[54:45]</div><div class="text">那我在这，我在这里，就大家有任何问题都欢迎在企微的社区上，在微信群里面，来找我们，我们包括就是像飞书为的吴老师，吴东环老师，还有李瑶瑶，包括我们自己团队的一些博士生，博士后呀，都会第一时间，尽大努力，以第一时间来回答的问题。好，关于今天的授课我们到这，大家还有什么问题吗？好，接下来的话，我明天，因为这次我们看到有很多同学他那个学习热情很高，所以明天的话我在想，我们其实还是会到时候李瑶有可能还会为 Octo- the Octopus 再准备再准备一节增量需求增量编译的一个内容。</div></div><div class="transcript-item"><div class="ts">[55:09]</div><div class="text">同时，我们明天也会给出 ARKbench 上的 Agent 的参考实现，因为现在这段时间大家是手把手跟着一个 demo 走一遍，但是到了未来，就是大家要打榜ARK，就是ARKbench，甚至打榜那个未知的一个软件系统，那么这个时候我们会把对应的一个参考实现也给大家爆出来，然后这样的话大家可以拿到参考实现看一看，就目前这些参考实现是不是花了没有用的token，是不是在本该能够通过的测试用例它没通过，什么是生成的 train 的testcase，什么是通过以及没有通过的 validation testcase，那这样的话可以给大家一个更加直观，但是呢由简入难的这样一个阶梯。</div></div><div class="transcript-item"><div class="ts">[55:30]</div><div class="text">大家还有什么问题吗？明天我们还是设在 1: 30，对，明天可能也是设在 1: 30，对。好。好，好，那就感谢大家，就是有任何问题也欢迎提出，然后我们最后的视频还是会放在 B 站上，也欢迎大家不管在 B 站上呀，在极客社区上呀，在微信群上呀，都提出大家自己的想法和意见，好，谢谢大家。</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="tail-block">
+  <h2>核心总结</h2>
+  <p style="margin: 16px 0;">查看完整逐字稿：<a href="https://rcnjxouk2ra0.feishu.cn/minutes/obcn2f8vo413gq245ro4r3pn" target="_blank">飞书妙记</a></p>
+  <p>查看在线PPT：<a href="https://my.feishu.cn/slides/YUozsGSMelOVBhdTgOyczgeYnJe" target="_blank">飞书幻灯片</a></p>
+</div>
+
+</div></body></html>
