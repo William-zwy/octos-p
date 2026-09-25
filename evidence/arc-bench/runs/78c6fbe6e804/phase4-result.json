@@ -1,0 +1,416 @@
+{
+  "schema_version": 1,
+  "PHASE4_RESULT": "complete",
+  "run_id": "78c6fbe6e804",
+  "task_key": "arc-bench-lite--bookstack",
+  "handoff_id": "78c6fbe6e804-A3D14157292E",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "manifest_sha256": "A3D14157292E3BA5D7AB75872533F73D18973D2ED469828CFE7842DE9B83D806",
+  "source": "platform_run_attachments",
+  "analysis_scope": "read_only_single_run_only",
+  "read_only": true,
+  "prior_runs_merged": [],
+  "other_runs_analyzed": [],
+  "stage5_executed": false,
+  "stage5_decision_executed": false,
+  "confirmed": {
+    "platform_final": {
+      "status": "FAILED",
+      "score": 58.8,
+      "passed_count": 20,
+      "failed_count": 14,
+      "total_count": 34,
+      "failure_stage": "final_playwright_execution",
+      "failure_reason": "Runner exited with test failures or runtime errors",
+      "all_failed_statuses": "timedOut",
+      "all_failed_timeout_ms": 10000,
+      "run_duration_seconds": 14383,
+      "platform_token_count": 50940534,
+      "provider_total_tokens": 50940422,
+      "provider_requests": 1549,
+      "cost_cny": 25.942949
+    },
+    "final_failure_chain": [
+      {
+        "id": "REQ-1.2",
+        "title": "Back to Homepage from Other Pages",
+        "status": "timedOut",
+        "duration_ms": 10015,
+        "locator": "getByRole('button', { name: /^BookStack$/i }).first()",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-2.2",
+        "title": "Log In Successfully",
+        "status": "timedOut",
+        "duration_ms": 10012,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "operation": "locator.fill"
+      },
+      {
+        "id": "REQ-3.1",
+        "title": "Enter Authenticated Homepage",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "operation": "locator.fill"
+      },
+      {
+        "id": "REQ-4.3.1",
+        "title": "Create Shelf",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "form.getByRole('button', { name: /^Shelf Tags$/i })",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-4.5.1",
+        "title": "Save Shelf Edits",
+        "status": "timedOut",
+        "duration_ms": 10011,
+        "locator": "form.getByRole('button', { name: /^Shelf Tags$/i })",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-5.3.1",
+        "title": "Fill out and Save Book",
+        "status": "timedOut",
+        "duration_ms": 10012,
+        "locator": "form.getByRole('button', { name: /^Book Tags$/i })",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-5.4.1",
+        "title": "Save Book Edits",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "locator": "form.getByRole('button', { name: /^Book Tags$/i })",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-5.6.1",
+        "title": "Fill out and Save Book with Shelf",
+        "status": "timedOut",
+        "duration_ms": 10011,
+        "locator": "getByRole('button', { name: /^New Book$/i }).first()",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-6.1.2",
+        "title": "Save Draft",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "operation": "locator.fill"
+      },
+      {
+        "id": "REQ-6.1.3",
+        "title": "Delete Draft",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "getByRole('button', { name: /^Edit$/i }).first()",
+        "operation": "locator.click"
+      },
+      {
+        "id": "REQ-7.1",
+        "title": "Add to Recently Viewed",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "operation": "locator.fill"
+      },
+      {
+        "id": "REQ-7.2",
+        "title": "Quick Navigation from Recently Viewed",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "operation": "locator.fill"
+      },
+      {
+        "id": "REQ-8.2",
+        "title": "Quick Navigation from Favorites",
+        "status": "timedOut",
+        "duration_ms": 10015,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "operation": "locator.fill"
+      },
+      {
+        "id": "REQ-9.1",
+        "title": "Quick Navigation from Recently Updated",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "getByRole('button', { name: /^BookStack$/i }).first()",
+        "operation": "locator.click"
+      }
+    ],
+    "failure_clusters": [
+      {
+        "cluster": "brand_home_control",
+        "tests": ["REQ-1.2", "REQ-9.1"],
+        "official_observation": "button named BookStack",
+        "static_template_observation": "brand control is an anchor with aria-label BookStack"
+      },
+      {
+        "cluster": "login_email_control",
+        "tests": ["REQ-2.2", "REQ-3.1", "REQ-6.1.2", "REQ-7.1", "REQ-7.2", "REQ-8.2"],
+        "official_observation": "accessible name matching Email address",
+        "static_template_observation": "login label is Email"
+      },
+      {
+        "cluster": "shelf_tags_control",
+        "tests": ["REQ-4.3.1", "REQ-4.5.1"],
+        "official_observation": "button named Shelf Tags",
+        "static_template_observation": "Shelf Tags is the label for a checkbox input"
+      },
+      {
+        "cluster": "book_tags_control",
+        "tests": ["REQ-5.3.1", "REQ-5.4.1"],
+        "official_observation": "button named Book Tags",
+        "static_template_observation": "Book Tags is the label for a checkbox input"
+      },
+      {
+        "cluster": "new_book_from_shelf_control",
+        "tests": ["REQ-5.6.1"],
+        "official_observation": "button named New Book",
+        "static_template_observation": "shelf 10 exposes an anchor named Create New Book"
+      },
+      {
+        "cluster": "draft_edit_control",
+        "tests": ["REQ-6.1.3"],
+        "official_observation": "button named Edit",
+        "static_template_observation": "book detail template exposes Edit as an anchor"
+      }
+    ],
+    "playwright_metadata": {
+      "version": "1.57.0",
+      "workers": 1,
+      "timeout_ms": 10000,
+      "root_dir": "/workspace/tests",
+      "official_tests_dir": "/workspace/submission/public-tests/arc-bench-web--bookstack",
+      "suite_duration_ms": 164413.372,
+      "expected": 20,
+      "unexpected": 14,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "configuration_and_validation": {
+      "model": "deepseek-v4-flash",
+      "reasoning": "low",
+      "time_budget_seconds": 51000,
+      "agent_acceptance_workers": 2,
+      "test_workers": 1,
+      "entrypoint": "main.py",
+      "tests_dir": "/workspace/tests",
+      "bundled_fallback_hits": 0,
+      "plaintext_api_key_hits": 0,
+      "raw_chat_completions_probe": "HTTP 200",
+      "app_build_and_start_rehearsal": "clean"
+    },
+    "internal_acceptance": {
+      "per_node_first_attempt": "31/34",
+      "full_suite_round_0": "34/34",
+      "failing_nodes_in_full_suite_round_0": [],
+      "repair_rounds": {
+        "REQ-5.3.1": "round 0 failed, round 1 failed, round 2 passed",
+        "REQ-6.1.1": "round 0 and round 1 infrastructure errors; no passing repair round recorded",
+        "REQ-6.1.2": "round 0 failed, round 1 failed, round 2 passed"
+      },
+      "authority": "internal acceptance is retained separately and does not override final platform 20/34"
+    },
+    "generation_identity": {
+      "build_id": "arc-agent-v1-e8f8b92bcae1da56d185f259",
+      "commit_sha": "fcfaa5f0093fd0af98560e5016d2d1fd4132f7e7",
+      "payload_tree_sha256": "7B9DF0D9B602369EF4ACB7187383487CAC73DD7FBCDFBA312B5302972E67FFD7",
+      "managed_file_count": 494,
+      "platform_submission_sha_binding": null,
+      "task_snapshot_id": null
+    },
+    "log_boundary": {
+      "events_count": 0,
+      "stdout_pages": 2,
+      "raw_logs_provider_totals_available": true,
+      "interpretation": "structured events are empty, but stdout contains the verified generation, acceptance, configuration and usage lines"
+    }
+  },
+  "strong_candidate": [
+    {
+      "id": "SC-UI-01-brand-role",
+      "tests": ["REQ-1.2", "REQ-9.1"],
+      "hypothesis": "The home-navigation control is exposed as a link, while the official locator requires a button named BookStack; the failure occurs before navigation.",
+      "evidence": [
+        "failure details show waiting for getByRole('button', { name: /^BookStack$/i }).first()",
+        "template frontend/src/index.html and shared pages use <a class=brand-link href=\"/\" aria-label=\"BookStack\">",
+        "frontend/build.js copies source HTML into dist without transforming element roles"
+      ],
+      "evidence_level": "strong_candidate",
+      "remaining_gap": "The failed-run final DOM snapshot for the exact page is not separately available."
+    },
+    {
+      "id": "SC-UI-02-login-label",
+      "tests": ["REQ-2.2", "REQ-3.1", "REQ-6.1.2", "REQ-7.1", "REQ-7.2", "REQ-8.2"],
+      "hypothesis": "The login field is visually present but its accessible name is Email rather than the official test's Email address pattern, preventing all dependent flows from reaching their business actions.",
+      "evidence": [
+        "failure details show waiting for getByLabel(/Email\\s+address/i).first()",
+        "template frontend/src/login/index.html labels the email input Email",
+        "backend router contains POST /login handling and the seeded user, so the observed blocker is earlier than authentication submission"
+      ],
+      "evidence_level": "strong_candidate",
+      "remaining_gap": "No failed-run final accessibility tree or request trace was delivered."
+    },
+    {
+      "id": "SC-UI-03-shelf-tags-role",
+      "tests": ["REQ-4.3.1", "REQ-4.5.1"],
+      "hypothesis": "Shelf Tags is implemented as a checkbox label, while the official test requires a button role; the timeout occurs before tags are entered or the form is submitted.",
+      "evidence": [
+        "failure details show form.getByRole('button', { name: /^Shelf Tags$/i })",
+        "create and edit shelf templates expose an input checkbox with label Shelf Tags",
+        "the build copies the HTML without role conversion"
+      ],
+      "evidence_level": "strong_candidate",
+      "remaining_gap": "No failed-run final DOM snapshot was delivered."
+    },
+    {
+      "id": "SC-UI-04-book-tags-role",
+      "tests": ["REQ-5.3.1", "REQ-5.4.1"],
+      "hypothesis": "Book Tags is implemented as a checkbox label, while the official test requires a button role; the timeout occurs before tags are entered or the form is submitted.",
+      "evidence": [
+        "failure details show form.getByRole('button', { name: /^Book Tags$/i })",
+        "create and edit book templates expose an input checkbox with label Book Tags",
+        "the build copies the HTML without role conversion"
+      ],
+      "evidence_level": "strong_candidate",
+      "remaining_gap": "No failed-run final DOM snapshot was delivered."
+    },
+    {
+      "id": "SC-UI-05-new-book-role-name",
+      "tests": ["REQ-5.6.1"],
+      "hypothesis": "The shelf action exists but is exposed as an anchor named Create New Book, while the official locator requires a button named New Book.",
+      "evidence": [
+        "failure details show getByRole('button', { name: /^New Book$/i }).first()",
+        "seeded shelf 10 is Shelf 5.6.1 and its template contains an anchor named Create New Book",
+        "the anchor carries the correct /books/new?shelf=SHELF_ID route context"
+      ],
+      "evidence_level": "strong_candidate",
+      "remaining_gap": "The exact failed-run DOM and whether the test had reached the intended shelf page are unavailable."
+    },
+    {
+      "id": "SC-UI-06-edit-role",
+      "tests": ["REQ-6.1.3"],
+      "hypothesis": "The book detail page exposes the draft-entry Edit action as an anchor, while the official locator requires a button named Edit; the timeout occurs before the draft editor flow.",
+      "evidence": [
+        "failure details show getByRole('button', { name: /^Edit$/i }).first()",
+        "the shared book detail template exposes Edit as an anchor href BOOK_EDIT_HREF",
+        "draft delete route and handler exist, so the observed failure precedes the delete operation"
+      ],
+      "evidence_level": "strong_candidate",
+      "remaining_gap": "No failed-run final DOM or redirect trace was delivered."
+    }
+  ],
+  "unknown": [
+    {
+      "field": "internal_acceptance_vs_final_platform_discrepancy",
+      "reason": "Internal acceptance records 31/34 on first attempts and 34/34 in full-suite round 0, while the final platform Playwright result is 20/34. The evidence does not establish whether this is caused by environment/state/order, a different built artifact, or a harness/version difference."
+    },
+    {
+      "field": "failed_run_final_dom_and_accessibility_tree",
+      "reason": "The supplied report contains locators and timeout stacks, but no independently inspectable final DOM/accessibility snapshots for each failed page."
+    },
+    {
+      "field": "network_and_redirect_trace_for_failed_steps",
+      "reason": "No per-test HTTP response, request, redirect chain, or browser console trace was supplied."
+    },
+    {
+      "field": "actual_platform_upload_binding",
+      "reason": "The platform provides build identity and payload tree identity in raw logs, but no direct binding to the user-provided submission ZIP SHA."
+    },
+    {
+      "field": "raw_executor_error_context_bodies",
+      "reason": "The report references error-context.md files, but the executor files are unavailable and the platform source paths return 404."
+    },
+    {
+      "field": "visual_model",
+      "reason": "No visual model was found in the supplied configuration evidence."
+    }
+  ],
+  "excluded_hypotheses": [
+    {
+      "item": "fourteen independent backend defects as the primary explanation",
+      "reason": "Every final failure stops at a shared locator click/fill before the corresponding business operation; the failures cluster into six repeated UI contracts."
+    },
+    {
+      "item": "platform-wide outage",
+      "reason": "The raw logs record a successful raw chat/completions probe, clean build/start rehearsal, and 20 passing final tests; no platform-wide outage evidence is present."
+    },
+    {
+      "item": "global timeout increase as the primary fix",
+      "reason": "The failure stacks show missing role/name matches, not a demonstrated slow response after a matching locator was found."
+    },
+    {
+      "item": "internal acceptance 34/34 overrides final platform 20/34",
+      "reason": "The handoff explicitly defines the final platform result as authoritative for this Run."
+    }
+  ],
+  "minimal_read_only_reproduction": {
+    "status": "recommended_before_stage5",
+    "constraints": [
+      "Use only a temporary extraction of the 78c template ZIP.",
+      "Do not edit the template, official tests, task assets or runtime configuration.",
+      "Do not create or rerun an ARC-Bench platform Run."
+    ],
+    "checks": [
+      "Build the extracted frontend and compare the relevant source/dist HTML role and accessible-name strings.",
+      "On the homepage or a representative content page, count the BookStack button and link roles.",
+      "On /login, compare getByLabel(/Email\\s+address/i) with the actual email control accessible name.",
+      "On /shelves/new and /books/new, compare button-role and checkbox-role counts for Shelf Tags and Book Tags.",
+      "On the seeded Shelf 5.6.1 page, inspect the New Book role/name and href.",
+      "On the seeded Book 6.1.3 detail page, inspect the Edit role/name and href.",
+      "Record DOM/accessibility counts and route targets only; do not alter the files."
+    ]
+  },
+  "stage5_boundary": {
+    "recommendation": "yes_conditionally",
+    "reason": "A narrow semantic UI contract slice could address all 14 failures through six shared control patterns, but the final DOM gap should be closed by local read-only checks first.",
+    "allowed_change_boundary": [
+      "Align the shared BookStack home control with the official accessible role/name while preserving navigation.",
+      "Align the login email accessible name with Email address while preserving the existing POST /login flow.",
+      "Align Shelf Tags and Book Tags controls with the official button/name contract while preserving tag toggle behavior and form submission.",
+      "Align the shelf New Book and book Edit controls with the official role/name contract while preserving their existing href/navigation targets.",
+      "Run focused local checks for all six clusters plus neighboring already-passing requirements before any platform rerun."
+    ],
+    "not_allowed_in_this_stage4": [
+      "Do not modify Agent code, official tests, task snapshots, ZIPs or runtime configuration.",
+      "Do not change the backend data model or rewrite unrelated application flows.",
+      "Do not globally increase test timeouts.",
+      "Do not treat this diagnosis as an approval to execute Stage 5."
+    ]
+  },
+  "impact_estimate": {
+    "current_completion": "20/34 = 58.8%",
+    "failed_requirements": 14,
+    "theoretical_target_if_all_six_clusters_are_fixed": "34/34 = 100%",
+    "theoretical_absolute_improvement_percentage_points": 41.2,
+    "final_playwright_suite_duration_seconds": 164.413372,
+    "failed_timeout_budget_seconds": 140.0,
+    "run_duration_seconds": 14383,
+    "token_count_platform": 50940534,
+    "provider_requests": 1549,
+    "cost_cny": 25.942949,
+    "time_interpretation": "Fixing locator contracts could remove up to roughly 140 seconds of final-test timeout waiting, but the 14383-second Run is dominated by agent generation/orchestration and no total-run reduction is guaranteed.",
+    "token_interpretation": "No token or request saving is claimed for this Stage 4 diagnosis; a platform rerun would have its own generation and metering cost."
+  },
+  "identity_and_security": {
+    "submission_id": "97fc7ba59103",
+    "build_id": "arc-agent-v1-e8f8b92bcae1da56d185f259",
+    "commit_sha": "fcfaa5f0093fd0af98560e5016d2d1fd4132f7e7",
+    "payload_tree_sha256": "7B9DF0D9B602369EF4ACB7187383487CAC73DD7FBCDFBA312B5302972E67FFD7",
+    "platform_submission_sha_binding": null,
+    "api_key_value_stored": false,
+    "plaintext_api_key_hits": 0
+  },
+  "validation_contract": {
+    "required_marker_in_markdown": "PHASE4_RESULT: complete",
+    "required_identity_matches": ["handoff_id", "run_id", "task_key", "thread_id", "manifest_sha256"],
+    "remote_sync": "not_attempted; user preference is no remote push and prior SSH preflight is unavailable"
+  }
+}
