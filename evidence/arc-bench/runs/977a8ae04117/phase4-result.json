@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "PHASE4_RESULT": "complete",
+  "run_id": "977a8ae04117",
+  "task_key": "arc-bench-lite--bookstack",
+  "handoff_id": "977a8ae04117-D3DB5DC43E18",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "manifest_sha256": "D3DB5DC43E18EB4EB9A938BE2D122C73F061307DF3BE03FA033D00A50B3FF599",
+  "source": "platform_run_attachments",
+  "analysis_scope": "read_only_single_run_only",
+  "read_only": true,
+  "prior_runs_merged": [],
+  "other_runs_analyzed": [],
+  "stage5_executed": false,
+  "stage5_decision_executed": false,
+  "confirmed": {
+    "final_result": {
+      "status": "FAILED",
+      "score": 0,
+      "passed_count": 0,
+      "failed_count": 0,
+      "tests_reached": false,
+      "failure_stage": "generation_agent",
+      "run_duration_seconds": 4,
+      "platform_token_count": 102,
+      "token_cost": 0.00039,
+      "token_cost_currency": "CNY",
+      "failure_reason": "Runner exited with test failures or runtime errors",
+      "failed_command": "python3 /workspace/submission/main.py ... --output-dir /workspace/template returned nonzero exit 1"
+    },
+    "run_lifecycle": [
+      "deploy_agent completed; environment preflight passed and traceability was initialized with 56 requirements and 34 scenarios",
+      "start_agent failed after dependency installation and generation launch",
+      "run_tests remained pending and was not reached"
+    ],
+    "raw_failure_chain": [
+      "Dependencies installed successfully",
+      "Agent identity and runtime environment were emitted",
+      "Raw chat/completions probe returned HTTP 200",
+      "Flow enumerated 34 atomic nodes with a 51000 second time budget",
+      "Flow aborted with AttributeError(\"'dict' object has no attribute 'parent'\")",
+      "Postflight completed; no application frontend/backend tree was generated"
+    ],
+    "output_state": {
+      "postflight_workspace_contains": ["requirements/", ".arc/"],
+      "package_shape_entries": 43,
+      "missing_directories": ["frontend/", "backend/"],
+      "unsafe_entries": 0,
+      "duplicate_entries": 0,
+      "forbidden_entries": 0,
+      "secret_entries": 0
+    },
+    "log_and_validation_facts": {
+      "main_py_seen": true,
+      "workspace_tests_seen": false,
+      "tests_directory": null,
+      "bundled_test_fallback_hits": 0,
+      "plaintext_api_key_hits": 0,
+      "raw_log_events": 0,
+      "raw_log_stdout_pages": 2,
+      "internal_acceptance_available": false,
+      "official_tests_executed": false
+    },
+    "identity": {
+      "agent_build_id": "arc-agent-v1-ea284b6a922a618f617a35ce",
+      "commit_sha": "0a809ca4ac1a3f4613e13319bfa0c7cf1a4dd7b2",
+      "managed_file_count": 531,
+      "package_contract": "arc_agent_bundle_v1",
+      "payload_tree_sha256": "63B782DE492B4ED34DC0C24A93FFCE900F8C8764B947B012B2A3DE93714974D4"
+    },
+    "attachment_boundaries": {
+      "platform_submission_sha256_binding": null,
+      "template_zip": null,
+      "playwright_report": null,
+      "snapshots": null,
+      "error_context_body": null
+    }
+  },
+  "strong_candidate": [
+    {
+      "id": "SC-GEN-01-type-contract",
+      "statement": "Generation orchestration or a runtime boundary passed a dict to code that expected an object exposing .parent.",
+      "evidence": [
+        "The raw log records the exact AttributeError immediately after flow node enumeration.",
+        "No acceptance, Playwright, or official-test phase was reached.",
+        "Static inspection of the supplied bundle found ordinary Path.parent uses but no traceback identifying the failing component."
+      ],
+      "confidence": "strong_candidate",
+      "limitation": "The exact module, object, and call site are not recoverable from the supplied logs."
+    },
+    {
+      "id": "SC-GEN-02-output-contract-consequence",
+      "statement": "The generation abort left an incomplete application output, which is independently sufficient to block deployment and testing for this run.",
+      "evidence": [
+        "Postflight lists requirements/ and .arc/ only.",
+        "Package-shape validation reports frontend/ and backend/ missing.",
+        "The run has no test cases because generation did not complete."
+      ],
+      "confidence": "strong_candidate",
+      "limitation": "This is a consequence of the generation abort, not the underlying cause of the AttributeError."
+    }
+  ],
+  "unknown": [
+    "The exact stack trace, failing module, object value, and call site for the .parent AttributeError.",
+    "Whether the dict originated in the requirements/traceability input, Agent runtime, dependency layer, or platform harness.",
+    "Whether the failure is solely a bundle defect or a compatibility mismatch between the bundle and the execution harness.",
+    "Any business-function, DOM, locator, API, or Playwright behavior; no application tests were reached.",
+    "Provider token breakdown, provider request count, visual model, reasoning level, acceptance workers, and acceptance rounds.",
+    "The summary's claim that /workspace/tests was used; raw logs and run metadata say tests were not reached and contain no /workspace/tests occurrence.",
+    "A platform binding between the supplied submission ZIP and the platform-uploaded artifact."
+  ],
+  "excluded_hypotheses": [
+    {
+      "hypothesis": "Business feature tests or UI locators caused the failure",
+      "reason": "Tests were not reached and the tests array is empty."
+    },
+    {
+      "hypothesis": "Platform-wide model/API outage",
+      "reason": "The raw chat/completions probe returned HTTP 200; this does not prove the whole run was healthy, but it does not support a platform-wide outage as the primary cause."
+    },
+    {
+      "hypothesis": "Out-of-memory or resource exhaustion",
+      "reason": "The raw log reports healthy memory and no OOM; only defunct Chrome cleanup was observed."
+    },
+    {
+      "hypothesis": "Bundled test fallback or plaintext API-key exposure",
+      "reason": "Bundled fallback hits and plaintext API-key hits are both zero."
+    }
+  ],
+  "evidence_gaps": [
+    "No usable traceback/error-context body was supplied.",
+    "No generated template ZIP, final browser report, screenshots, or network trace was supplied.",
+    "The raw logs payload has events=[] and no provider totals line.",
+    "No independent acceptance record exists because generation aborted before acceptance."
+  ],
+  "read_only_next_step_recommendation": {
+    "purpose": "Narrowly identify the pre-generation type-contract failure before any Stage 5 product change.",
+    "actions": [
+      "Inspect the exact object boundary immediately before the flow abort using the existing submission bundle and requirement input in a disposable local diagnostic context.",
+      "Confirm that the generation output contains frontend/ and backend/ and passes package-shape validation before considering a platform rerun.",
+      "Keep official tests, task snapshots, ZIP inputs, and runtime configuration unchanged."
+    ],
+    "not_executed": true
+  },
+  "stage5_boundary": {
+    "status": "not_ready",
+    "reason": "This run failed before application generation; UI or business-logic changes would be premature and cannot be validated from this evidence.",
+    "allowed_later_scope": [
+      "First repair and locally verify the generation input/type contract.",
+      "Then independently verify output shape and main.py preflight.",
+      "Only after those gates pass, consider a new authorized platform run."
+    ],
+    "prohibited_in_this_result": [
+      "No Agent code modification",
+      "No official-test modification",
+      "No task-snapshot or ZIP modification",
+      "No platform rerun or upload",
+      "No Stage 5 completion claim"
+    ]
+  },
+  "impact_estimate": {
+    "current_completion": "0/0; no meaningful feature completion rate can be inferred",
+    "current_score": 0,
+    "duration_seconds": 4,
+    "platform_token_count": 102,
+    "provider_tokens_and_requests": "unknown",
+    "cost": "0.00039 CNY",
+    "potential_gain": "Not estimable from this run; a new independent run is required after the generation gate is repaired.",
+    "note": "No pass-rate, token-saving, or runtime improvement claim is made from an unexecuted test suite."
+  },
+  "validation_contract": {
+    "required_marker": "PHASE4_RESULT: complete",
+    "remote_push": false,
+    "result_files": [
+      "evidence/arc-bench/runs/977a8ae04117/phase4-ack.json",
+      "evidence/arc-bench/runs/977a8ae04117/phase4-result.json",
+      "evidence/arc-bench/runs/977a8ae04117/phase4-result.md"
+    ]
+  }
+}
