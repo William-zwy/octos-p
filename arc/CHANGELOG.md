@@ -1,5 +1,11 @@
 # arc/ 适配层改动记录（工作流 A，分支 `wf-adapter`）
 
+## 2026-09-25 · `0917_hkt-20260924` 清理候选（仅探索、未验证）
+
+- 来源固定为 `f38251a61ab85f135871a4417940856328e3ebd4`；本分支只删除 `HKT/scripts/`，不把该分支的其他变更解释为已验证能力。
+- 删除原因：目录内脚本含硬编码凭据风险，禁止进入上传包。普通删除不会清除既有 Git 历史中的敏感内容；原凭据仍须撤销/轮换，相关历史仍需单独净化。
+- 本候选未执行平台 Run，只可作为隔离探索包；正式候选应以最新 Agent 基线选择性整合后另行验证。
+
 度量口径：本机 `.arc/octos-events.jsonl` 的 `turn/completed`（tokens_in / tokens_out 之和，不含缓存命中）与 `token_cost_update`（每个 session 的累计 `session_cost`，多 session 求和）；耗时取 `.arc/runner-events.jsonl` 的 running → completed；通过数由 `arc/grade-local.py` 用平台公开 Playwright 测试打分（`arc/metrics.py <输出目录>` 可一次打印整行）。所有运行都是本机、同一二进制（`octos 2.0.3-rc.11 (82e3bef3)`，`target/release/octos`，SHA-256 `b0b670ba…cd8c5`）、同一模型（`deepseek-v4-flash` 经 `api.arc-bench.com`）。「未评测」表示没有云端运行。
 
 ## 结论表（改前 → 改后，均为本机最终配置一次运行；云端未评测）
