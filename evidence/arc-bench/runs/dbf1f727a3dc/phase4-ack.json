@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 4 read-only diagnosis",
+  "handoff_id": "dbf1f727a3dc-DFE713A53AFC",
+  "run_id": "dbf1f727a3dc",
+  "task_key": "arc-bench-lite--bookstack",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "status": "received",
+  "read_only": true,
+  "manifest_path": "evidence/arc-bench/runs/dbf1f727a3dc/manifest.json",
+  "manifest_sha256": "DFE713A53AFC67C63C56FC1935B70572E6304660AFCA0BBCB9716F2B54B84DDB",
+  "handoff_path": "evidence/arc-bench/runs/dbf1f727a3dc/phase4-handoff.json",
+  "result_path": "evidence/arc-bench/runs/dbf1f727a3dc/phase4-result.json",
+  "result_md_path": "evidence/arc-bench/runs/dbf1f727a3dc/phase4-result.md",
+  "scope": "Only Run dbf1f727a3dc; ignore all other Runs.",
+  "allowed_actions": [
+    "read the dbf1f727a3dc manifest and supplied attachments",
+    "classify confirmed facts, root-cause candidates, exclusions and evidence gaps",
+    "write the matching phase4 result files"
+  ],
+  "forbidden_actions_acknowledged": [
+    "create or rerun a platform or local Run",
+    "upload anything",
+    "modify Agent code, official tests, task snapshots, ZIPs, assets or runtime configuration",
+    "trigger or write Stage 5 decisions",
+    "analyze any other Run"
+  ],
+  "received_at": "2026-09-26T00:00:00+08:00"
+}

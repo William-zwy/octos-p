@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "PHASE4_RESULT": "complete",
+  "run_id": "dbf1f727a3dc",
+  "task_key": "arc-bench-lite--bookstack",
+  "handoff_id": "dbf1f727a3dc-DFE713A53AFC",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "manifest_sha256": "DFE713A53AFC67C63C56FC1935B70572E6304660AFCA0BBCB9716F2B54B84DDB",
+  "source": "platform_run_attachments",
+  "analysis_scope": "read_only_single_run_only",
+  "read_only": true,
+  "prior_runs_merged": [],
+  "other_runs_analyzed": [],
+  "stage5_executed": false,
+  "stage5_decision_executed": false,
+  "confirmed": {
+    "final_result": {
+      "status": "FAILED",
+      "score": 0,
+      "passed_count": 0,
+      "failed_count": 0,
+      "total_count": 0,
+      "tests_reached": false,
+      "failure_stage": "generation_agent",
+      "platform_command_exit_code": 2,
+      "run_duration_seconds": 0,
+      "observed_lifecycle_seconds": 3.191009,
+      "platform_token_count": null,
+      "token_cost": null,
+      "token_cost_currency": null
+    },
+    "lifecycle": [
+      "deploy_agent completed and environment preflight passed",
+      "start_agent failed; dependency installation succeeded, then the generation command exited 2",
+      "run_tests remained pending and was not reached"
+    ],
+    "failure_chain": [
+      "Agent dependencies installed successfully",
+      "Agent identity and masked runtime environment were emitted; OPENAI_API_KEY was reported only as set",
+      "A raw chat/completions probe returned a permanent authentication failure, HTTP 401",
+      "The agent aborted before generation",
+      "Platform recorded the main.py command as nonzero exit 2; no application output or business tests were produced"
+    ],
+    "identity": {
+      "agent_build_id": "arc-agent-v1-28a60ce10cd6f9fe289342dc",
+      "commit_sha": "d3529b8f85925724408de2cd52f6b9b0230123d3",
+      "payload_tree_sha256": "A09D2F401123C1EE4D67445CCB455887B95105FCA964F62E6145E6A8290A97CF",
+      "managed_file_count": 531,
+      "package_contract": "arc_agent_bundle_v1",
+      "submission_zip_sha256": "714980CD64B75DBB4F6ECA50A839AF02008AC8410601ED24A63E4085FABD1D11",
+      "platform_submission_sha256_binding": null
+    },
+    "log_checks": {
+      "main_py_seen_in_raw_logs": false,
+      "main_py_invocation_confirmed_by_run_step": true,
+      "workspace_tests_seen_in_raw_logs": false,
+      "tests_directory": null,
+      "official_tests_executed": false,
+      "bundled_fallback_hits": 0,
+      "plaintext_api_key_hits": 0,
+      "raw_log_events": 0,
+      "raw_log_stdout_pages": 2
+    },
+    "source_conflicts": [
+      {
+        "field": "summary_tests_directory_claim",
+        "summary_claim": "/workspace/tests was used",
+        "raw_and_lifecycle_evidence": "No /workspace/tests occurrence; authentication abort occurred before generation; run_tests was not reached",
+        "resolution": "Do not accept the summary's checkmark as evidence that tests ran"
+      },
+      {
+        "field": "duration",
+        "run_json_seconds": 0,
+        "timestamp_span_seconds": 3.191009,
+        "resolution": "Retain both values with their distinct definitions"
+      },
+      {
+        "field": "failure_exit_representation",
+        "platform_exit_code": 2,
+        "raw_log_failure": "permanent authentication failure, HTTP 401",
+        "resolution": "Both observations describe separate layers and are retained"
+      }
+    ],
+    "available_artifacts": {
+      "raw_log_events": 0,
+      "raw_log_stdout_pages": 2,
+      "provider_totals": null,
+      "request_count": null,
+      "template_zip": null,
+      "playwright_report": null,
+      "snapshots": null,
+      "requirements_tree": null,
+      "error_context_body": null
+    }
+  },
+  "strong_candidate": [
+    {
+      "id": "SC-AUTH-01-credential-rejected",
+      "statement": "The configured credential or its authorization context was rejected by the ARC-Bench model API gateway, preventing any generation request from proceeding.",
+      "evidence": [
+        "The raw log explicitly labels the failure permanent authentication failure and gives HTTP 401.",
+        "The probe targets the configured ARC-Bench API base URL and occurs before generation.",
+        "The environment log only says OPENAI_API_KEY=set; it does not disclose or validate the secret itself."
+      ],
+      "confidence": "strong_candidate",
+      "limitation": "The evidence cannot distinguish an invalid, expired, revoked, wrong-account, wrong-scope, or otherwise unauthorized credential, nor establish which control plane issued it."
+    },
+    {
+      "id": "SC-AUTH-02-pre-generation-gate",
+      "statement": "The authentication probe is an intentional pre-generation gate; once it classified the response as permanent HTTP 401, the agent aborted before application creation.",
+      "evidence": [
+        "The raw log states aborting before generation.",
+        "Run lifecycle marks start_agent failed and run_tests pending/not reached.",
+        "No template or Playwright artifacts exist."
+      ],
+      "confidence": "strong_candidate",
+      "limitation": "No source-level traceback or runtime configuration artifact was supplied to verify the gate implementation beyond the log and lifecycle."
+    }
+  ],
+  "unknown": [
+    "Whether the credential was invalid, expired, revoked, associated with the wrong account, missing required scope, or rejected for another authorization policy.",
+    "Whether the credential came from the intended ARC-Bench hackathon account and whether that account was authorized for deepseek-v4-flash at the time.",
+    "The exact HTTP response body, gateway request ID, and authentication control plane; these are not present in the supplied logs.",
+    "Provider token totals, request count, visual model, reasoning level, time budget, and worker counts.",
+    "Any application generation, business functionality, DOM, locator, or Playwright behavior; generation and tests were not reached.",
+    "The summary's claim that /workspace/tests was used; raw logs and lifecycle contradict it.",
+    "A platform binding between the supplied submission ZIP and the uploaded artifact."
+  ],
+  "excluded_hypotheses": [
+    {
+      "hypothesis": "BookStack business logic or official acceptance tests caused the failure",
+      "reason": "Authentication failed before generation; tests is empty and run_tests is pending."
+    },
+    {
+      "hypothesis": "The five summary validation checkmarks establish successful execution",
+      "reason": "The /workspace/tests claim is directly contradicted by raw logs and lifecycle; other summary claims are not treated as raw evidence."
+    },
+    {
+      "hypothesis": "A network timeout or DNS/connectivity failure caused the probe",
+      "reason": "The endpoint returned an HTTP 401 response, which is an authentication rejection rather than a transport timeout."
+    },
+    {
+      "hypothesis": "Provider rate limit or quota exhaustion is established",
+      "reason": "No rate-limit response or provider usage record is present; the only explicit response is HTTP 401 authentication failure."
+    },
+    {
+      "hypothesis": "Bundled test fallback or plaintext API-key exposure occurred",
+      "reason": "Bundled fallback hits and plaintext API-key hits are both zero."
+    }
+  ],
+  "evidence_gaps": [
+    "No credential metadata, authorization scope, gateway response body, or request correlation ID was supplied; no secret value is needed or requested for this analysis.",
+    "No provider totals, request count, template ZIP, Playwright report, snapshots, requirements tree, or error-context body were supplied.",
+    "The raw logs payload contains events=[] and two stdout pages, with no test execution section."
+  ],
+  "stage5_recommendation": {
+    "status": "not_ready",
+    "reason": "The run is blocked before generation by an authentication rejection, so application-level changes cannot address or be validated against this failure.",
+    "recommended_boundary": [
+      "In a separately authorized operational check, verify the configured key's account, validity, scope, and model authorization using the approved ARC-Bench credential-management flow; never reveal or log the key.",
+      "Check the gateway's redacted error details or request ID through an authorized support path if the credential appears valid.",
+      "Only after authentication succeeds should a new authorized run be considered; then verify that generation begins and evidence reflects the actual tests directory."
+    ],
+    "not_executed": true,
+    "prohibited_in_this_result": [
+      "No Agent, official-test, asset, task-snapshot, ZIP, or runtime configuration changes",
+      "No platform rerun or upload",
+      "No Stage 5 implementation or completion claim"
+    ]
+  },
+  "impact_estimate": {
+    "current_completion": "0/0; no meaningful feature completion rate can be inferred",
+    "current_score": 0,
+    "run_duration_seconds": 0,
+    "observed_lifecycle_seconds": 3.191009,
+    "platform_tokens_and_cost": "null in run object",
+    "provider_tokens_and_requests": "unknown",
+    "potential_gain": "Not estimable from this run; an authentication fix must be verified in a separate authorized run before estimating task metrics.",
+    "note": "No feature pass-rate, token-saving, or generation-time improvement is inferred from this pre-generation failure."
+  },
+  "validation_contract": {
+    "required_marker": "PHASE4_RESULT: complete",
+    "remote_push": false,
+    "result_files": [
+      "evidence/arc-bench/runs/dbf1f727a3dc/phase4-ack.json",
+      "evidence/arc-bench/runs/dbf1f727a3dc/phase4-result.json",
+      "evidence/arc-bench/runs/dbf1f727a3dc/phase4-result.md"
+    ]
+  }
+}
