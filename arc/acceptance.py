@@ -129,6 +129,88 @@ class RunSummary:
         return self.total > 0 and self.passed == self.total
 
 
+def test_identity(outcome: TestOutcome) -> tuple[str, str]:
+    """Return a stable identity for one Playwright test outcome."""
+    file = Path(outcome.file or "?").as_posix()
+    title = re.sub(r"\s+", " ", (outcome.title or "?").strip())
+    return file, title
+
+
+def check_results(summary: RunSummary) -> dict[tuple[str, str], bool]:
+    """Map stable test identities to their pass/fail result."""
+    return {test_identity(outcome): outcome.ok for outcome in summary.results}
+
+
+def failed_test_keys(summary: RunSummary) -> set[tuple[str, str]]:
+    """Return the stable identities of failed tests in a completed report."""
+    return {identity for identity, passed in check_results(summary).items() if not passed}
+
+
+def failure_reason(outcome: TestOutcome) -> str:
+    """Extract an actionable reason from a Playwright failure."""
+    text = " ".join([outcome.message or "", *outcome.steps]).lower()
+    if ("intercepts pointer events" in text or "receives pointer events" in text
+            or "element is not receiving pointer events" in text):
+        return "pointer_interception"
+    if "err_connection_refused" in text or "net::err_" in text or "failed to fetch" in text:
+        return "startup"
+    if outcome.status == "timedOut" or "timeout" in text:
+        return "timeout"
+    if ("expected" in text and "received" in text
+            and any(word in text for word in ("count", "text", "value", "visible"))):
+        return "assertion_mismatch"
+    if any(word in text for word in ("not found", "no element", "locator")):
+        return "locator_mismatch"
+    return "behavior"
+
+
+def failure_signature(outcome: TestOutcome) -> str:
+    """Normalize volatile Playwright output for no-progress detection."""
+    reason = failure_reason(outcome)
+    text = re.sub(r"\d+(?:\.\d+)?(?:ms|s)?", "#", outcome.message or "")
+    text = re.sub(r"\s+", " ", text).strip().lower()
+    return f"{reason}:{text[:320]}"
+
+
+def failure_evidence(outcome: TestOutcome, limit: int = 6) -> list[str]:
+    """Extract the useful Playwright call-log lines for a repair prompt."""
+    lines = [re.sub(r"\s+", " ", line).strip() for line in (outcome.message or "").splitlines()]
+    markers = (
+        "waiting for ", "locator resolved to ", "attempting ", "intercepts pointer events",
+        "receives pointer events", "element is not receiving pointer events", "call log:",
+    )
+    selected = [line[:260] for line in lines if any(marker in line.lower() for marker in markers)]
+    if not selected and outcome.steps:
+        selected = [re.sub(r"\s+", " ", step).strip()[:260] for step in outcome.steps]
+    return selected[-limit:]
+
+
+def group_failures(summary: RunSummary) -> dict[str, list[TestOutcome]]:
+    """Cluster failures by actionable root-cause signature."""
+    groups: dict[str, list[TestOutcome]] = {}
+    for outcome in summary.results:
+        if not outcome.ok:
+            groups.setdefault(failure_signature(outcome), []).append(outcome)
+    return groups
+
+
+def failure_kind(summary: RunSummary) -> str:
+    """Classify a run for repair policy and regression diagnostics."""
+    if summary.error or summary.killed:
+        return "infrastructure"
+    if not summary.results and summary.load_errors:
+        return "startup"
+    failed = [outcome for outcome in summary.results if not outcome.ok]
+    reasons = {failure_reason(outcome) for outcome in failed}
+    if failed and reasons == {"startup"}:
+        return "startup"
+    if failed and reasons == {"timeout"}:
+        return "timeout"
+    if "pointer_interception" in reasons:
+        return "pointer_interception"
+    return "behavior"
+
+
 def summarize_report(report: dict) -> RunSummary:
     """Collapse a Playwright JSON report into per-test outcomes."""
     summary = RunSummary()

@@ -77,7 +77,9 @@ from arcbench_agent_runtime import AgentRuntime  # noqa: E402
 from acceptance import (  # noqa: E402
     workers_for_memory,
     AcceptanceRunner, AppServer, RunSummary, acceptance_work_dir, container_memory_limit, ensure_playwright,
-    failure_summaries, find_playwright_by_search, find_playwright_root, map_specs_to_nodes,
+    check_results, failed_test_keys, failure_evidence, failure_kind, failure_reason, failure_summaries,
+    failure_signature, group_failures,
+    find_playwright_by_search, find_playwright_root, map_specs_to_nodes,
     nodes_for_failures, playwright_candidates, playwright_version_hint, restore_tree,
     restore_worktree, snapshot_worktree, tree_digest,
 )
@@ -85,6 +87,7 @@ from codegen import FORMAT_INSTRUCTIONS, dedupe_nav_links, parse_file_blocks, wr
 from guard import TurnMonitor  # noqa: E402
 from llm_proxy import LlmProxy  # noqa: E402
 from requirement_order import ancestors_of, node_fingerprint, topo_order  # noqa: E402
+from repair_context import RepairContext  # noqa: E402
 
 BUNDLE_DIR = Path(__file__).resolve().parent
 
@@ -764,6 +767,14 @@ Requirement {node_id}: {description}
 Acceptance test (ground truth):
 {spec}
 Files: frontend/src/index.html (+ one html per further route); backend/server.js = CommonJS (require) Node http server on process.env.PORT||{port} serving ../frontend/dist files (index.html for /, <name>.html for /<name>) plus any API routes the requirement needs (in-memory state), 404 for anything else, wrapped in try/catch and process.on('uncaughtException').{ports} Both package.json files already exist (build copies src/* to dist; start runs server.js): do not output them.
+
+CRITICAL - Implementation principles:
+- Keep it SIMPLE: implement ONLY what the test verifies, no extra features or abstractions
+- The test is the specification: texts, button names, labels and test ids must match exactly
+- Concurrency-safe: multiple tests run in parallel against the same backend, avoid shared mutable state
+- No external resources, no CSS, no comments, no unnecessary code
+- Playwright strict mode: every locator must match exactly one element (no duplicates)
+
 Rules: texts, button names, labels and test ids exactly as in the test; the initial state is literally in the HTML; state lives in the page script unless the requirement says it is persisted; no external resources, no CSS, no comments, no notes; Playwright strict mode: every locator in the test must match exactly one element on the served page (no duplicate links, labels, texts or ids; each label's for= resolves to its own control). {size_rule}
 """ + CREATE_RESULT_CONTRACT
 
@@ -793,7 +804,7 @@ PERFORMANCE_CONTRACT = """\
 Performance & robustness (the grader is a slow container, tests run in parallel, EACH TEST HAS A 10 s BUDGET including reloads):
 - The grader CPU is 5–10x slower than a laptop and runs 4 browsers at once, so budget CPU per request at 30 ms: hash passwords with crypto.scryptSync(password, salt, 64, {N: 4096, r: 8, p: 1}) or pbkdf2Sync with <= 10000 iterations — never the default scrypt cost, never bcrypt; keep the JSON store small and rewrite it only on mutation.
 - Session cookie: HttpOnly; Path=/; SameSite=Lax; Max-Age at least 7 days; NO `Secure`, NO `Domain` attribute (tests run on http://127.0.0.1). Render every page server-side from the cookie (signed-in header, username) so a page needs NO XHR after load; keep pages tiny (one small inline script, no separate JS bundles) — the grader's browsers are slow and memory-starved.
-- Persistence: the in-memory store is the single source of truth; never re-read the JSON file per request. Mutations update memory first and then write the whole file synchronously (writeFileSync to a temp file, then rename) — never an async read-modify-write, because the grader runs 2–4 test files in parallel against ONE backend and a concurrent register/login pair must never lose a user. No setTimeout delays, polling, service workers, beforeunload handlers, or debounced writes.
+- Persistence (CONCURRENCY-CRITICAL): the in-memory store is the single source of truth; never re-read the JSON file per request. Mutations update memory first and then write the whole file synchronously (writeFileSync to a temp file, then renameSync for atomic replace) — never an async read-modify-write, because the grader runs 2–4 test files in parallel against ONE backend and a concurrent register/login pair must never lose a user. No setTimeout delays, polling, service workers, beforeunload handlers, or debounced writes. Race-condition-free persistence pattern: `const tmp = path + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(data)); fs.renameSync(tmp, path);`
 """
 
 ARCHITECTURE_CONTRACT = """\
@@ -849,15 +860,32 @@ NODE_PROMPT = """\
 {design}{ancestors}
 {tests}
 
-CRITICAL - Before writing any code:
+CRITICAL - Before writing any code (Test-Driven Understanding):
 1. Read and analyze the test helper functions (like renameLabel, clickNamed, etc.) to understand the EXACT DOM structure and accessibility labels expected
 2. List all required HTML elements with their roles, names, and ARIA labels that the test will query
 3. Verify your understanding: describe what UI the test expects to see
+4. Check if the requirement name could be ambiguous (e.g., "Edit labels" = editing label definitions, NOT assigning labels to items)
 
-While implementing:
-- Test every major component immediately after writing it (every 5-10 minutes of work)
+CRITICAL - Keep implementations SIMPLE (Minimum Complexity):
+- Don't add features, refactoring, or "improvements" beyond what the test requires
+- A bug fix doesn't need surrounding code cleaned up; a simple feature doesn't need extra configurability
+- Avoid complex event handling (stopPropagation, preventDefault, capturing phase) unless the test explicitly requires it
+- Three similar lines is better than a premature abstraction
+- No gold-plating: implement ONLY what the test verifies, nothing more
+
+CRITICAL - Concurrent test execution (Race Condition Awareness):
+- The grader runs ALL tests in PARALLEL against the SAME backend server instance
+- Your code must be concurrency-safe: avoid shared mutable state, global variables, or singleton patterns that assume single-threaded execution
+- Event handlers must not interfere with each other when multiple browser instances run simultaneously
+- If a test passes individually but fails in the full suite, you have a race condition or shared state issue
+- Backend: use synchronous file operations (writeFileSync + renameSync) for persistence, never async read-modify-write sequences
+- Frontend: avoid global event listeners that could be triggered by other concurrent tests
+
+Verify incrementally (Early Detection):
+- Test every major UI component or API endpoint immediately after writing it (every 5-10 minutes of work)
+- Don't wait until the end to verify - if something is wrong, you need time to fix it
+- Run: `npm run build` in frontend/, start backend with `ARC_EXTRA_PORTS=0 PORT={smoke} npm start`, curl each endpoint, stop server
 - If a test fails, read the error message carefully and adjust your implementation strategy
-- Do not write large amounts of code without verification
 
 {ui}{performance}
 {verify}
@@ -882,7 +910,13 @@ Before writing code, write your design for this node as ONE JSON object to .arc/
 EVOLUTION_NOTE = """\
 This is an EXISTING application that already passed its previous acceptance tests. Current sources:
 {listing}
-Read the files you need before changing them, keep every existing route, label and behaviour intact, and change only what this node requires.
+
+CRITICAL - Preserve existing functionality:
+- Read the files you need BEFORE changing them - understand what already works
+- Keep every existing route, label, accessible name, and behavior intact
+- Change ONLY what this new node requires - don't refactor or "improve" working code
+- Don't add features beyond what the new requirement specifies
+- If you break a previously passing test, you've violated the evolution contract
 """
 
 REPAIR_PROMPT = """\
@@ -890,10 +924,25 @@ The official acceptance tests for requirement node {node_id} just ran against yo
 {failures}
 {corrections}{slow}{sources}
 
-CRITICAL - Before attempting repairs:
-1. If this is your second repair attempt and the error is similar to the first, your approach is fundamentally wrong - read the test code carefully and implement a COMPLETELY DIFFERENT solution
-2. Analyze the test helper functions to understand what DOM structure and accessibility labels are expected
-3. Check if you misunderstood the requirement (e.g., "Edit labels" means editing label definitions, NOT assigning labels to notes)
+CRITICAL - Before attempting repairs (Failure Pattern Detection):
+1. If this is your SECOND repair attempt and the error is similar to the first, your approach is fundamentally wrong
+   - Stop repeating the same strategy
+   - Read the test code line-by-line to understand what it actually does
+   - Implement a COMPLETELY DIFFERENT solution from scratch
+2. Analyze the test helper functions (renameLabel, clickNamed, etc.) to understand the expected DOM structure and accessibility labels
+3. Check if you misunderstood the requirement:
+   - "Edit labels" = editing label definitions (the label catalog), NOT assigning labels to items
+   - "Update note" = editing note content, not changing metadata
+   - Read the test assertions to see what the test actually verifies
+4. If the test passes alone but fails in the suite, you have a concurrency issue:
+   - Check for shared global state or mutable variables accessed by multiple tests
+   - Check for event handlers that aren't properly scoped
+   - Backend: ensure atomic file writes (writeFileSync + renameSync, never async read-modify-write)
+
+CRITICAL - Keep the fix SIMPLE:
+- Fix ONLY the failing behavior, don't refactor working code
+- Don't add defensive code for scenarios the test doesn't exercise
+- Avoid complex event handling unless the test explicitly requires it
 
 Fix frontend/ and/or backend/ so these tests pass without breaking the passing ones. You have about 10 requests: in the FIRST response read at most two files (only the ones you will change), in the SECOND response emit every edit_file/write_file call together, then finish — do not read more files afterwards. No shell commands. The harness rebuilds and re-runs the official tests right after your turn. The spec files are read-only ground truth.
 """ + CREATE_RESULT_CONTRACT + PORT_RULES
@@ -903,6 +952,13 @@ Final end-to-end check of the web application in the current directory:
 1. `npm run build` in frontend/ — fix any error.
 2. Kill leftover servers, start the backend with `ARC_EXTRA_PORTS=0 PORT={smoke} npm start`, confirm `curl http://127.0.0.1:{smoke}/` serves the app and every API endpoint answers (success and error cases).
 3. Audit every page against the contracts below and fix violations; run a mechanical strict-mode check: for each value the pages echo, count the elements containing it (`curl -s <page> | grep -o '<value>' | wc -l` for server-rendered pages, or read the render code) — the count must be 1.
+
+CRITICAL - Verification principles:
+- Actually run the commands - don't claim completion without executing verification
+- If a build or start command fails, you MUST fix it before claiming done
+- Test both success and error cases for each endpoint
+- Check for concurrency issues: ensure atomic file operations (writeFileSync + renameSync)
+
 {tests}
 {ui}{performance}
 """ + PORT_RULES
@@ -1262,6 +1318,110 @@ class Flow:
         git.run(["clean", "-fd", "-e", "node_modules", "-e", "dist", "--", "frontend", "backend"], check=False)
         log(f"[flow] restored frontend/ and backend/ to best commit {sha[:8]}")
 
+    def app_digest(self) -> dict[str, str]:
+        """Digest only submitted app sources; acceptance restores test data separately."""
+        digest: dict[str, str] = {}
+        for part in ("frontend", "backend"):
+            root = self.output_dir / part
+            if not root.is_dir():
+                continue
+            for rel, value in tree_digest(root).items():
+                if Path(rel).parts and Path(rel).parts[0] in {"dist", "build"}:
+                    continue
+                digest[f"{part}/{rel}"] = value
+        return digest
+
+    @staticmethod
+    def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
+        return sorted(set(before) ^ set(after) | {
+            path for path in set(before) & set(after) if before[path] != after[path]
+        })
+
+    @staticmethod
+    def repair_likely_files(summary: RunSummary) -> list[str]:
+        """Point repairs at the ownership boundary suggested by the evidence."""
+        reasons = {failure_reason(r) for r in summary.results if not r.ok}
+        likely: list[str] = []
+        if reasons & {"pointer_interception", "locator_mismatch", "assertion_mismatch"}:
+            likely.append("frontend")
+        if reasons & {"startup", "infrastructure"}:
+            likely.extend(["frontend", "backend"])
+        if not likely or reasons - {"pointer_interception", "locator_mismatch", "assertion_mismatch",
+                                    "startup", "infrastructure", "timeout"}:
+            likely.extend(["frontend", "backend"])
+        return list(dict.fromkeys(likely))
+
+    def repair_scope_guard(self, before_sha: str | None, before_digest: dict[str, str],
+                           after_digest: dict[str, str], summary: RunSummary) -> list[str]:
+        """Reject an obviously mis-scoped repair while preserving normal shared-file fixes."""
+        changed = self.changed_files(before_digest, after_digest)
+        if not changed or not before_sha:
+            return changed
+        reasons = {failure_reason(r) for r in summary.results if not r.ok}
+        frontend_only = reasons & {"pointer_interception", "locator_mismatch"}
+        backend_only = reasons & {"startup"} and not (reasons - {"startup"})
+        if frontend_only and all(path.startswith("backend/") for path in changed):
+            self.restore_app(before_sha)
+            self.pending_corrections.append(
+                "The previous repair changed only backend files, but the acceptance evidence is a frontend "
+                "pointer/locator failure. Restore the UI path and fix the affected frontend component.")
+            log(f"[flow] scope guard restored backend-only repair ({len(changed)} file(s))")
+        elif backend_only and all(path.startswith("frontend/") for path in changed):
+            self.restore_app(before_sha)
+            self.pending_corrections.append(
+                "The previous repair changed only frontend files, but the acceptance evidence is a backend/startup "
+                "failure. Restore the server path and fix the startup or API contract.")
+            log(f"[flow] scope guard restored frontend-only repair ({len(changed)} file(s))")
+        return changed
+
+    @staticmethod
+    def repair_context_text(node_id: str, attempt: int, summary: RunSummary,
+                            best_failures: set[tuple[str, str]] | None,
+                            current_failures: set[tuple[str, str]],
+                            changed_files: list[str], no_progress_count: int,
+                            expected_checks: set[tuple[str, str]] | None = None) -> str:
+        best = best_failures or set()
+        current_labels = sorted(f"{file}::{title}" for file, title in current_failures)
+        best_labels = sorted(f"{file}::{title}" for file, title in best)
+        fixed = sorted(f"{file}::{title}" for file, title in best - current_failures)
+        new = sorted(f"{file}::{title}" for file, title in current_failures - best)
+        known = sorted(f"{file}::{title}" for file, title in current_failures & best)
+        expected = expected_checks or set()
+        current_checks = set(check_results(summary))
+        missing = sorted(f"{file}::{title}" for file, title in expected - current_checks)
+        groups = group_failures(summary)
+        evidence = [
+            f"{len(outcomes)} test(s): {signature[:180]}"
+            for signature, outcomes in sorted(groups.items())
+        ]
+        for outcome in summary.results:
+            if not outcome.ok:
+                details = failure_evidence(outcome)
+                if details:
+                    evidence.append(f"{outcome.title}: " + " | ".join(details))
+        reason_counts: dict[str, int] = {}
+        for outcome in summary.results:
+            if not outcome.ok:
+                reason = failure_reason(outcome)
+                reason_counts[reason] = reason_counts.get(reason, 0) + 1
+        context = RepairContext(
+            node_id=node_id,
+            repair_round=attempt,
+            failure_kind=failure_kind(summary),
+            failure_reason=", ".join(f"{key}={value}" for key, value in sorted(reason_counts.items())),
+            current_failures=current_labels,
+            best_failures=best_labels,
+            fixed_failures=fixed,
+            new_failures=new,
+            known_failures=known,
+            missing_checks=missing,
+            changed_files=changed_files,
+            likely_files=Flow.repair_likely_files(summary),
+            evidence=evidence,
+            no_progress_count=no_progress_count,
+        )
+        return context.prompt_text()
+
     # -- acceptance -------------------------------------------------------
     def setup_playwright(self) -> None:
         """Prefer the Playwright already on the machine (the runner image ships
@@ -1420,8 +1580,14 @@ class Flow:
         best_passed, best_sha, regressions, stalls = -1, self.head(), 0, 0
         rewrite_used = False
         previous_failures = None
+        previous_run_fingerprint = None
+        previous_digest = None
+        previous_checks: set[tuple[str, str]] | None = None
+        best_failures: set[tuple[str, str]] | None = None
+        no_progress_count = 0
         self.codegen_blocked = False  # same failure twice in codegen mode -> tool mode for this node
         for attempt in range(self.repair_rounds + 1):
+            run_digest = self.app_digest()
             summary = self.run_specs(specs)
             if summary.error and summary.killed:
                 log(f"[acceptance] {node_id}: test runner killed ({summary.error[:120]}); no verdict from this round")
@@ -1429,13 +1595,29 @@ class Flow:
             if summary.error:
                 log(f"[acceptance] {node_id} infrastructure error: {summary.error[:300]}")
                 failures = f"- Feature: app startup\n  Failed at: build/start\n  Observation: {summary.error[:600]}\n  Steps: npm run build -> npm start"
-                summary = RunSummary(passed=0, total=max(1, len(specs)))
+                summary.total = max(1, len(specs))
                 passed = 0
             else:
                 passed = summary.passed
                 failures = failure_summaries(summary)
                 self.record_tests(node_id, specs, summary)
             log(f"[acceptance] {node_id} round {attempt}: {passed}/{summary.total}")
+            current_failures = failed_test_keys(summary)
+            current_checks = set(check_results(summary))
+            signatures = tuple(sorted(
+                failure_signature(outcome) for outcome in summary.results if not outcome.ok
+            ))
+            changed_since_run = self.changed_files(previous_digest, run_digest) if previous_digest is not None else []
+            fingerprint = (tuple(sorted(current_failures)), signatures, tuple(changed_since_run))
+            if fingerprint == previous_run_fingerprint:
+                no_progress_count += 1
+            else:
+                no_progress_count = 0
+            previous_run_fingerprint = fingerprint
+            previous_digest = run_digest
+            if no_progress_count:
+                log(f"[flow] {node_id}: no-progress fingerprint repeated "
+                    f"(count={no_progress_count}, changed={changed_since_run})")
             normalized = re.sub(r"\d+", "#", failures or "")
             if normalized and normalized == previous_failures:
                 # Cloud 91aaecaf31af: three codegen rounds, identical observation.
@@ -1462,6 +1644,7 @@ class Flow:
                 if best_passed >= 0:
                     self.commit(f"{node_id} (repair {attempt}): {passed}/{summary.total} pass")
                 best_passed, best_sha, regressions, stalls = passed, self.head(), 0, 0
+                best_failures = current_failures
             elif passed == best_passed and attempt > 0:
                 stalls += 1
                 if stalls >= 2:
@@ -1476,6 +1659,11 @@ class Flow:
                         f"Your last two repairs made the tests worse; the harness restored frontend/ and backend/ "
                         f"to the best state ({best_passed}/{summary.total}). Start from that code.")
                     regressions = 0
+            if no_progress_count:
+                self.pending_corrections.append(
+                    "The last repair produced the same failure set and root-cause signature without meaningful "
+                    "progress. Stop repeating that approach and keep the best checkpoint.")
+                break
             if attempt == self.repair_rounds:
                 break
             left = deadline - time.time()
@@ -1496,27 +1684,36 @@ class Flow:
                 time_pressure_repair = f"\n⚠️ CRITICAL: Only {left:.0f}s remaining. Make the most targeted fix possible.\n"
             elif left < 600:
                 time_pressure_repair = f"\n⏱️ TIME LIMITED: {left:.0f}s left. Focus on the root cause only.\n"
+            repair_sha = self.head()
+            repair_digest = self.app_digest()
+            context = self.repair_context_text(
+                node_id, attempt + 1, summary, best_failures, current_failures,
+                changed_since_run, no_progress_count, previous_checks)
             if passed == 0 and rebuild_prompt is not None and not rewrite_used \
                     and os.environ.get("OCTOS_ARC_REWRITE_ON_ZERO", "1") != "0":
                 rewrite_used = True
                 log(f"[flow] {node_id}: nothing passed; one full rewrite turn instead of a patch")
-                prompt = rebuild_prompt(failures or "(no detail)")
+                prompt = context + rebuild_prompt(failures or "(no detail)")
                 if self.codegen_mode():
                     self.codegen_turn(prompt, min(self.node_timeout, left), f"{node_id} rewrite (repair {attempt + 1})")
                 else:
                     self.turn(prompt, min(self.node_timeout, left), f"{node_id} rewrite (repair {attempt + 1})",
                               request_budget=int(os.environ.get("OCTOS_ARC_IMPLEMENT_REQUESTS", "20")))
+                self.repair_scope_guard(repair_sha, repair_digest, self.app_digest(), summary)
+                previous_checks = current_checks
                 continue
             prompt = REPAIR_PROMPT.format(node_id=node_id, passed=passed, total=summary.total,
                                           failures=failures or "(no detail)", corrections=self.corrections_text(),
                                           slow=slow_text, smoke=self.smoke_port, port=self.web_port,
                                           sources=self.sources_text())
-            prompt = time_pressure_repair + prompt
+            prompt = time_pressure_repair + context + prompt
             if self.codegen_mode():
                 self.codegen_turn(prompt + "\nReturn every file you change as a complete file block.",
                                   min(self.node_timeout, left), f"{node_id} repair {attempt + 1}/{self.repair_rounds}")
             else:
                 self.turn(prompt, min(self.node_timeout, left), f"{node_id} repair {attempt + 1}/{self.repair_rounds}")
+            self.repair_scope_guard(repair_sha, repair_digest, self.app_digest(), summary)
+            previous_checks = current_checks
         if best_passed > 0 and best_sha and self.head() != best_sha:
             self.restore_app(best_sha)
             self.commit(f"{node_id}: keep best acceptance state {best_passed}")
@@ -1777,7 +1974,30 @@ class Flow:
             return  # single spec already judged by the node run
         rounds = int(os.environ.get("OCTOS_FINAL_REPAIR_ROUNDS", "2"))
         workers = workers_for_memory(getattr(self, "mem_limit", None), int(os.environ.get("OCTOS_ARC_FINAL_WORKERS", "4")))
-        previous_failing: set[str] | None = None
+        # Full-suite repairs touch shared application code, so a repair that
+        # fixes one scenario can easily regress another.  Keep a committed
+        # checkpoint and only accept strictly better full-suite results.
+        best_passed = -1
+        best_sha = self.head()
+        best_failures: set[tuple[str, str]] | None = None
+        baseline_checks: dict[tuple[str, str], bool] | None = None
+        previous_suite_fingerprint = None
+        previous_suite_digest = None
+
+        def restore_best() -> None:
+            if best_sha and self.head() != best_sha:
+                self.restore_app(best_sha)
+            if best_failures is None:
+                return
+            # The last run may have described a worse state than the
+            # checkpoint we restored.  Keep traceability aligned with the
+            # application that will actually be submitted.
+            for node_id, specs in self.spec_map.items():
+                if not node_id or not specs:
+                    continue
+                names = {Path(p).name for p in specs}
+                self.test_verdict[node_id] = not any(file in names for file, _ in best_failures)
+
         for attempt in range(rounds + 1):
             summary = self.run_specs(all_specs, workers=workers, grader_like=True)
             if summary.error and summary.killed:
@@ -1786,18 +2006,68 @@ class Flow:
                 log(f"[acceptance] full suite could not run ({summary.error[:120]}); keeping per-node verdicts")
                 return
             if summary.error:
-                # The app does not even start the way the grader starts it: every node fails.
-                log(f"[acceptance] full suite (grader-like start) failed: {summary.error[:300]}")
-                for node_id in self.spec_map:
-                    if node_id:
-                        self.test_verdict[node_id] = False
-                grouped = {None: []}
-                failures = (f"- Feature: application startup exactly as the grader runs it (only PORT set)\n"
-                            f"  Failed at: npm start\n  Observation: {summary.error[:700]}\n  Steps: npm run build -> npm start")
-                summary = RunSummary(passed=0, total=len(all_specs))
+                # A build/start failure is infrastructure, not a code verdict.
+                # Never establish a bad baseline or spend repair rounds on it.
+                log(f"[acceptance] full suite infrastructure error: {summary.error[:300]}")
+                restore_best()
+                return
             else:
+                if not summary.total:
+                    log("[acceptance] full suite produced no test results; restoring best state")
+                    restore_best()
+                    return
                 grouped = nodes_for_failures(summary.results, self.spec_map)
                 failures = failure_summaries(RunSummary(results=[r for rs in grouped.values() for r in rs]))
+            current_checks = check_results(summary)
+            current_failures = failed_test_keys(summary)
+            current_kind = failure_kind(summary)
+            suite_digest = self.app_digest()
+            suite_changed = (self.changed_files(previous_suite_digest, suite_digest)
+                             if previous_suite_digest is not None else [])
+            suite_fingerprint = (
+                tuple(sorted(current_failures)),
+                tuple(sorted(failure_signature(r) for r in summary.results if not r.ok)),
+                tuple(suite_changed),
+            )
+            if suite_fingerprint == previous_suite_fingerprint:
+                log("[acceptance] full suite: no-progress fingerprint repeated; restoring best state")
+                restore_best()
+                break
+            previous_suite_fingerprint = suite_fingerprint
+            previous_suite_digest = suite_digest
+            groups = group_failures(summary)
+            if groups:
+                log("[acceptance] full suite failure groups: " + "; ".join(
+                    f"{key.split(':', 1)[0]}={len(value)}" for key, value in sorted(groups.items())
+                ))
+            if baseline_checks is None:
+                baseline_checks = current_checks
+                log(f"[acceptance] full suite baseline established: "
+                    f"{summary.passed}/{summary.total}, kind={current_kind}")
+            else:
+                baseline_failures = {
+                    identity for identity, passed in baseline_checks.items() if not passed
+                }
+                new_failures = {
+                    identity for identity in current_failures
+                    if baseline_checks.get(identity, True)
+                }
+                fixed_failures = {
+                    identity for identity, passed in baseline_checks.items()
+                    if not passed and current_checks.get(identity) is True
+                }
+                missing_checks = set(baseline_checks) - set(current_checks)
+                log(f"[acceptance] full suite delta: fixed={len(fixed_failures)} "
+                    f"new={len(new_failures)} known={len(current_failures & baseline_failures)} "
+                    f"missing={len(missing_checks)} kind={current_kind}")
+                if missing_checks:
+                    log("[acceptance] full suite: missing checks; restoring best state")
+                    restore_best()
+                    break
+                if new_failures:
+                    log("[acceptance] full suite: new failures introduced; restoring best state")
+                    restore_best()
+                    break
             log(f"[acceptance] full suite round {attempt}: {summary.passed}/{summary.total}; failing nodes "
                 f"{sorted(k for k in grouped if k) or ('all' if None in grouped and not summary.results else [])}")
             for node_id, specs in self.spec_map.items():
@@ -1808,11 +2078,28 @@ class Flow:
             if not grouped:
                 self.commit(f"chore: full acceptance suite {summary.passed}/{summary.total} pass (parallel)")
                 return
-            failing_titles = {r.title for rs in grouped.values() for r in rs}
-            if previous_failing is not None and failing_titles == previous_failing:
-                log("[acceptance] full suite: same failures as the previous round; stopping repairs")
+
+            failing_keys = current_failures
+            if best_passed < 0:
+                best_passed = summary.passed
+                best_sha = self.head()
+                best_failures = failing_keys
+            elif summary.passed <= best_passed:
+                # Equal pass counts with different failures are still a
+                # regression risk: the repair moved the bug rather than
+                # improving the application.  Do not let that state reach the
+                # final submission.
+                reason = "same failures" if failing_keys == best_failures else "failure set drifted"
+                log(f"[acceptance] full suite: no strict improvement ({reason}); "
+                    f"restoring best state {best_passed}/{summary.total}")
+                restore_best()
                 break
-            previous_failing = failing_titles
+            else:
+                best_passed = summary.passed
+                best_sha = self.head()
+                best_failures = failing_keys
+                log(f"[acceptance] full suite: new best state {best_passed}/{summary.total}")
+
             if attempt == rounds or self.remaining() < 240:
                 break
             failing = sorted(k for k in grouped if k) or ["all nodes"]
@@ -1822,11 +2109,25 @@ class Flow:
                 corrections=self.corrections_text() + "The grader runs all spec files IN PARALLEL against one "
                 "server; tests from different files must not interfere through shared server state "
                 "(e.g. a counter that every browser session shares). Keep persisted data only where the "
-                "requirement demands persistence.\n",
+                "requirement demands persistence.\n"
+                "This is a regression-sensitive full-suite repair: read the failing spec and the directly "
+                "related frontend/backend files first, preserve all behavior covered by passing tests, and "
+                "do not rewrite shared UI, routes, or event handling unless the failure proves they are the "
+                "root cause. Make the smallest targeted change and verify the failing path before finishing.\n",
                 slow="", smoke=self.smoke_port, port=self.web_port)
+            prompt = self.repair_context_text(
+                ", ".join(failing), attempt + 1, summary, best_failures, current_failures,
+                suite_changed, 0) + prompt
+            repair_sha = self.head()
+            repair_digest = self.app_digest()
             self.turn(prompt, min(self.node_timeout, max(120, self.remaining() - 200)),
                       f"full-suite repair {attempt + 1}/{rounds}")
+            self.repair_scope_guard(repair_sha, repair_digest, self.app_digest(), summary)
             self.commit(f"fix: full-suite repair {attempt + 1}")
+
+        if best_sha and self.head() != best_sha:
+            restore_best()
+            log(f"[acceptance] full suite: final state restored to best result {best_passed}/{len(all_specs)}")
 
     # -- skeleton ---------------------------------------------------------
     def skeleton(self, tree: dict) -> None:

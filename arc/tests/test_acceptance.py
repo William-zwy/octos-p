@@ -1,10 +1,19 @@
 import subprocess
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from acceptance import (
+    RunSummary,
+    check_results,
+    failed_test_keys,
+    failure_evidence,
     failure_summaries,
+    failure_kind,
+    failure_reason,
+    failure_signature,
+    group_failures,
     isolated_install_env,
     map_specs_to_nodes,
     playwright_version_hint,
@@ -17,7 +26,9 @@ from acceptance import (
     tree_digest,
     spec_node_id,
     summarize_report,
+    test_identity,
 )
+from main import Flow
 
 
 class SpecIdTests(unittest.TestCase):
@@ -99,6 +110,92 @@ class ReportTests(unittest.TestCase):
         summary = summarize_report(report(("slow one", "timedOut", "Test timeout of 10000ms exceeded.", ["page.reload"], 10000)))
         text = failure_summaries(summary)
         self.assertIn("timed out", text.lower())
+
+    def test_should_build_stable_test_identity_and_failure_sets(self):
+        summary = summarize_report(report(
+            ("first check", "passed", None, [], 10),
+            ("second check", "failed", "boom", [], 10),
+        ))
+        self.assertEqual(test_identity(summary.results[0]), ("REQ-1.spec.ts", "first check"))
+        self.assertEqual(
+            check_results(summary),
+            {
+                ("REQ-1.spec.ts", "first check"): True,
+                ("REQ-1.spec.ts", "second check"): False,
+            },
+        )
+        self.assertEqual(
+            failed_test_keys(summary),
+            {("REQ-1.spec.ts", "second check")},
+        )
+
+    def test_should_classify_completed_timeout_as_timeout(self):
+        summary = summarize_report(report(
+            ("slow one", "timedOut", "Test timeout of 10000ms exceeded.", [], 10000),
+        ))
+        self.assertEqual(failure_kind(summary), "timeout")
+
+    def test_should_classify_runner_error_as_infrastructure(self):
+        self.assertEqual(failure_kind(RunSummary(error="npm start failed")), "infrastructure")
+
+    def test_should_classify_connection_refused_as_startup(self):
+        msg = "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3100/"
+        summary = summarize_report(report(("loads app", "failed", msg, ["page.goto"], 100)))
+        self.assertEqual(failure_kind(summary), "startup")
+
+    def test_should_classify_pointer_interception_as_actionable_ui_failure(self):
+        msg = ("locator.click: Timeout 4000ms exceeded.\n"
+               "Call log:\n"
+               "  - waiting for getByRole('button', { name: 'Delete Note' })\n"
+               "  - locator resolved to <button aria-label=\"Delete Note\">\n"
+               "  - <article class=\"note-card\"> intercepts pointer events")
+        summary = summarize_report(report(("open menu", "failed", msg, ["locator.click"], 4000)))
+        outcome = summary.results[0]
+        self.assertEqual(failure_reason(outcome), "pointer_interception")
+        self.assertEqual(failure_kind(summary), "pointer_interception")
+        self.assertTrue(failure_signature(outcome).startswith("pointer_interception:"))
+        evidence = failure_evidence(outcome)
+        self.assertTrue(any("Delete Note" in line for line in evidence))
+        self.assertTrue(any("intercepts pointer events" in line for line in evidence))
+
+    def test_should_group_same_root_cause_failures(self):
+        msg = "locator.click: Timeout 4000ms exceeded; <article> intercepts pointer events"
+        summary = summarize_report(report(
+            ("one", "failed", msg, [], 4000),
+            ("two", "failed", msg, [], 4000),
+        ))
+        groups = group_failures(summary)
+        self.assertEqual(sorted(len(items) for items in groups.values()), [2])
+
+    def test_should_report_changed_files_and_missing_checks_in_repair_context(self):
+        summary = summarize_report(report(
+            ("still failing", "failed", "expected 2 received 1", [], 10),
+        ))
+        context_text = Flow.repair_context_text(
+            "REQ-1",
+            2,
+            summary,
+            {("REQ-1.spec.ts", "still failing")},
+            {("REQ-1.spec.ts", "still failing")},
+            ["frontend/src/app.js"],
+            0,
+            expected_checks={
+                ("REQ-1.spec.ts", "still failing"),
+                ("REQ-1.spec.ts", "disappeared check"),
+            },
+        )
+        payload = json.loads(context_text.split("```json\n", 1)[1].split("\n```", 1)[0])
+        self.assertEqual(payload["changed_files"], ["frontend/src/app.js"])
+        self.assertEqual(payload["missing_checks"], ["REQ-1.spec.ts::disappeared check"])
+
+    def test_should_compute_changed_files_as_added_removed_and_modified(self):
+        self.assertEqual(
+            Flow.changed_files(
+                {"frontend/a.js": "old", "frontend/removed.js": "gone"},
+                {"frontend/a.js": "new", "frontend/added.js": "new"},
+            ),
+            ["frontend/a.js", "frontend/added.js", "frontend/removed.js"],
+        )
 
 
 if __name__ == "__main__":
