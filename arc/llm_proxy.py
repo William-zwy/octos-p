@@ -381,11 +381,16 @@ class LlmProxy:
                 ctype = resp_headers.get("Content-Type", "application/json") if resp_headers else "application/json"
                 if was_streaming and status == 200:
                     payload, ctype = to_sse(payload), "text/event-stream; charset=utf-8"
-                self.send_response(status)
-                self.send_header("Content-Type", ctype)
-                self.send_header("Content-Length", str(len(payload)))
-                self.end_headers()
-                self.wfile.write(payload)
+                try:
+                    self.send_response(status)
+                    self.send_header("Content-Type", ctype)
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    # The caller may have timed out and closed the socket while
+                    # the upstream model request was still finishing.
+                    return
 
             def do_POST(self):
                 self._forward("POST")

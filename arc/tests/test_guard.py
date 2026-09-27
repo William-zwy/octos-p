@@ -28,6 +28,27 @@ class TurnMonitorTests(unittest.TestCase):
         m.finish("Implemented and verified.")
         self.assertEqual(m.corrections(), [])
 
+    def test_should_allow_early_stop_after_written_files_and_successful_verification(self):
+        m = TurnMonitor(protected_prefixes=[])
+        m.observe(*started("write_file", {"path": "frontend/src/index.html"}, "w1"))
+        m.observe(*completed("w1", True))
+        m.observe(*started("bash", {"cmd": "npm run build"}, "v1"))
+        self.assertFalse(m.ready_for_early_stop())
+        m.observe(*completed("v1", True))
+        self.assertTrue(m.verified)
+        self.assertTrue(m.verification_completed)
+        self.assertTrue(m.ready_for_early_stop())
+
+    def test_should_not_early_stop_when_verification_fails(self):
+        m = TurnMonitor(protected_prefixes=[])
+        m.observe(*started("write_file", {"path": "frontend/src/index.html"}, "w1"))
+        m.observe(*completed("w1", True))
+        m.observe(*started("bash", {"cmd": "npm run build"}, "v1"))
+        m.observe(*completed("v1", False, "build failed"))
+        self.assertTrue(m.verified)
+        self.assertFalse(m.verification_completed)
+        self.assertFalse(m.ready_for_early_stop())
+
     def test_should_flag_three_identical_consecutive_errors(self):
         m = TurnMonitor(protected_prefixes=[])
         for i in range(3):

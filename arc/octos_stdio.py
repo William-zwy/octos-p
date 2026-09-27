@@ -182,7 +182,8 @@ class OctosStdioSession:
             params["profile_id"] = self.profile_id
         self._send("session/open", params, want_response=True, timeout=timeout)
 
-    def run_turn(self, text: str, timeout: float = 1800.0) -> tuple[bool, str]:
+    def run_turn(self, text: str, timeout: float = 1800.0,
+                 stop_when: Callable[[], bool] | None = None) -> tuple[bool, str]:
         """Run one turn; stream events to on_event. Returns (ok, full_text)."""
         turn_id = str(uuid.uuid4())
         self._send("turn/start", {
@@ -207,6 +208,8 @@ class OctosStdioSession:
             method = frame.get("method", "")
             params = frame.get("params") or {}
             self.on_event(method, params)
+            if stop_when is not None and stop_when():
+                return False, "octos turn stopped after local verification"
             if method == "server/heartbeat":
                 continue
             if method == "message/delta" and params.get("turn_id") == turn_id:

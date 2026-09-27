@@ -30,15 +30,25 @@ Environment (all optional):
     OCTOS_SECONDS_PER_NODE    per-node allowance used for that default (1500)
     OCTOS_MIN_REPAIR_SECONDS  do not start a repair turn with less than this left (300)
     OCTOS_NODE_TIME_BUDGET    cap per node incl. repairs (default 1500)
+    OCTOS_ADAPTIVE_TIMEOUT    "0" disables adaptive implement/repair caps
+    OCTOS_SIMPLE_IMPLEMENT_FRACTION  fraction for generic/simple first turns (default 0.42)
+    OCTOS_SIMPLE_IMPLEMENT_CAP  hard cap for generic/simple first turns (default 720)
+    OCTOS_REWRITE_TIMEOUT_CAP  max seconds for the one zero-pass rewrite (default 420)
+    OCTOS_REPAIR_TIMEOUT_CAP  max seconds for a targeted repair turn (default 480)
     OCTOS_REPAIR_ROUNDS       K, acceptance repair rounds per node (default 5)
     OCTOS_DESIGN_TURN         "0" disables the design turn
     OCTOS_DESIGN_MODE         inline (default) | separate (own read-only design turn)
     OCTOS_DESIGN_MIN_NODES    design only for trees with at least this many nodes (3)
     OCTOS_SKELETON_MIN_NODES  separate skeleton turn only for trees with at least this many nodes (3)
+    OCTOS_MODEL_SKELETON     "1" uses the model for bootstrap instead of the deterministic scaffold
+    OCTOS_SKELETON_TURN_CAP   cap for the opt-in model bootstrap turn (default 600)
     OCTOS_SMALL_TASK_NODES    trees up to this size get the minimal self-verification text (2)
     OCTOS_VERIFY_MODE         auto (default) | minimal | full
     OCTOS_ARC_REASONING       auto (default: none for <=1 node to implement, else low) | low | medium | high | none | passthrough
     OCTOS_ARC_IMPLEMENT_REASONING  optional override for first implement turns of small tasks (default: base mode)
+    OCTOS_ARC_SKELETON_REASONING  reasoning mode for the bootstrap turn (default: none)
+    OCTOS_SKELETON_REQUESTS  optional hard cap for bootstrap model requests (default: 0 = off)
+    OCTOS_SKELETON_TOTAL_TIMEOUT total cap for the opt-in model bootstrap (default 900)
     OCTOS_ARC_INLINE_SPECS    "0" stops quoting the node's spec files into the prompt (default: quote up to 24k chars)
     OCTOS_ARC_DESTREAM        "0" lets streaming requests reach the platform as SSE (default: one JSON response upstream)
     OCTOS_ARC_TRIM_PROMPT     "0" keeps the kernel system prompt and all tool schemas (default: drop ARC-irrelevant sections/tools)
@@ -46,6 +56,10 @@ Environment (all optional):
     OCTOS_ARC_IMPLEMENT_REQUESTS / OCTOS_ARC_REPAIR_REQUESTS  hard per-turn request caps enforced at the proxy (20 for small tasks / 10; 0 = off)
     OCTOS_ARC_REWRITE_ON_ZERO "0" disables the single full-rewrite turn when round 0 passes nothing
     OCTOS_ARC_INLINE_SOURCE_CHARS  budget for quoting the app's sources into repair/rewrite prompts (40000; 0 = off)
+    OCTOS_RELIABILITY_FIRST      "0" opts into simple-task speed shortcuts (default on)
+    OCTOS_FAST_PASS               "0" disables the simple-node acceptance fast path
+    OCTOS_SIMPLE_SOURCE_CHARS     source budget for generic/simple repair prompts (default 12000)
+    OCTOS_EARLY_STOP_AFTER_VERIFY "0" disables stopping implement turns after successful verification
     OCTOS_ARC_MAX_TOKENS      minimum max_tokens the proxy enforces on chat requests (32768; kernel arc.11 sends 4096)
     OCTOS_ARC_CODEGEN         "0" disables one-request codegen turns for one-node tasks (default on)
     OCTOS_SESSION_SCOPE       turn (default) | node | run — when a fresh octos session starts
@@ -87,7 +101,7 @@ from codegen import FORMAT_INSTRUCTIONS, dedupe_nav_links, parse_file_blocks, wr
 from guard import TurnMonitor  # noqa: E402
 from llm_proxy import LlmProxy  # noqa: E402
 from requirement_order import ancestors_of, node_fingerprint, topo_order  # noqa: E402
-from repair_context import RepairContext  # noqa: E402
+from repair_context import RepairContext, domain_context, infer_product_domain  # noqa: E402
 
 BUNDLE_DIR = Path(__file__).resolve().parent
 
@@ -335,6 +349,106 @@ def write_codegen_manifests(output_dir: Path) -> list[str]:
     return written
 
 
+BOOTSTRAP_INDEX = """\
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Application</title></head>
+<body><main><h1>Application</h1></main></body>
+</html>
+"""
+
+BOOTSTRAP_SERVER = """\
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+
+const port = Number(process.env.PORT || 3000);
+const staticRoot = path.resolve(__dirname, "..", "frontend", "dist");
+const dataFile = path.resolve(__dirname, "data", "db.json");
+let store = {items: []};
+try {
+  store = JSON.parse(fs.readFileSync(dataFile, "utf8"));
+} catch (error) {
+  console.error(error);
+}
+
+function send(res, status, body, type) {
+  const payload = Buffer.from(body);
+  res.writeHead(status, {
+    "Content-Type": type,
+    "Content-Length": payload.length,
+    "Cache-Control": "no-store"
+  });
+  res.end(payload);
+}
+
+function contentType(filePath) {
+  if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
+  if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
+  if (filePath.endsWith(".js")) return "text/javascript; charset=utf-8";
+  return "application/octet-stream";
+}
+
+function handle(req, res) {
+  try {
+    const url = new URL(req.url || "/", "http://127.0.0.1");
+    if (url.pathname === "/api/health") {
+      send(res, 200, JSON.stringify({ok: true}), "application/json; charset=utf-8");
+      return;
+    }
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      send(res, 404, "Not found", "text/plain; charset=utf-8");
+      return;
+    }
+    const relative = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\\/+/, "");
+    if (!relative || relative.includes("..")) {
+      send(res, 404, "Not found", "text/plain; charset=utf-8");
+      return;
+    }
+    const filePath = path.resolve(staticRoot, relative);
+    if (!filePath.startsWith(staticRoot + path.sep) && filePath !== path.join(staticRoot, "index.html")) {
+      send(res, 404, "Not found", "text/plain; charset=utf-8");
+      return;
+    }
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      send(res, 404, "Not found", "text/plain; charset=utf-8");
+      return;
+    }
+    const body = fs.readFileSync(filePath);
+    res.writeHead(200, {"Content-Type": contentType(filePath), "Content-Length": body.length});
+    if (req.method === "HEAD") res.end();
+    else res.end(body);
+  } catch (error) {
+    console.error(error);
+    if (!res.headersSent) send(res, 500, JSON.stringify({error: "internal error"}), "application/json; charset=utf-8");
+    else res.end();
+  }
+}
+
+process.on("uncaughtException", error => console.error(error));
+process.on("unhandledRejection", error => console.error(error));
+http.createServer(handle).listen(port, "0.0.0.0");
+"""
+
+
+def scaffold_bootstrap(output_dir: Path) -> list[str]:
+    """Create the stable, product-neutral app shell without an LLM turn."""
+    written = write_codegen_manifests(output_dir)
+    files = {
+        "frontend/src/index.html": BOOTSTRAP_INDEX,
+        "backend/server.js": BOOTSTRAP_SERVER,
+        "backend/data/db.json": '{\n  "items": []\n}\n',
+    }
+    for rel, text in files.items():
+        path = output_dir / rel
+        if path.exists():
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        written.append(rel)
+    return written
+
+
 def inline_sources(output_dir: Path, max_chars: int = 40000, exts: tuple = (".js", ".mjs", ".cjs", ".html", ".css", ".json")) -> str:
     """Quote the app's source files (frontend sources, backend JS) so a repair
     turn edits immediately instead of spending its request budget on reads.
@@ -383,6 +497,105 @@ def source_listing(output_dir: Path, limit: int = 60) -> str:
 
 
 # ---------------------------------------------------------------- octos driver
+
+def implementation_timeout(node_budget: float, node_timeout: int, node_text: str,
+                           base_fraction: float = 0.6, adaptive: bool = True,
+                           force_complex: bool = False) -> int:
+    """Choose the first-turn budget, with an opt-in reliability override."""
+    budget = max(60.0, float(node_budget))
+    timeout = max(60, int(node_timeout))
+    if not adaptive:
+        return max(60, int(min(timeout, base_fraction * budget)))
+    complex_node = force_complex or is_complex_node_text(node_text)
+    if complex_node:
+        fraction = base_fraction
+        cap = timeout
+    else:
+        fraction = float(os.environ.get("OCTOS_SIMPLE_IMPLEMENT_FRACTION", "0.42"))
+        cap = int(os.environ.get("OCTOS_SIMPLE_IMPLEMENT_CAP", "720"))
+    return max(60, int(min(timeout, cap, fraction * budget)))
+
+
+def is_complex_node_text(node_text: str) -> bool:
+    """Identify nodes for which skipping implementation would be risky."""
+    text = node_text or ""
+    lowered = text.lower()
+    domain = infer_product_domain(text)
+    scenario_count = len(re.findall(r"scenario\s*:", text, flags=re.I))
+    interactive_terms = (
+        "dialog", "modal", "textbox", "textarea", "form", "fill(",
+        "autosave", "dropdown", "menu", "navigation", "article",
+        "undo", "delete", "search", "filter", "sort", "select",
+        "upload", "drag", "seed data", "exactly one", "uniquely",
+    )
+    interactive_score = sum(lowered.count(term) for term in interactive_terms)
+    return (
+        domain in {"github", "sheet"}
+        or len(text) >= 4200
+        or scenario_count >= 3
+        or sum(lowered.count(term) for term in (
+            "persist", "permission", "formula", "dependency", "merge", "refresh",
+        )) >= 4
+        or interactive_score >= 2
+    )
+
+
+def fast_pass_eligible(node_text: str) -> bool:
+    """Allow a local passing probe only for short, generic/simple nodes."""
+    return not is_complex_node_text(node_text)
+
+
+def early_stop_eligible(node_text: str) -> bool:
+    """Only use verification handoff for genuinely low-risk shell changes.
+
+    A successful build/curl can still come from a static shell that has not
+    implemented an interactive workflow. Keep early-stop narrower than the
+    existing fast-pass rule so acceptance remains the first feature-level
+    verdict for dialogs, forms, navigation, persistence, and similar flows.
+    """
+    text = node_text or ""
+    return fast_pass_eligible(text) and len(text) < 1800
+
+
+def repair_timeout(remaining: float, node_timeout: int, *, rewrite: bool = False,
+                   adaptive: bool = True) -> int:
+    """Bound repair time and leave enough runway for acceptance and cleanup."""
+    left = max(60.0, float(remaining))
+    timeout = max(60, int(node_timeout))
+    if not adaptive:
+        return max(60, int(min(timeout, left)))
+    cap = int(os.environ.get(
+        "OCTOS_REWRITE_TIMEOUT_CAP" if rewrite else "OCTOS_REPAIR_TIMEOUT_CAP",
+        "420" if rewrite else "480",
+    ))
+    reserve = 45 if rewrite else 30
+    return max(60, int(min(timeout, cap, max(60.0, left - reserve))))
+
+
+def should_use_full_rewrite(passed: int, rewrite_used: bool,
+                            implementation_timed_out: bool, enabled: bool = True) -> bool:
+    """Full rewrite is for structurally broken attempts, not timed-out partial work."""
+    return bool(enabled and passed == 0 and not rewrite_used and not implementation_timed_out)
+
+
+def turn_was_timed_out(text: str) -> bool:
+    lowered = (text or "").lower()
+    return "octos turn timed out" in lowered or "octos timed out after" in lowered
+
+
+def turn_was_early_stopped(text: str) -> bool:
+    return "octos turn stopped after local verification" in (text or "").lower()
+
+
+def skeleton_timeout(remaining: float, node_timeout: int, reserve: int = 30) -> int:
+    """Give a skeleton turn a hard cap while reserving time for cleanup/nudges."""
+    left = max(60.0, float(remaining))
+    cap = min(
+        max(60, int(node_timeout)),
+        max(60, int(os.environ.get("OCTOS_SKELETON_TURN_CAP", "600"))),
+    )
+    return max(60, int(min(cap, max(60.0, left - max(0, reserve)))))
+
 
 OCTOS_RELEASE_URL = (
     "https://github.com/octos-org/octos-arc/releases/download/v2.0.3-rc.11-arc.11/"
@@ -655,19 +868,29 @@ class OctosDriver:
             self._session.open()
         return self._session
 
-    def run(self, prompt: str, timeout: int, monitor: TurnMonitor | None = None) -> tuple[bool, str]:
+    def run(self, prompt: str, timeout: int, monitor: TurnMonitor | None = None,
+            early_stop_on_verification: bool = False) -> tuple[bool, str]:
         self.monitor = monitor
+        stop_when = (
+            (lambda: bool(monitor and monitor.ready_for_early_stop()))
+            if early_stop_on_verification and monitor is not None else None
+        )
         if self.mode == "chat":
             fn = lambda: run_octos(self.octos_bin, self.cwd, prompt, self.env, self.data_dir,  # noqa: E731
                                    timeout, self.max_iterations)
         else:
-            fn = lambda: self._run_stdio(prompt, timeout)  # noqa: E731
+            fn = lambda: self._run_stdio(prompt, timeout, stop_when)  # noqa: E731
         try:
             ok, text = self._run_with_heartbeat(lambda: self._run_with_retries(fn))
         finally:
             self.monitor = None
             if self.session_scope == "turn":
                 self.close()
+        # A timed-out turn is no longer safe to reuse. In node/run session
+        # scopes the old implementation left the provider turn alive, so a
+        # later repair could overlap it and consume another full budget.
+        if not ok and (turn_was_timed_out(text) or turn_was_early_stopped(text)):
+            self.close()
         if monitor is not None:
             monitor.finish(text)
         return ok, text
@@ -716,9 +939,10 @@ class OctosDriver:
             ok, text = fn()
         return ok, text
 
-    def _run_stdio(self, prompt: str, timeout: int) -> tuple[bool, str]:
+    def _run_stdio(self, prompt: str, timeout: int,
+                   stop_when=None) -> tuple[bool, str]:
         try:
-            return self._get_session().run_turn(prompt, timeout=float(timeout))
+            return self._get_session().run_turn(prompt, timeout=float(timeout), stop_when=stop_when)
         except Exception as exc:  # noqa: BLE001
             self.close()
             chat_ok, chat_text = run_octos(self.octos_bin, self.cwd, prompt, self.env, self.data_dir,
@@ -828,11 +1052,30 @@ Ports: run your own smoke servers ONLY with `ARC_EXTRA_PORTS=0 PORT={smoke} npm 
 """
 
 SKELETON_PROMPT = """\
-Build the skeleton of a full-stack web application in the current working directory. The requirement tree is at {req_dir} (skim it; individual features come in later turns).
+Create only the minimum runnable bootstrap for a full-stack web application in the
+current working directory. This is a short setup turn before the individual
+requirement nodes are implemented.
+
+Do NOT read the requirement tree, requirements.md, requirements.yaml, acceptance
+specs, helpers, runner code, or existing files before writing the bootstrap. Do
+NOT implement any note, search, settings, auth, CRUD, or other product feature.
+Do NOT inspect ports with grep or repeatedly re-check the runner contract. Later
+turns receive the exact requirement and acceptance spec for each feature.
 
 """ + ARCHITECTURE_CONTRACT + """
-{tests}
-Steps: create frontend/ and backend/ as specified with a home page and a health endpoint, seed the JSON store, run `npm run build` in frontend/, start the backend with `ARC_EXTRA_PORTS=0 PORT={smoke} npm start`, `curl http://127.0.0.1:{smoke}/` to confirm the page is served, then stop it.
+Write these files immediately, each as a complete file:
+- frontend/package.json with a dependency-free `npm run build` that copies the
+  small sources into frontend/dist/
+- frontend/src/index.html and, only if needed, frontend/src/app.js and
+  frontend/src/index.css for a blank but valid home page
+- backend/package.json with a dependency-free `npm run start`
+- backend/server.js with a crash-safe static server, `/api/health`, and a JSON
+  store at backend/data/db.json
+- backend/data/db.json with a small valid seed object
+
+After writing, perform exactly one `npm run build` and one smoke start/curl/stop
+check using PORT={smoke}. If a command fails, fix only that bootstrap failure.
+Finish with a short summary. Do not add product behavior in this turn.
 """ + PORT_RULES
 
 NUDGE_PROMPT = """\
@@ -1085,6 +1328,8 @@ class Flow:
         self.min_repair_seconds = int(os.environ.get("OCTOS_MIN_REPAIR_SECONDS", "300"))  # Keep baseline for more repair opportunities
         self.node_budget_cap = int(os.environ.get("OCTOS_NODE_TIME_BUDGET", "1500"))
         self.repair_rounds = int(os.environ.get("OCTOS_REPAIR_ROUNDS", "5"))
+        self.reliability_first = os.environ.get("OCTOS_RELIABILITY_FIRST", "1") != "0"
+        self.adaptive_timeout = os.environ.get("OCTOS_ADAPTIVE_TIMEOUT", "1") != "0"
         self.design_enabled = os.environ.get("OCTOS_DESIGN_TURN", "1") != "0"
         self.design_min_nodes = int(os.environ.get("OCTOS_DESIGN_MIN_NODES", "3"))
         self.skeleton_min_nodes = int(os.environ.get("OCTOS_SKELETON_MIN_NODES", "3"))
@@ -1111,6 +1356,9 @@ class Flow:
         self.pending_corrections: list[str] = []
         self.evolution = False
         self.folder_children: dict[str, list[str]] = {}
+        self.requirement_context = ""
+        self.current_node_context = ""
+        self.current_node_text = ""
 
     # -- helpers ----------------------------------------------------------
     def remaining(self) -> float:
@@ -1137,6 +1385,14 @@ class Flow:
         limit = int(os.environ.get("OCTOS_ARC_INLINE_SOURCE_CHARS", "40000"))
         return inline_sources(self.output_dir, limit) + "\n" if limit > 0 else ""
 
+    def node_sources_text(self) -> str:
+        """Use the full repair context in reliability-first mode."""
+        limit = int(os.environ.get("OCTOS_ARC_INLINE_SOURCE_CHARS", "40000"))
+        if (not self.reliability_first
+                and fast_pass_eligible(self.current_node_text or self.current_node_context)):
+            limit = min(limit, int(os.environ.get("OCTOS_SIMPLE_SOURCE_CHARS", "12000")))
+        return inline_sources(self.output_dir, limit) + "\n" if limit > 0 else ""
+
     def corrections_text(self) -> str:
         if not self.pending_corrections:
             return ""
@@ -1145,7 +1401,8 @@ class Flow:
         return text
 
     def turn(self, prompt: str, timeout: int, label: str, expect_verification: bool = True,
-             request_budget: int | None = None) -> tuple[bool, str]:
+             request_budget: int | None = None,
+             early_stop_on_verification: bool = False) -> tuple[bool, str]:
         monitor = TurnMonitor(self.protected_prefixes(), expect_verification=expect_verification,
                               allowed_prefixes=[".arc/design/", str(self.output_dir / ".arc" / "design")])
         proxy = getattr(self, "llm_proxy", None)
@@ -1155,14 +1412,26 @@ class Flow:
             base_mode = getattr(self, "base_reasoning_mode", proxy.mode)
             impl_mode = os.environ.get("OCTOS_ARC_IMPLEMENT_REASONING", "")  # auto already gives "none" to 1-node tasks
             is_implement = label.endswith(" implement") or label.startswith("skeleton")
-            proxy.mode = impl_mode if (impl_mode and is_implement and self.minimal_mode(getattr(self, "n_nodes", 99))) else base_mode
+            is_bootstrap = label.startswith("skeleton") or label.startswith("nudge")
+            skeleton_mode = os.environ.get("OCTOS_ARC_SKELETON_REASONING", "none")
+            if is_bootstrap:
+                proxy.mode = skeleton_mode
+            else:
+                proxy.mode = impl_mode if (impl_mode and is_implement and self.minimal_mode(getattr(self, "n_nodes", 99))) else base_mode
             if request_budget is None:
-                request_budget = int(os.environ.get("OCTOS_ARC_REPAIR_REQUESTS", "10")) if "repair" in label else \
-                    int(os.environ.get("OCTOS_ARC_IMPLEMENT_REQUESTS", "20" if self.minimal_mode(getattr(self, "n_nodes", 99)) else "0"))
+                if is_bootstrap:
+                    request_budget = int(os.environ.get("OCTOS_SKELETON_REQUESTS", "0"))
+                else:
+                    request_budget = int(os.environ.get("OCTOS_ARC_REPAIR_REQUESTS", "10")) if "repair" in label else \
+                        int(os.environ.get("OCTOS_ARC_IMPLEMENT_REQUESTS", "20" if self.minimal_mode(getattr(self, "n_nodes", 99)) else "0"))
             proxy.begin_turn(request_budget)
         t0 = time.time()
-        ok, text = self.driver.run(prompt, max(60, int(timeout)), monitor)
-        log(f"[flow] {label} {'ok' if ok else 'FAILED'} in {time.time()-t0:.0f}s "
+        ok, text = self.driver.run(
+            prompt, max(60, int(timeout)), monitor,
+            early_stop_on_verification=early_stop_on_verification,
+        )
+        status = "stopped" if turn_was_early_stopped(text) else ("ok" if ok else "FAILED")
+        log(f"[flow] {label} {status} in {time.time()-t0:.0f}s "
             f"(tools={monitor.tool_calls} wrote={monitor.wrote_files} verified={monitor.verified}): {text[-240:]!r}")
         if proxy is not None and proxy.turn_budget and proxy.turn_requests > proxy.turn_budget:
             log(f"[guard] {label}: request budget {proxy.turn_budget} hit; turn forced to finish")
@@ -1198,6 +1467,8 @@ class Flow:
     SHELL_TOOLS = {"bash", "shell", "exec_command"}
 
     def minimal_mode(self, total_nodes: int) -> bool:
+        if self.reliability_first:
+            return False
         mode = os.environ.get("OCTOS_VERIFY_MODE", "auto")
         return mode == "minimal" or (mode != "full" and total_nodes <= self.small_task_nodes)
 
@@ -1213,7 +1484,9 @@ class Flow:
 
     def codegen_mode(self) -> bool:
         """One-request generation for one-node tasks (OCTOS_ARC_CODEGEN=0 disables)."""
-        return (os.environ.get("OCTOS_ARC_CODEGEN", "1") != "0" and getattr(self, "llm_proxy", None) is not None
+        return (not self.reliability_first
+                and os.environ.get("OCTOS_ARC_CODEGEN", "1") != "0"
+                and getattr(self, "llm_proxy", None) is not None
                 and not getattr(self, "codegen_blocked", False)
                 and getattr(self, "n_nodes", 99) <= int(os.environ.get("OCTOS_ARC_CODEGEN_MAX_NODES", "2")))
 
@@ -1379,7 +1652,8 @@ class Flow:
                             best_failures: set[tuple[str, str]] | None,
                             current_failures: set[tuple[str, str]],
                             changed_files: list[str], no_progress_count: int,
-                            expected_checks: set[tuple[str, str]] | None = None) -> str:
+                            expected_checks: set[tuple[str, str]] | None = None,
+                            domain_hint: str = "") -> str:
         best = best_failures or set()
         current_labels = sorted(f"{file}::{title}" for file, title in current_failures)
         best_labels = sorted(f"{file}::{title}" for file, title in best)
@@ -1404,6 +1678,10 @@ class Flow:
             if not outcome.ok:
                 reason = failure_reason(outcome)
                 reason_counts[reason] = reason_counts.get(reason, 0) + 1
+        failure_text = "\n".join(
+            [outcome.message or "" for outcome in summary.results if not outcome.ok]
+        )
+        domain = domain_context(domain_hint, failure_text)
         context = RepairContext(
             node_id=node_id,
             repair_round=attempt,
@@ -1419,6 +1697,17 @@ class Flow:
             likely_files=Flow.repair_likely_files(summary),
             evidence=evidence,
             no_progress_count=no_progress_count,
+            product_domain=domain["product_domain"],
+            business_flow=domain["business_flow"],
+            state_owner=domain["state_owner"],
+            read_path=domain["read_path"],
+            write_path=domain["write_path"],
+            persistence_path=domain["persistence_path"],
+            permission_boundary=domain["permission_boundary"],
+            derived_state=domain["derived_state"],
+            workflow_transition=domain["workflow_transition"],
+            invariants_to_preserve=domain["invariants_to_preserve"],
+            failure_reason_hint=domain["failure_reason_hint"],
         )
         return context.prompt_text()
 
@@ -1570,7 +1859,7 @@ class Flow:
             log(f"[trace] test rows not recorded: {exc}")
 
     def acceptance_loop(self, node_id: str, specs: list[str], deadline: float,
-                        rebuild_prompt=None) -> bool | None:
+                        rebuild_prompt=None, implementation_timed_out: bool = False) -> bool | None:
         """Returns True/False for a real verdict, None when no local run happened.
         `rebuild_prompt(failures)` (optional) yields a full re-implementation
         prompt; it is used once when round 0 passes nothing — rewriting beats
@@ -1663,7 +1952,12 @@ class Flow:
                 self.pending_corrections.append(
                     "The last repair produced the same failure set and root-cause signature without meaningful "
                     "progress. Stop repeating that approach and keep the best checkpoint.")
-                break
+                if no_progress_count >= 2:
+                    break
+                self.pending_corrections.append(
+                    "The previous repair made no meaningful file change. Use the next repair turn to edit the "
+                    "likely frontend/backend files and implement the missing behavior; do not only report that "
+                    "the app is still broken.")
             if attempt == self.repair_rounds:
                 break
             left = deadline - time.time()
@@ -1688,30 +1982,51 @@ class Flow:
             repair_digest = self.app_digest()
             context = self.repair_context_text(
                 node_id, attempt + 1, summary, best_failures, current_failures,
-                changed_since_run, no_progress_count, previous_checks)
-            if passed == 0 and rebuild_prompt is not None and not rewrite_used \
-                    and os.environ.get("OCTOS_ARC_REWRITE_ON_ZERO", "1") != "0":
+                changed_since_run, no_progress_count, previous_checks,
+                self.current_node_context)
+            if rebuild_prompt is not None and should_use_full_rewrite(
+                    passed, rewrite_used, implementation_timed_out,
+                    os.environ.get("OCTOS_ARC_REWRITE_ON_ZERO", "1") != "0"):
                 rewrite_used = True
                 log(f"[flow] {node_id}: nothing passed; one full rewrite turn instead of a patch")
                 prompt = context + rebuild_prompt(failures or "(no detail)")
+                rewrite_budget = repair_timeout(left, self.node_timeout, rewrite=True,
+                                                adaptive=self.adaptive_timeout)
                 if self.codegen_mode():
-                    self.codegen_turn(prompt, min(self.node_timeout, left), f"{node_id} rewrite (repair {attempt + 1})")
+                    self.codegen_turn(prompt, rewrite_budget, f"{node_id} rewrite (repair {attempt + 1})")
                 else:
-                    self.turn(prompt, min(self.node_timeout, left), f"{node_id} rewrite (repair {attempt + 1})",
+                    self.turn(prompt, rewrite_budget, f"{node_id} rewrite (repair {attempt + 1})",
                               request_budget=int(os.environ.get("OCTOS_ARC_IMPLEMENT_REQUESTS", "20")))
                 self.repair_scope_guard(repair_sha, repair_digest, self.app_digest(), summary)
                 previous_checks = current_checks
                 continue
+            if implementation_timed_out and passed == 0 and not rewrite_used:
+                self.pending_corrections.append(
+                    "The first implementation timed out and left a partial app. Make a targeted repair "
+                    "from the existing files and acceptance evidence; do not rewrite the whole application.")
             prompt = REPAIR_PROMPT.format(node_id=node_id, passed=passed, total=summary.total,
                                           failures=failures or "(no detail)", corrections=self.corrections_text(),
                                           slow=slow_text, smoke=self.smoke_port, port=self.web_port,
-                                          sources=self.sources_text())
+                                          sources=self.node_sources_text())
             prompt = time_pressure_repair + context + prompt
+            repair_budget = repair_timeout(left, self.node_timeout,
+                                           adaptive=self.adaptive_timeout)
             if self.codegen_mode():
                 self.codegen_turn(prompt + "\nReturn every file you change as a complete file block.",
-                                  min(self.node_timeout, left), f"{node_id} repair {attempt + 1}/{self.repair_rounds}")
+                                  repair_budget, f"{node_id} repair {attempt + 1}/{self.repair_rounds}")
             else:
-                self.turn(prompt, min(self.node_timeout, left), f"{node_id} repair {attempt + 1}/{self.repair_rounds}")
+                repair_requests = int(os.environ.get("OCTOS_ARC_REPAIR_REQUESTS", "10"))
+                if no_progress_count:
+                    repair_requests = max(
+                        repair_requests,
+                        int(os.environ.get("OCTOS_NO_PROGRESS_REPAIR_REQUESTS", "16")),
+                    )
+                self.turn(
+                    prompt,
+                    repair_budget,
+                    f"{node_id} repair {attempt + 1}/{self.repair_rounds}",
+                    request_budget=repair_requests,
+                )
             self.repair_scope_guard(repair_sha, repair_digest, self.app_digest(), summary)
             previous_checks = current_checks
         if best_passed > 0 and best_sha and self.head() != best_sha:
@@ -1763,12 +2078,37 @@ class Flow:
 
     def node_cycle(self, node: dict, ordered: list[dict], index: int, total: int) -> None:
         node_id = str(node.get("id"))
+        self.current_node_text = describe_node(node)
+        self.current_node_context = self.requirement_context + "\n" + self.current_node_text
         specs = list(self.spec_map.get(node_id) or [])
         self.codegen_blocked = False  # a previous node's fallback to tool mode must not leak into this one
         nodes_left = total - index + 1
         node_budget = min(self.node_budget_cap, max(240, self.remaining() / nodes_left))
         deadline = time.time() + node_budget
         log(f"[flow] node {index}/{total} {node_id} starting (budget {node_budget:.0f}s, specs={specs})")
+
+        # The skeleton or an earlier node may already satisfy a small node.
+        # Probe before paying for a design/implementation model turn. Complex
+        # real-domain nodes deliberately stay on the normal path.
+        fast_pass = (
+            not self.evolution
+            and not self.reliability_first
+            and os.environ.get("OCTOS_FAST_PASS", "1") != "0"
+            and self.has_app()
+            and self.runner is not None
+            and bool(specs)
+            and fast_pass_eligible(self.current_node_text)
+            and node_id in self.already_passing_nodes([node_id])
+        )
+        if fast_pass:
+            self.mark("design_started", node_id)
+            self.mark("design_done", node_id, "simple-node fast path: existing app passes local acceptance")
+            self.mark("implementation_started", node_id)
+            self.mark("implementation_done", node_id, "carried over: local acceptance already passes")
+            self.test_verdict[node_id] = True
+            self.mark("test_passed", node_id, "simple-node fast path acceptance passed")
+            self.commit(f"{node_id} (fast path): existing acceptance passed")
+            return
 
         self.mark("design_started", node_id)
         design = None
@@ -1811,7 +2151,24 @@ class Flow:
                                     performance=self.perf_text(), ui=self.ui_contract(), verify=self.verify_text(total))
         prompt = self.corrections_text() + time_pressure_hint + prompt
         codegen_prompt = None
-        implement_timeout = min(self.node_timeout, self.implement_fraction * node_budget, deadline - time.time())
+        implement_timeout = min(
+            implementation_timeout(
+                node_budget, self.node_timeout, self.current_node_text,
+                # Complexity is a per-node scheduling decision. Product-level
+                # context remains in the prompt but must not upgrade every
+                # short node because another node mentions a complex workflow.
+                base_fraction=self.implement_fraction, adaptive=self.adaptive_timeout,
+                force_complex=self.reliability_first,
+            ),
+            max(60, int(deadline - time.time())),
+        )
+        early_stop = (
+            not self.evolution
+            and not self.reliability_first
+            and os.environ.get("OCTOS_EARLY_STOP_AFTER_VERIFY", "1") != "0"
+            and early_stop_eligible(self.current_node_text)
+            and not self.codegen_mode()
+        )
         if self.codegen_mode():
             compact = CODEGEN_PROMPT.format(node_id=node_id, description=str(node.get("description") or "").strip(),
                                             spec=self.spec_bodies(node_id), port=self.web_port, ports=self.codegen_ports_clause(),
@@ -1824,7 +2181,9 @@ class Flow:
             write_codegen_manifests(self.output_dir)
             ok, text = self.codegen_turn(compact, implement_timeout, f"{node_id} implement")
         else:
-            ok, text = self.turn(prompt, implement_timeout, f"{node_id} implement")
+            ok, text = self.turn(prompt, implement_timeout, f"{node_id} implement",
+                                 early_stop_on_verification=early_stop)
+        early_stopped = turn_was_early_stopped(text)
         if not ok and "truncated" in text.lower():
             # Cloud 76fb32a69d81: output cut by max_tokens, nothing written. Retry
             # once, one file per response (fresh session, same prompt).
@@ -1842,7 +2201,7 @@ class Flow:
             self.pending_corrections.append(
                 "Your turn ended without both frontend/package.json and backend/package.json (with `build` and "
                 "`start` scripts) on disk; the harness could not even build the app. Create the missing files.")
-        if not ok and not timed_out:
+        if not ok and not timed_out and not early_stopped:
             self.mark("implementation_failed", node_id, text[-500:])
             self.impl_failed.append(node_id)
             return
@@ -1852,6 +2211,12 @@ class Flow:
             self.driver.close()
             self.pending_corrections.append(
                 "Your implementation turn ran out of time; work in smaller steps and verify with curl early.")
+        elif early_stopped:
+            log(f"[flow] {node_id}: implement turn stopped after successful verification; testing what exists")
+            self.driver.close()
+            self.pending_corrections.append(
+                "The implementation turn was stopped after a successful verification command; acceptance is now "
+                "the source of truth. Repair only if the official spec still fails.")
         if inline_design:
             written = self.output_dir / ".arc" / "design" / f"{node_id}.json"
             try:
@@ -1873,11 +2238,14 @@ class Flow:
                         + "\n" + inline_sources(self.output_dir, 30000, exts=(".html", ".js"))
                         + "Fix the root causes and return every file you change, complete.\n")
             return (prompt + "\nYOUR PREVIOUS ATTEMPT FAILED EVERY ACCEPTANCE TEST — the failures (Feature / where / "
-                    "observation / steps):\n" + failures + "\n" + self.sources_text()
+                    "observation / steps):\n" + failures + "\n" + self.node_sources_text()
                     + "Rewrite the files for this node completely (full write_file for each file, not edits), "
                     "fixing the root causes above.\n")
 
-        verdict = self.acceptance_loop(node_id, specs, deadline, rebuild_prompt=rebuild_prompt)
+        verdict = self.acceptance_loop(
+            node_id, specs, deadline, rebuild_prompt=rebuild_prompt,
+            implementation_timed_out=timed_out or early_stopped,
+        )
         self.test_verdict[node_id] = verdict
         if verdict is True:
             self.mark("test_passed", node_id, f"{len(specs)} acceptance spec file(s) pass locally")
@@ -2117,7 +2485,7 @@ class Flow:
                 slow="", smoke=self.smoke_port, port=self.web_port)
             prompt = self.repair_context_text(
                 ", ".join(failing), attempt + 1, summary, best_failures, current_failures,
-                suite_changed, 0) + prompt
+                suite_changed, 0, domain_hint=self.requirement_context) + prompt
             repair_sha = self.head()
             repair_digest = self.app_digest()
             self.turn(prompt, min(self.node_timeout, max(120, self.remaining() - 200)),
@@ -2131,24 +2499,58 @@ class Flow:
 
     # -- skeleton ---------------------------------------------------------
     def skeleton(self, tree: dict) -> None:
+        if os.environ.get("OCTOS_MODEL_SKELETON", "0") != "1":
+            written = scaffold_bootstrap(self.output_dir)
+            log(f"[flow] deterministic skeleton created in 0s (files={len(written)})")
+            self.commit("chore: scaffold web application skeleton")
+            return
+
         log("[flow] skeleton turn starting")
-        prompt = SKELETON_PROMPT.format(req_dir=self.req_dir, port=self.web_port, smoke=self.smoke_port,
-                                        tests=self.tests_prompt_for(None, skeleton=True))
+        prompt = SKELETON_PROMPT.format(port=self.web_port, smoke=self.smoke_port)
+        log(f"[flow] skeleton prompt chars={len(prompt)} "
+            f"reasoning={os.environ.get('OCTOS_ARC_SKELETON_REASONING', 'none')} "
+            f"request_cap={os.environ.get('OCTOS_SKELETON_REQUESTS', '0')}")
+        skeleton_budget = min(
+            max(60, int(self.remaining())),
+            max(60, int(os.environ.get("OCTOS_SKELETON_TOTAL_TIMEOUT", "900"))),
+        )
+        skeleton_deadline = time.time() + skeleton_budget
         for attempt in range(1, 5):
-            if self.time_up():
+            left = skeleton_deadline - time.time()
+            if self.time_up() or left < 60:
                 raise RuntimeError("time budget exhausted before the skeleton existed")
-            ok, text = self.turn(prompt, self.node_timeout, f"skeleton attempt {attempt}")
-            if ok and not self.has_app():
+            ok, text = self.turn(
+                prompt,
+                skeleton_timeout(left, self.node_timeout),
+                f"skeleton attempt {attempt}",
+            )
+            timed_out = turn_was_timed_out(text)
+            if not self.has_app() and (ok or timed_out):
                 log("[flow] skeleton turn wrote no frontend/backend; nudging")
                 for nudge in range(1, 3):
-                    self.turn(NUDGE_PROMPT, 600, f"nudge {nudge}/2")
+                    nudge_left = skeleton_deadline - time.time() - 30
+                    if nudge_left < 60:
+                        break
+                    self.turn(
+                        NUDGE_PROMPT,
+                        min(600, max(60, int(nudge_left))),
+                        f"nudge {nudge}/2",
+                    )
                     if self.has_app():
                         break
             if self.has_app():
                 self.commit("chore: scaffold web application skeleton")
                 return
-            time.sleep(30)
-        raise RuntimeError("skeleton scaffolding failed: no frontend/ and backend/ after 4 attempts")
+            if timed_out:
+                log("[flow] skeleton timed out; keeping partial files and skipping another full skeleton turn")
+                break
+            sleep_for = min(30, max(0, int(skeleton_deadline - time.time())))
+            if sleep_for:
+                time.sleep(sleep_for)
+        raise RuntimeError(
+            f"skeleton scaffolding failed within {skeleton_budget}s: "
+            "no frontend/ and backend/ package manifests"
+        )
 
     def has_app(self) -> bool:
         return (self.output_dir / "frontend" / "package.json").is_file() and \
@@ -2183,6 +2585,10 @@ class Flow:
         try:
             previous = previous_requirement_records(self.output_dir)
             tree = load_requirement_tree(self.req_dir)
+            self.requirement_context = (
+                f"Product name: {tree.get('name', '')}\n"
+                f"Product description: {tree.get('description', '')}\n"
+            )
             self.runtime.traceability.store_requirement_tree(tree)
             ordered = topo_order(tree)
             if not ordered:
@@ -2215,7 +2621,7 @@ class Flow:
 
             self.runtime.git.ensure_repo()
             self.setup_playwright()
-            if self.evolution and self.runner is not None:
+            if self.evolution and self.runner is not None and not self.reliability_first:
                 # The platform's template app carries no traceability records, so
                 # fingerprints cannot tell what is new. A node whose specs already
                 # pass against the existing app is unchanged — no LLM turn for it.

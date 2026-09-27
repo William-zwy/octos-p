@@ -25,6 +25,7 @@ class TurnMonitor:
         self.expect_verification = expect_verification
         self.wrote_files = False
         self.verified = False
+        self.verification_completed = False
         self.tool_calls = 0
         self.errors_in_a_row = 0
         self._last_error = None
@@ -33,6 +34,7 @@ class TurnMonitor:
         self.protected_writes: list[str] = []
         self.written_paths: list[str] = []
         self._pending: dict[str, tuple[str, dict]] = {}
+        self._verification_calls: set[str] = set()
         self._final_text = ""
 
     # -- events -----------------------------------------------------------
@@ -49,12 +51,16 @@ class TurnMonitor:
                 cmd = str(args.get("cmd") or args.get("command") or "")
                 if _VERIFY.search(cmd):
                     self.verified = True
+                    self._verification_calls.add(str(params.get("tool_call_id") or ""))
                 if re.search(r"\b(cat|echo|printf|tee|cp|mv|sed)\b.*(>|tee|-i)", cmd) or re.search(r"\b(cp|mv)\s", cmd):
                     self.wrote_files = True
                     for m in _REDIRECT.finditer(cmd):
                         self._note_path(m.group(1).strip("'\""))
         elif method == "tool/completed":
             ok = bool(params.get("success", True))
+            call_id = str(params.get("tool_call_id") or "")
+            if ok and call_id in self._verification_calls:
+                self.verification_completed = True
             preview = str(params.get("output_preview") or "")[:300]
             if not ok:
                 key = re.sub(r"\d+", "#", preview)
@@ -82,6 +88,10 @@ class TurnMonitor:
         self._final_text = final_text or ""
 
     # -- verdicts ---------------------------------------------------------
+    def ready_for_early_stop(self) -> bool:
+        """A successful verification command is a safe handoff point."""
+        return self.wrote_files and self.verification_completed
+
     def corrections(self) -> list[str]:
         out: list[str] = []
         if self.expect_verification and self.wrote_files and not self.verified and _CLAIM.search(self._final_text):

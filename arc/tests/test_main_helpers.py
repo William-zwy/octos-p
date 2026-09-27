@@ -1,7 +1,13 @@
 import unittest
 
-from main import OctosDriver, describe_node, folder_descendants, inline_sources, inline_spec_text, unchanged_node_ids
+from main import (
+    OctosDriver, describe_node, folder_descendants, implementation_timeout, inline_sources,
+    inline_spec_text, repair_timeout, should_use_full_rewrite, skeleton_timeout,
+    early_stop_eligible, fast_pass_eligible, is_complex_node_text,
+    turn_was_early_stopped, turn_was_timed_out, unchanged_node_ids,
+)
 import main as m
+from repair_context import domain_context, infer_product_domain
 
 
 def node(node_id, description, deps=()):
@@ -30,6 +36,98 @@ class DescribeNodeTests(unittest.TestCase):
         self.assertIn("ID: REQ-2", text)
         self.assertIn("GIVEN x", text)
         self.assertIn("Depends on: REQ-1", text)
+
+
+class AdaptiveTimeoutTests(unittest.TestCase):
+    def test_simple_node_gets_a_shorter_first_turn(self):
+        timeout = implementation_timeout(1500, 1200, "Create a settings page with a save button.")
+        self.assertEqual(timeout, 630)
+
+    def test_real_github_node_keeps_the_long_budget(self):
+        text = (
+            "GitHub repository pull request review merge branch protection. "
+            "The current session must preserve permissions and persistence."
+        )
+        timeout = implementation_timeout(1500, 1200, text)
+        self.assertEqual(timeout, 900)
+
+    def test_reliability_override_gives_simple_nodes_the_shared_budget(self):
+        timeout = implementation_timeout(
+            1500, 1200, "Display a static settings heading.", force_complex=True
+        )
+        self.assertEqual(timeout, 900)
+
+    def test_rewrite_has_an_independent_cap(self):
+        self.assertEqual(repair_timeout(580, 1200, rewrite=True), 420)
+        self.assertEqual(repair_timeout(580, 1200), 480)
+
+    def test_timed_out_implementation_uses_targeted_repair(self):
+        self.assertFalse(should_use_full_rewrite(0, False, True))
+        self.assertTrue(should_use_full_rewrite(0, False, False))
+
+    def test_skeleton_timeout_reserves_time_for_nudges(self):
+        self.assertEqual(skeleton_timeout(1800, 1200), 600)
+        self.assertEqual(skeleton_timeout(600, 1200), 570)
+
+    def test_timeout_text_is_detected_for_session_cleanup(self):
+        self.assertTrue(turn_was_timed_out("octos turn timed out"))
+        self.assertTrue(turn_was_timed_out("octos timed out after 1200s"))
+        self.assertFalse(turn_was_timed_out("provider returned 502"))
+
+    def test_early_stop_text_is_detected(self):
+        self.assertTrue(turn_was_early_stopped("octos turn stopped after local verification"))
+        self.assertFalse(turn_was_early_stopped("octos turn timed out"))
+
+    def test_fast_pass_is_limited_to_simple_generic_nodes(self):
+        self.assertTrue(fast_pass_eligible("Create a settings page with a save button."))
+        self.assertTrue(is_complex_node_text(
+            "GitHub repository pull request review merge branch protection"
+        ))
+        self.assertFalse(fast_pass_eligible(
+            "GitHub repository pull request review merge branch protection"
+        ))
+
+    def test_interactive_note_workflow_is_not_simple_or_early_stoppable(self):
+        text = (
+            "Create a note from the Take a note button. Open exactly one dialog "
+            "named Note editor with uniquely labelled textboxes Title and Note content. "
+            "Fill the form and close it; autosave the note article."
+        )
+        self.assertTrue(is_complex_node_text(text))
+        self.assertFalse(fast_pass_eligible(text))
+        self.assertFalse(early_stop_eligible(text))
+
+    def test_early_stop_stays_available_for_a_small_shell_task(self):
+        self.assertTrue(early_stop_eligible("Display a static settings heading."))
+
+class DomainContextTests(unittest.TestCase):
+    def test_github_context_contains_permission_and_merge_invariants(self):
+        context = domain_context(
+            "GitHub repository pull request review and branch protection",
+            "merge forbidden",
+        )
+        self.assertEqual(context["product_domain"], "github")
+        self.assertIn("repository_store", context["state_owner"])
+        self.assertEqual(context["failure_reason_hint"], "permission_boundary_mismatch")
+        self.assertIn("failed_merge_keeps_pull_request_and_target_branch_unchanged",
+                      context["invariants_to_preserve"])
+
+    def test_sheet_context_contains_formula_and_refresh_invariants(self):
+        context = domain_context(
+            "Workbook worksheet grid formula dependency and pivot refresh",
+            "formula dependency is stale after refresh",
+        )
+        self.assertEqual(context["product_domain"], "sheet")
+        self.assertIn("cell_store", context["state_owner"])
+        self.assertEqual(context["failure_reason_hint"], "state_persistence_mismatch")
+        self.assertIn("formula_bar_keeps_the_original_formula",
+                      context["invariants_to_preserve"])
+
+    def test_generic_context_does_not_invent_a_business_domain(self):
+        self.assertEqual(infer_product_domain("Create a profile page with a button"), "generic")
+        context = domain_context("Create a profile page with a button")
+        self.assertEqual(context["product_domain"], "generic")
+        self.assertEqual(context["state_owner"], [])
 
 
 if __name__ == "__main__":
