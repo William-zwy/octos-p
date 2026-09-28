@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "handoff_id": "53cc4b062b0d-1F75A058EEBA",
+  "run_id": "53cc4b062b0d",
+  "task_key": "arc-bench-lite--bookstack",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "thread_title": "06 项目阶段4 + arc-bench-lite--bookstack",
+  "manifest": "evidence/arc-bench/runs/53cc4b062b0d/manifest.json",
+  "manifest_sha256": "1F75A058EEBA0556E5A77F8DE320F769EF2D912AC45404A40D73750E021B1705",
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "source_precedence": [
+    "run JSON for final status, score, tests, metrics and identifiers",
+    "raw logs JSON for entrypoint, test directory, provider totals and internal flow records",
+    "Playwright report for structured failure locator evidence",
+    "failure details for human-readable failure excerpts",
+    "summary markdown for navigation only"
+  ],
+  "card": {
+    "platform_final": {"status": "FAILED", "score": 70.6, "pass_total": "24/34", "failed_count": 10, "failure_stage": "final_playwright_execution"},
+    "failed_tests": ["REQ-2.2", "REQ-4.3.1", "REQ-4.5.1", "REQ-4.5.2", "REQ-5.4.1", "REQ-5.6.1", "REQ-6.1.1", "REQ-6.1.3", "REQ-8.2", "REQ-9.1"],
+    "internal_acceptance": {"atomic_nodes": 34, "raw_flow_unique_status_counts": {"ok": 25, "failed": 9}, "reported_summary_counts": {"ok": 24, "failed": 9}},
+    "metering": {"platform_token_count": 68657796, "provider_requests": 1516, "provider_total_tokens": 57803267, "cost_cny": 30.546969, "duration_seconds": 18809},
+    "platform_validation": {"entrypoint": "main.py", "tests_dir": "/workspace/tests", "bundled_fallback_hits": 0, "plaintext_api_key_hits": 0, "preflight": "passed", "test_workers": 1}
+  },
+  "required_ack": {"path": "evidence/arc-bench/runs/53cc4b062b0d/phase4-ack.json", "must_match": ["handoff_id", "run_id", "task_key", "thread_id"]},
+  "required_result": {"json_path": "evidence/arc-bench/runs/53cc4b062b0d/phase4-result.json", "markdown_path": "evidence/arc-bench/runs/53cc4b062b0d/phase4-result.md", "must_match": ["handoff_id", "run_id", "task_key", "thread_id", "manifest_sha256"], "required_marker": "PHASE4_RESULT: complete|incomplete"},
+  "instructions": [
+    "Switch the current analysis object to Run 53cc4b062b0d and ignore prior Run conclusions except as explicitly marked history.",
+    "Write phase4-ack.json before reading the supplied evidence.",
+    "Diagnose only this single Run; do not analyze other Runs, modify code/tests/assets/configuration, upload, rerun, or start Stage 5.",
+    "Keep final Playwright results separate from internal implement flow counts and record the count conflict.",
+    "Classify confirmed facts, strong candidates and unknowns; do not turn locator observations into confirmed root causes without sufficient evidence.",
+    "Write phase4-result.json and phase4-result.md with all identity fields matching this handoff."
+  ]
+}
