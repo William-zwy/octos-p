@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "purpose": "Idempotent ARC-Bench phase 4 task-to-thread routing",
-  "updated_at": "2026-09-26",
+  "updated_at": "2026-09-29",
   "rules": {
     "identity_key": "competition_id--task_id",
     "run_id_is_not_title_identity": true,
@@ -91,7 +91,7 @@
     "arc-bench-lite--bookstack": {
       "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
       "title": "06 项目阶段4 + arc-bench-lite--bookstack",
-      "status": "handoff_pending_unverified",
+      "status": "verified",
       "last_run_id": "53cc4b062b0d",
       "previous_run_id": "a1ab93feb2eb",
       "last_handoff_id": "53cc4b062b0d-1F75A058EEBA",
@@ -101,10 +101,10 @@
       "ack_path": "evidence/arc-bench/runs/53cc4b062b0d/phase4-ack.json",
       "result_path": "evidence/arc-bench/runs/53cc4b062b0d/phase4-result.json",
       "result_md_path": "evidence/arc-bench/runs/53cc4b062b0d/phase4-result.md",
-      "result_status": "pending_after_dispatch_invalid_app_request",
+      "result_status": "complete",
       "evidence_revision": "53cc4b062b0d-stage3-intake",
-      "verification_method": "message_dispatch_invalid_app_request",
-      "verified_at": null,
+      "verification_method": "filesystem_after_direct_current_conversation_fallback",
+      "verified_at": "2026-09-28T18:53:04.4942435Z",
       "previous_verified_run_id": "8d6925802b44",
       "previous_verified_handoff_id": "8d6925802b44-A4C3B3E7FF9B",
       "previous_verified_manifest": "evidence/arc-bench/runs/8d6925802b44/manifest.json",
@@ -117,9 +117,9 @@
       "previous_verified_handoff_id": "b985ae04f3cd-36B45B6DC372",
       "previous_verified_manifest": "evidence/arc-bench/runs/b985ae04f3cd/manifest.json",
       "previous_verified_result_status": "complete",
-      "dispatch_error": "For Run 53cc4b062b0d, list_threads and send_message_to_thread both returned Invalid app tool request before execution; no Stage 4 message, ACK or result was produced.",
+      "dispatch_error": "For Run 53cc4b062b0d, list_threads and send_message_to_thread returned Invalid app tool request before execution; the target Stage 4 thread did not receive the message. The already-authorized direct-current-conversation fallback produced and validated the ACK/result files recorded above.",
       "prior_unverified_run": {"run_id": "a1ab93feb2eb", "handoff_id": "a1ab93feb2eb-1B42A59740DC", "manifest": "evidence/arc-bench/runs/a1ab93feb2eb/manifest.json", "result_status": "pending"},
-      "reason": "Run 53cc4b062b0d has a persistent handoff but its Stage 4 dispatch is unverified. Retain the last verified Run dbf1f727a3dc for audit, do not fork a duplicate, do not trigger Stage 5, and reconcile the existing Thread before retrying."
+      "reason": "Run 53cc4b062b0d is verified from the persistent ACK/result files after the app-routing failure was handled through the previously authorized direct-current-conversation fallback. The target thread remains unmapped to an actual received message; do not create a duplicate or infer that the target thread itself executed the turn. Stage 5 remains untriggered."
     },
     "arc-bench-web--keep": {
       "thread_id": "01a0b7e7-1cff-7380-ac81-ef35dbe70633",

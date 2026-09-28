@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "PHASE4_HANDOFF_ACK": "53cc4b062b0d-1F75A058EEBA",
+  "handoff_id": "53cc4b062b0d-1F75A058EEBA",
+  "run_id": "53cc4b062b0d",
+  "task_key": "arc-bench-lite--bookstack",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "received_at": "2026-09-28T18:39:00.3162489Z",
+  "execution_mode": "direct_current_conversation_due_app_routing_unavailable",
+  "note": "The requested Stage 4 diagnosis is being executed in the current conversation because the existing mapped thread could not be reliably reached through the app routing path. The target thread identity is retained for audit matching."
+}
