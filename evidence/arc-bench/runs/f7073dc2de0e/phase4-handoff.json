@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "handoff_id": "f7073dc2de0e-BFE0597F162B",
+  "run_id": "f7073dc2de0e",
+  "submission_id": "361981f7e88b",
+  "task_key": "arc-bench-lite-evolution--bookstack",
+  "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
+  "thread_title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
+  "manifest": "evidence/arc-bench/runs/f7073dc2de0e/manifest.json",
+  "manifest_sha256": "9363BB51157CC85E315EFD51A59DC0992166BF8F2B2C5E01B36B9E3C17BB6288",
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "source_precedence": ["run JSON final status, lifecycle and IDs","Playwright report and failure details for test evidence","raw logs for execution path and configuration","summary markdown for navigation only"],
+  "card": {
+    "platform_final": {"status":"FAILED","score":66.7,"pass_total":"4/6","failure_stage":"runner_tests","tests_reached":true,"failure":"REQ-10.2 timed out waiting for sort button; REQ-11.1 attempted fill on non-editable comments section"},
+    "confirmed_failures": ["REQ-10.2","REQ-11.1"],
+    "generation_identity": {"build_id":null,"commit_sha":null,"payload_tree_sha256":null,"submission_zip_sha256":"9BE91C3D824EB946AC938BA20CFAA6D6B66266E2029573E97FB91AE40CBFD30C"},
+    "metering": {"requests":339,"provider_total_tokens":11444476,"platform_token_count":11444586,"cost_cny":5.300888,"duration_seconds":3221},
+    "platform_validation": {"entrypoint":"main.py","tests_dir":"/workspace/tests","bundled_fallback_hits":0,"plaintext_api_key_hits":0,"test_workers":1,"test_timeout_ms":10000},
+    "conflicts": ["node_states marks all nodes test-passed while tests[] and Playwright report show two failures","build/commit/payload identity absent from supplied platform artifacts"]
+  },
+  "required_ack": {"path":"evidence/arc-bench/runs/f7073dc2de0e/phase4-ack.json","must_match":["handoff_id","run_id","task_key","thread_id"]},
+  "required_result": {"json_path":"evidence/arc-bench/runs/f7073dc2de0e/phase4-result.json","markdown_path":"evidence/arc-bench/runs/f7073dc2de0e/phase4-result.md","must_match":["handoff_id","run_id","task_key","thread_id","manifest_sha256"],"required_marker":"PHASE4_RESULT: complete|incomplete"},
+  "instructions": [
+    "Write phase4-ack.json before reading evidence.",
+    "Analyze only Run f7073dc2de0e; do not merge 1dbe8860eda8 or any other Run.",
+    "Do not create a platform Run, rerun tests, upload, modify Agent code, official tests, task snapshots, ZIPs, assets or runtime configuration.",
+    "Classify REQ-10.2 and REQ-11.1 from the supplied Playwright report and failure details; retain exact locator and timeout evidence.",
+    "Separate confirmed application/test observations from hypotheses about missing sort controls, page state, comment input markup or evolution baseline.",
+    "Do not treat node_states as overriding the tests[] and Playwright report conflict.",
+    "Write phase4-result.json and phase4-result.md with confirmed, strong_candidate and unknown evidence levels and the full Run/submission identity."
+  ]
+}

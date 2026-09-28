@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "intake_label": "stage3-f7073dc2de0e",
+  "status": "normalized_intake_complete_pending_phase4",
+  "run_id": "f7073dc2de0e",
+  "submission_id": "361981f7e88b",
+  "identity": {
+    "competition_id": "arc-bench-lite-evolution",
+    "task_id": "bookstack",
+    "task_key": "arc-bench-lite-evolution--bookstack",
+    "catalog": "competition",
+    "task_snapshot_id": null,
+    "runtime": "python",
+    "agent_source": "upload",
+    "platform_original_filename": "octos-arc-bundle_v2_3.zip",
+    "platform_submission_sha256_binding": null
+  },
+  "intake_routing": {
+    "source_folder": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution",
+    "phase3_scope": "facts_manifest_and_routing_only",
+    "phase4_auto_dispatch": "reuse_registered_task_thread_after_reconciliation",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "stage5_triggered": false,
+    "prior_runs_merged": []
+  },
+  "artifacts": [
+    {"role":"run_json","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\arcbench-run-f7073dc2de0e.json","bytes":6454,"sha256":"BFE0597F162B6D6921BDE8FEF3D16508D3D5FAA91F3BF0BE0158704284AC2C41"},
+    {"role":"logs_json","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\arcbench-run-f7073dc2de0e-logs.json","bytes":50354,"sha256":"7F76580B4E9FD5779F802E6C94FBD99BC37DBB31D87AFA079CC1258231E0F22C"},
+    {"role":"summary_navigation_only","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\arcbench-run-f7073dc2de0e-summary.md","bytes":3360,"sha256":"CBB33F408F95CE2E8B009F4831E7BBB9AF5CED0E952752F9C4D1E32B127EB5D2"},
+    {"role":"failure_details","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\arcbench-f7073dc2de0e-failure-details.md","bytes":2576,"sha256":"39577C7132B896A236958780A5F790D66A856490B99965FD6EC45417DA8707A9"},
+    {"role":"snapshots","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\arcbench-f7073dc2de0e-snapshots.json","bytes":14731,"sha256":"AB1585E77D8031C59503E9881FF9E866A569DD49643AB7479B7EA50B80053B08"},
+    {"role":"playwright_report","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\arcbench-f7073dc2de0e-pw-report.json","bytes":14684,"sha256":"6E371189D51F4F2430A10A2F723A11F64AD3671E634DE359C6EFC7651668C4CB"},
+    {"role":"template_zip","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\f7073dc2de0e-template.zip","bytes":13348218,"sha256":"E39F3CB8DCD1641B72F5381AF7225405AC3AAFAEFF1556F3C613BF055AF01C63"},
+    {"role":"submission_agent_zip","path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-evolution\\submission-361981f7e88b-agent.zip","bytes":329218,"sha256":"9BE91C3D824EB946AC938BA20CFAA6D6B66266E2029573E97FB91AE40CBFD30C"},
+    {"role":"submission_agent_zip_alias","path":"C:\\Users\\dayuruozhi\\Downloads\\submission-361981f7e88b-agent.zip","bytes":329218,"sha256":"9BE91C3D824EB946AC938BA20CFAA6D6B66266E2029573E97FB91AE40CBFD30C"}
+  ],
+  "missing_artifacts": ["error-context.md bodies referenced by Playwright report were not separately supplied", "task_snapshot_id", "platform submission SHA binding", "agent build identity"],
+  "run_timing": {"created_at":"2026-09-28T09:07:55.573510","started_at":"2026-09-28T09:07:59.384409","finished_at":"2026-09-28T10:02:18.169281","run_duration_seconds":3221,"observed_lifecycle_seconds":3258.784872},
+  "platform_final": {
+    "status":"FAILED","score":66.7,"passed_count":4,"failed_count":2,"total_count":6,"test_pass_rate":66.7,
+    "feature_implementation_rate":{"implemented":4,"total":6,"percent":66.7},
+    "failure_reason":"Runner exited with test failures or runtime errors",
+    "failure_stage":"runner_tests",
+    "tests_reached":true,
+    "steps":{"deploy_agent":"completed; environment preflight passed","start_agent":"completed; generation finished successfully","run_tests":"completed; Playwright results parsed 4 passed and 2 failed"}
+  },
+  "tests": [
+    {"req_id":"REQ-10.1","name":"invalid login shows feedback and stays on login page","status":"passed","duration_ms":1022},
+    {"req_id":"REQ-10.2","name":"sort pages and chapters inside a book","status":"timedOut","duration_ms":10019,"error":"Test timeout of 10000ms exceeded; waiting for getByRole('button', { name: /alphabetical|name/i }).first()"},
+    {"req_id":"REQ-11.1","name":"add a comment to a readable page","status":"failed","duration_ms":1021,"error":"locator.fill resolved getByLabel(/Comment/i) to section.comments, which is not an editable input/textarea/contenteditable"},
+    {"req_id":"REQ-11.2","name":"export a book as Markdown","status":"passed","duration_ms":1097},
+    {"req_id":"REQ-12.1","name":"search within the current book","status":"passed","duration_ms":726},
+    {"req_id":"REQ-12.2","name":"open page revision history","status":"passed","duration_ms":1083}
+  ],
+  "generation_identity": {"build_id":null,"commit_sha":null,"payload_tree_sha256":null,"submission_zip_sha256":"9BE91C3D824EB946AC938BA20CFAA6D6B66266E2029573E97FB91AE40CBFD30C","source_note":"Agent identity fields were not present in the supplied run object or raw logs"},
+  "platform_configuration": {"model":"deepseek-v4-flash","visual_model":null,"reasoning":"low","time_budget_seconds":9000,"agent_acceptance_workers":null,"test_workers":1,"playwright_version":"1.57.0","test_timeout_ms":10000,"sources":{"model":"run JSON and raw logs","reasoning":"raw logs proxy line","time_budget":"raw logs flow","workers":"Playwright report"}},
+  "metering": {"platform_token_count":11444586,"provider_totals":{"requests":339,"prompt_tokens":11263945,"completion_tokens":180531,"reasoning_tokens":109406,"prompt_cache_hit_tokens":10384896,"total_tokens":11444476},"cost":{"amount":5.300888,"currency":"CNY"},"duration_seconds":3221,"note":"Run token_count and provider totals are retained as distinct reporting scopes"},
+  "platform_validation": {
+    "entrypoint":{"value":"main.py","raw_log_verified":true,"source":"platform start_agent command and generation lifecycle"},
+    "tests_directory":{"value":"/workspace/tests","raw_log_verified":true,"source":"Playwright report rootDir and configFile"},
+    "official_tests":{"value":true,"raw_log_verified":true,"source":"Playwright report contains six executed suites"},
+    "bundled_fallback_hits":0,
+    "plaintext_api_key_hits":0,
+    "package_shape":{"frontend_present":true,"backend_present":true,"source":"raw postflight and runner deployment logs"}
+  },
+  "agent_logs": {"events_count":0,"stdout_pages":2,"raw_log_chars":50354,"raw_log_sha256":"7F76580B4E9FD5779F802E6C94FBD99BC37DBB31D87AFA079CC1258231E0F22C","checks":{"main_py_seen":true,"workspace_tests_seen":true,"bundled_seen":false,"api_key_plaintext_seen":false},"generation_observation":"evolution mode detected existing app; all six nodes implemented; no acceptance specs found inside agent bundle, then official runner tests executed"},
+  "conflicts": [
+    {"field":"run_node_states_vs_tests","description":"run JSON node_states marks all six nodes test-passed, while tests[] and Playwright report contain two failures","resolution":"use tests[] and Playwright report for per-test status; retain node_states as conflicting platform metadata"},
+    {"field":"summary_acceptance_round","description":"summary has no acceptance round record, while official runner tests did execute","resolution":"do not infer an agent acceptance pass rate; report only final official Playwright results"},
+    {"field":"agent_identity_fields","description":"submission ZIP and platform run are identified, but build_id/commit/payload tree identity are absent","resolution":"do not claim strict Agent build-to-Run binding"}
+  ],
+  "source_precedence": ["run JSON for final status, score, lifecycle, IDs and platform token count","Playwright report and failure details for per-test results and errors","raw logs for execution path, provider totals, configuration and safety checks","summary markdown for navigation and normalized cross-field context"],
+  "security": {"plaintext_api_key_found":false,"log_scan_scope":"supplied raw logs and reports; masked OPENAI_API_KEY only"}
+}
