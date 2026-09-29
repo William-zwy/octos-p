@@ -2,7 +2,7 @@
   "schema_version": 1,
   "purpose": "ARC-Bench phase 3 normalized evidence intake",
   "intake_label": "stage3-d9608977de9c",
-  "status": "normalized_intake_complete_needs_reconciliation",
+  "status": "normalized_intake_complete_pending_phase4",
   "run": {
     "run_id": "d9608977de9c",
     "submission_id": "eb01fc37f040",
@@ -29,15 +29,15 @@
   },
   "intake_routing": {
     "phase3_scope": "facts_manifest_and_routing_only",
-    "phase4_auto_dispatch": "blocked_by_prior_unverified_handoff",
-    "next_stage": "phase4_thread_reconciliation_required",
+    "phase4_auto_dispatch": "direct_current_conversation_fallback_after_prior_handoff_reconciliation",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
     "stage5_triggered": false,
     "prior_runs_merged": [],
     "registered_thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
     "registered_thread_title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
-    "registered_thread_status_at_intake": "handoff_pending_unverified",
-    "dispatch_attempted": false,
-    "dispatch_block_reason": "The existing task mapping has an earlier unverified handoff for f7073dc2de0e; workflow requires reconciliation before a new handoff and forbids a duplicate thread."
+    "registered_thread_status_at_intake": "verified_after_filesystem_reconciliation",
+    "dispatch_attempted": true,
+    "dispatch_note": "The prior f7073dc2de0e ACK/result files were reconciled by identity and manifest hash. App routing for the new handoff returned Invalid app tool request, so the already-authorized direct current-conversation fallback is used without creating a duplicate thread."
   },
   "platform_final": {
     "status": "FAILED",
@@ -128,8 +128,7 @@
     "platform build ID, commit SHA, payload tree SHA and upload-package SHA binding",
     "platform-native error-context.md bodies, screenshots and trace archive",
     "platform result_path",
-    "visual model identifier",
-    "phase4 handoff, ACK and result files because dispatch is blocked pending reconciliation of f7073dc2de0e"
+    "visual model identifier"
   ],
   "source_precedence": [
     "run JSON for final status, score, tests, metrics and identifiers",

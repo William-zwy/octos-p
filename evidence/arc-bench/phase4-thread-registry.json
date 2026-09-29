@@ -172,25 +172,25 @@
     "arc-bench-lite-evolution--bookstack": {
       "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
       "title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
-      "status": "needs_reconciliation",
+      "status": "verified",
       "last_run_id": "d9608977de9c",
       "previous_run_id": "f7073dc2de0e",
-      "last_handoff_id": null,
+      "last_handoff_id": "d9608977de9c-D5F626038553",
       "previous_handoff_id": "f7073dc2de0e-BFE0597F162B",
       "manifest": "evidence/arc-bench/runs/d9608977de9c/manifest.json",
-      "handoff_path": null,
-      "ack_path": null,
-      "result_path": null,
-      "result_md_path": null,
-      "result_status": "not_created_reconciliation_required",
+      "handoff_path": "evidence/arc-bench/runs/d9608977de9c/phase4-handoff.json",
+      "ack_path": "evidence/arc-bench/runs/d9608977de9c/phase4-ack.json",
+      "result_path": "evidence/arc-bench/runs/d9608977de9c/phase4-result.json",
+      "result_md_path": "evidence/arc-bench/runs/d9608977de9c/phase4-result.md",
+      "result_status": "complete",
       "evidence_revision": "d9608977de9c-stage3-intake",
-      "verification_method": "blocked_by_prior_unverified_handoff",
-      "verified_at": null,
+      "verification_method": "filesystem_after_prior_handoff_reconciliation_and_direct_current_conversation_fallback",
+      "verified_at": "2026-09-29T04:45:49.4321919Z",
       "previous_quarantined_run_id": "1dbe8860eda8",
       "previous_quarantined_handoff_id": "1dbe8860eda8-E8A76BAD453A",
-      "dispatch_error": "No handoff was sent for d9608977de9c because the prior f7073dc2de0e handoff remains unverified; the workflow requires reconciliation before another handoff and forbids a duplicate thread.",
-      "prior_unverified_run": {"run_id": "f7073dc2de0e", "handoff_id": "f7073dc2de0e-BFE0597F162B", "manifest": "evidence/arc-bench/runs/f7073dc2de0e/manifest.json", "result_status": "pending_after_dispatch_interface_error"},
-      "reason": "d9608977de9c is fully normalized at Stage 3 but cannot enter Stage 4 until the existing evolution BookStack thread mapping and prior handoff are reconciled. Do not create a duplicate, do not fabricate a handoff/ACK/result, and do not trigger Stage 5."
+      "reconciled_prior_run": {"run_id": "f7073dc2de0e", "handoff_id": "f7073dc2de0e-BFE0597F162B", "manifest": "evidence/arc-bench/runs/f7073dc2de0e/manifest.json", "result_status": "complete", "verification": "ack/result identity and manifest SHA matched"},
+      "dispatch_error": "Codex app read/list operations returned Invalid app tool request before execution for the existing mapped thread. No app message was delivered; the already-authorized direct current-conversation fallback produced and validated the d9608977de9c ACK/result files.",
+      "reason": "The existing evolution BookStack Thread was reused by identity. Prior f7073dc2de0e evidence was reconciled from persistent files, and d9608977de9c is complete and verified from matching ACK/result files. No duplicate thread was created; Stage 5 remains untriggered."
     }
   }
 }

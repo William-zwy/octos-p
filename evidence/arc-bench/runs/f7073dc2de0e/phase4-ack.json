@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "PHASE4_HANDOFF_ACK": "f7073dc2de0e-BFE0597F162B",
+  "handoff_id": "f7073dc2de0e-BFE0597F162B",
+  "run_id": "f7073dc2de0e",
+  "task_key": "arc-bench-lite-evolution--bookstack",
+  "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
+  "received_at": "2026-09-28T12:01:10.8300442Z",
+  "execution_mode": "direct_current_conversation_due_app_routing_unavailable",
+  "note": "The requested direct Stage 4 fallback was executed in the current conversation because the Codex app could not deliver the existing handoff to the mapped thread. The target thread identity is retained for handoff audit matching."
+}

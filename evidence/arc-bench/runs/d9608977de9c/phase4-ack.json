@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "PHASE4_HANDOFF_ACK": "d9608977de9c-D5F626038553",
+  "handoff_id": "d9608977de9c-D5F626038553",
+  "run_id": "d9608977de9c",
+  "submission_id": "eb01fc37f040",
+  "task_key": "arc-bench-lite-evolution--bookstack",
+  "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
+  "received_at": "2026-09-29T04:45:49.4321919Z",
+  "execution_mode": "direct_current_conversation_due_app_routing_unavailable",
+  "status": "received",
+  "read_only": true,
+  "note": "The existing mapped Stage 4 thread could not be reached through the Codex app routing path. The already-authorized direct current-conversation fallback is used; the target thread identity is retained for audit matching."
+}
