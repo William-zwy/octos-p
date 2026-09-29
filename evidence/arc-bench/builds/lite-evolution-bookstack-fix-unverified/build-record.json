@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "platform_unverified",
+  "branch": "codex/lite-evolution-bookstack-fix",
+  "base_commit": "76860d0d9cd72475b39a4cebfebc3c234da2a956",
+  "source_commit": "fa144ab1f62cead89b065d98a2679b09ba0a40d8",
+  "built_on": "2026-09-29",
+  "timezone": "Asia/Shanghai",
+  "decision": {
+    "issue_id": "P5-023",
+    "task": "arc-bench-lite-evolution--bookstack",
+    "requirement_tree_sha256": "5995450bf29ec1e1611568297e90fb7e3cf736813164e7a846728c33cefe9815",
+    "source_kind": "observed_proxy",
+    "summary": "Complete Evolution selector integration by exact requirement-tree identity and expose acceptance execution status without treating an observed proxy as official scoring authority."
+  },
+  "changes": [
+    "Added the frozen Evolution BookStack observed-proxy suite and bound it to the exact requirement-tree fingerprint.",
+    "Kept platform-provided ARCBENCH_TESTS_DIR and /workspace/tests ahead of bundled fallback.",
+    "Added source-kind-aware prompt labels and ARC_ACCEPTANCE_STATUS records for selection, execution, infrastructure failure, and unavailable acceptance.",
+    "Injected the Evolution interaction contract and fixed every direct codegen/repair prompt formatting call.",
+    "Fail closed on duplicate exact fingerprints and preserved the legacy unique-title compatibility path."
+  ],
+  "official_test_integrity": {
+    "official_tests_modified": false,
+    "observed_proxy_tests": 6,
+    "proxy_evidence": ["d9608977de9c", "896e9a68c798", "1dbe8860eda8"],
+    "proxy_is_score_authority": false
+  },
+  "non_changes": [
+    "No model, timeout, request-budget, or repair-round changes.",
+    "No platform upload and no platform Run creation.",
+    "No official public-test contents were edited."
+  ],
+  "validation": {
+    "py_compile": {
+      "command": "python -m py_compile main.py acceptance.py codegen.py guard.py llm_proxy.py requirement_order.py tests/test_main_helpers.py",
+      "exit_code": 0
+    },
+    "focused_tests": {
+      "command": "python -m unittest tests.test_main_helpers.AcceptanceSuiteIdentityTests tests.test_main_helpers.CodegenPromptTests tests.test_main_helpers.CreateResultContractTests tests.test_main_helpers.EvolutionInteractionContractTests -v",
+      "passed": 17,
+      "total": 17,
+      "exit_code": 0
+    },
+    "full_tests": {
+      "command": "python -m unittest discover -s tests -t . -v",
+      "passed": 103,
+      "total": 107,
+      "failures": 3,
+      "errors": 1,
+      "exit_code": 1,
+      "known_windows_baseline": [
+        "two path-separator assertions",
+        "one Unix npm_config_cache path assertion",
+        "one temporary .git/objects cleanup PermissionError"
+      ],
+      "new_evolution_failures": 0
+    },
+    "git_diff_check_exit_code": 0,
+    "json_validation_exit_code": 0,
+    "package_validation_exit_code": 0,
+    "platform_run_performed": false,
+    "platform_upload_performed": false
+  },
+  "bundle": {
+    "path": "octos-arc-bundle_lite-evolution-bookstack-fix-unverified.zip",
+    "bytes": 376970,
+    "entries": 569,
+    "sha256": "8FC0D9858D0B33B73381491C107828C1A4906712B9EBBF8C5DE8159A92C4525F",
+    "root_main_py": true,
+    "forbidden_arc_prefix": false,
+    "forbidden_python_cache": false,
+    "includes_evolution_proxy_suite": true
+  },
+  "handoff": "This is a platform_unverified local artifact. Do not upload or create a Run without separate authorization. Any future platform evidence must bind this exact ZIP SHA to the task, submission/build identity, and official-versus-observed-proxy test source."
+}
