@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "handoff_id": "53a102f3ee96-E049C5C5C011",
+  "run_id": "53a102f3ee96",
+  "submission_id": "362bc0d7b112",
+  "task_key": "arc-bench-web--bookstack",
+  "thread_id": "01a0b8a0-1851-7693-b8cf-1fbbfcbbbf7e",
+  "manifest_sha256": "E049C5C5C0119DF24C337D5914C9B92A24F4D05D7553AE4741D909D5762255FF",
+  "status": "received",
+  "received_at": "2026-09-30T03:00:00+08:00"
+}
