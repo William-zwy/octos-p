@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "purpose": "Phase 5 role mapping and idempotent handoff index; decisions live only in the Markdown register",
-  "updated_at": "2026-09-24",
+  "updated_at": "2026-09-29",
   "source_checkout": "D:/DataMove/codex/worktrees/9015/AI智能体软件工厂黑客松",
   "user_limits": {
     "remote_push_authorized": false,
@@ -1266,6 +1266,29 @@
       "strict_ab_comparable": false,
       "identity_gaps": ["platform_uploaded_zip_sha", "agent_build_id", "code_sha", "task_snapshot_id", "zip_to_build_binding"],
       "next_gate": "Finish the isolated REQ-8.1 seed/timing matrix. Separately obtain explicit user authorization before dispatching one generalized create-result heading-contract Agent slice for REQ-4.3.1 and REQ-6.1.1; do not include REQ-8.1 until confirmed, and do not create a platform Run without separate authorization."
+    },
+    {
+      "key": "334c6c6736b4:test-suite-identity-routing:fa2aebf215f7",
+      "run_id": "334c6c6736b4",
+      "task_key": "arc-bench-lite--bookstack",
+      "issue_id": "test-suite-identity-routing",
+      "status": "source_committed_artifact_built_platform_unverified",
+      "decision": "route_bundled_tests_by_exact_requirement_tree_identity",
+      "code_change_authorized": true,
+      "implementation_dispatched": true,
+      "implementation_thread_role": "Agent implementation",
+      "base_commit_sha": "9c9d701091c91ae4966fa21ad763d92ec7e1bb21",
+      "source_commit_sha": "fa2aebf215f785157771f925824f1fa0fe8932f0",
+      "branch": "codex/lite-test-identity-routing-fix",
+      "build_record": "evidence/arc-bench/builds/lite-test-identity-routing-fix-unverified/build-record.json",
+      "agent_zip_path": "octos-arc-bundle_lite-test-identity-routing-fix-unverified.zip",
+      "agent_zip_sha256": "6096441BF7FAAB548011150014E99C5F5657783660DA89BEB9056F5A4C9E5B24",
+      "official_tests_modified": false,
+      "static_self_check_forced_into_repair": false,
+      "new_platform_run_created_by_implementation": false,
+      "business_go": false,
+      "strict_ab_comparable": false,
+      "next_gate": "Upload the exact ZIP, bind its SHA to a new Lite BookStack Run, confirm the internal suite path is arc-bench-lite--bookstack, then return the Run through phases 3 and 4."
     }
   ]
 }
