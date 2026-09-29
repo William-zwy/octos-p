@@ -152,9 +152,20 @@
       "thread_id": "01a0b7e7-1cff-7380-ac81-ef35dbe70633",
       "title": "07 项目阶段4 + arc-bench-web--keep",
       "status": "quarantined",
-      "last_run_id": "4b792b72d7dd",
-      "last_handoff_id": "4b792b72d7dd-retrigger-01",
-      "reason": "用户报告存在两个同标题会话；当前 thread listing 未返回候选。该候选原始执行和一次重触发均变为 completed/idle，但 latestAssistantMessageId 为空且无可验证最终消息，因此已隔离。不得复用或再次触发，需先确认另一个实际 Thread ID。"
+      "last_run_id": "c68bef1a6343",
+      "last_handoff_id": "c68bef1a6343-6D7B1A92C4E0",
+      "previous_run_id": "4b792b72d7dd",
+      "previous_handoff_id": "4b792b72d7dd-retrigger-01",
+      "manifest": "evidence/arc-bench/runs/c68bef1a6343/manifest.json",
+      "handoff_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-handoff.json",
+      "ack_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-ack.json",
+      "result_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-result.json",
+      "result_md_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-result.md",
+      "result_status": "pending_thread_reconciliation",
+      "evidence_revision": "c68bef1a6343-stage3-intake",
+      "dispatch_attempts": 0,
+      "dispatch_error": "The app list_threads call returned -32602 Invalid app tool request during reconciliation; no Stage 4 message was delivered and no ACK/result was produced.",
+      "reason": "The mapping remains quarantined because the user reported duplicate same-title conversations and the app did not return a verifiable candidate. Persist c68bef1a6343 as the latest Stage 3 handoff, but do not reuse, fork or trigger Stage 4 until the unique target Thread ID is reconciled."
     },
     "arc-bench-web--bookstack": {
       "thread_id": "01a0b8a0-1851-7693-b8cf-1fbbfcbbbf7e",
