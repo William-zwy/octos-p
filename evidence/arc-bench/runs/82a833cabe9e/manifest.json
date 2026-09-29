@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake",
+  "intake_label": "stage3-82a833cabe9e",
+  "status": "normalized_intake_complete_phase4_running",
+  "run": {
+    "run_id": "82a833cabe9e",
+    "submission_id": "a9475f8e5f57",
+    "display_name": "luyun18029839909@163.com",
+    "original_filename": "octos-arc-bundle_urgent-bookstack-contract-fix-r2-platform-unverified.zip",
+    "catalog": "competition",
+    "competition_id": "arc-bench-lite-evolution",
+    "task_id": "keep",
+    "task_key": "arc-bench-lite-evolution--keep",
+    "task_snapshot_id": null,
+    "runtime": "python",
+    "agent_source": "upload",
+    "created_at": "2026-09-29T12:15:23.847507",
+    "started_at": "2026-09-29T12:15:26.304755",
+    "finished_at": "2026-09-29T14:09:57.391587",
+    "status": "FAILED",
+    "score": 33.3,
+    "test_pass_rate": 33.3,
+    "passed_count": 2,
+    "failed_count": 4,
+    "feature_implementation_rate": 33.3,
+    "run_duration_seconds": 6809,
+    "failure_reason": "Runner exited with test failures or runtime errors"
+  },
+  "intake_routing": {
+    "phase3_scope": "facts_manifest_and_routing_only",
+    "phase4_auto_dispatch": "direct_current_conversation_fallback",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "stage5_triggered": false,
+    "prior_runs_merged": [],
+    "registered_thread_id": "01a0ec96-3f05-7541-ac77-18df00d83a1c",
+    "registered_thread_title": "11 项目阶段4 + arc-bench-lite-evolution--keep",
+    "registered_thread_status_at_intake": "verified",
+    "reconciliation_required": false,
+    "boundary": "This manifest contains only Run 82a833cabe9e facts. Root-cause conclusions are stored in the Run-specific Stage 4 result."
+  },
+  "platform_final": {
+    "status": "FAILED",
+    "score": 33.3,
+    "passed": 2,
+    "total": 6,
+    "failed_tests": [
+      {"name": "REQ-7.1: search filters notes by type", "file": "REQ-7.1.spec.ts", "status": "timedOut", "duration_ms": 10025, "observed": "Lists click followed by Groceries count expected 0, received 1"},
+      {"name": "REQ-7.2: checked checklist items can stay in place", "file": "REQ-7.2.spec.ts", "status": "timedOut", "duration_ms": 10023, "observed": "10 second timeout; no assertion stack in the supplied report"},
+      {"name": "REQ-8.2: set a Tomorrow reminder and show it in Reminders", "file": "REQ-8.2.spec.ts", "status": "timedOut", "duration_ms": 10018, "observed": "Card-scoped Remind me button click timed out"},
+      {"name": "REQ-9.1: add a collaborator to a note", "file": "REQ-9.1.spec.ts", "status": "timedOut", "duration_ms": 10017, "observed": "Groceries locator not found in the page DOM"}
+    ],
+    "passed_tests": ["REQ-8.1", "REQ-9.2"],
+    "source_precedence": [
+      "arcbench-run-82a833cabe9e.json",
+      "playwright-report-82a833cabe9e.json",
+      "arcbench-82a833cabe9e-failure-details.md"
+    ]
+  },
+  "internal_acceptance": {
+    "available": true,
+    "source": "arcbench-82a833cabe9e-runner-events.jsonl and run logs",
+    "atomic_nodes": 6,
+    "implement_turns_at_900_seconds": 6,
+    "runner_final_state": {"implemented": 6, "verified": 0},
+    "final_check_timeout_seconds": 1200,
+    "note": "Runner completion state is kept separate from platform feature_implemented_count=2 and final Playwright result 2/6."
+  },
+  "metering": {
+    "platform_token_count": 74573398,
+    "cost": {"amount": 43.156152, "currency": "CNY", "source": "run JSON token_cost_usd and token_cost_currency fields"},
+    "duration_seconds": 6809,
+    "note": "This is the platform run-object accounting scope; no separate provider total is inferred or added."
+  },
+  "platform_configuration": {
+    "model": "deepseek-v4-flash",
+    "reasoning": "low",
+    "visual_model": null,
+    "agent_time_budget_seconds": 9000,
+    "test_workers": 1,
+    "playwright_version": "1.57.0",
+    "test_timeout_ms": 10000,
+    "agent_tests_source_observed": "/workspace/tests; no *.spec.ts found",
+    "runner_tests_candidate_observed": "/workspace/tests"
+  },
+  "platform_validation": {
+    "entrypoint": {"value": "main.py", "raw_log_verified": true},
+    "tests_directory": {"value": "/workspace/tests", "raw_log_verified": true},
+    "official_tests": {"value": "final Playwright report with six requirement-derived specs", "raw_report_verified": true},
+    "bundled_fallback_hits": 0,
+    "generated_application_reached": true
+  },
+  "generation_identity": {
+    "build_id": null,
+    "commit_sha": null,
+    "platform_upload_sha256": null,
+    "attached_submission_zip_sha256": "9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E",
+    "submission_zip_platform_binding_verified": false,
+    "task_snapshot_id": null,
+    "note": "The local submission ZIP is attached and hashed, but no platform checksum field binds it to this Run."
+  },
+  "artifacts": [
+    {"name":"arcbench-run-82a833cabe9e.json","bytes":5946,"sha256":"57499C9F43480D232757CF719FE3968C77F34B5A878A9284B76EBAEEE10C217D","role":"raw_run_object","stored_in_repository":false},
+    {"name":"arcbench-run-82a833cabe9e-logs.json","bytes":100703,"sha256":"2485A634BDDC0F3DBEC5071309F08EDC54773481A517AB1DBA559BF275C6F5FE","role":"raw_run_logs","stored_in_repository":false},
+    {"name":"arcbench-run-82a833cabe9e-midrun.json","bytes":5946,"sha256":"A877FEC6252F266121467DA1C4D82D1D6ED148A84505DC085527C10D414831C6","role":"midrun_run_object","stored_in_repository":false},
+    {"name":"arcbench-run-82a833cabe9e-midrun-logs.json","bytes":100681,"sha256":"C2D022C39E3FBDD7E34C2C6C6F3135A454039E930E9BC1F43D5FD76592DD6A5A","role":"midrun_logs","stored_in_repository":false},
+    {"name":"arcbench-run-82a833cabe9e-midrun-traceability.json","bytes":2079,"sha256":"6CCA314C54F429E7DD31B5ADE1D68CCD5BDB80C890676735AD5870BF5917F8BF","role":"midrun_traceability","stored_in_repository":false},
+    {"name":"arcbench-run-82a833cabe9e-summary.md","bytes":2808,"sha256":"16F26E2A75281466839D23CADA5D9643141781A207D06B37119A2DB1554F7071","role":"summary_navigation_only","stored_in_repository":false},
+    {"name":"playwright-report-82a833cabe9e.json","bytes":14946,"sha256":"CCE917268481D238E3C1AC9065C2575615E20E727638F4F6AAC65598C1450C8A","role":"raw_playwright_report","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-failure-details.md","bytes":2620,"sha256":"A2469947F083FFFF912239289E17D567A07E5FB2F517BAF1874324D2D9A8622B","role":"failure_details","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-snapshots.json","bytes":10448,"sha256":"D859D55EB4E6EFA21D8EBC545E0DD8599D99046E714F29256AA2F9BCAEBA2B10","role":"arc_snapshots","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-design-midrun.json","bytes":9683,"sha256":"5DBED360FB285E3A595AB3BA0853D06E877C8CBB362BE4CFABC714807F0B8B85","role":"design_midrun","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-arc-extra.json","bytes":2842454,"sha256":"152BF333ECD5203A349C7DFEA5FF49139A41766DCCCE5C4EA540AF0A9BE10644","role":"arc_extra_evidence","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-octos-events.jsonl","bytes":2481028,"sha256":"E31E8200A2F721CAFB9792A5B4B4AE5E5AC3C032E0FBF036C6D03267AF3036ED","role":"octos_event_stream","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-runner-events.jsonl","bytes":102473,"sha256":"812BDEA7D60BA0E3776C5016695CC50DB7CE0CF4C381558B8965EFFD6AF98DDE","role":"runner_event_stream","stored_in_repository":false},
+    {"name":"arcbench-82a833cabe9e-stdout.log","bytes":100234,"sha256":"596425FD3FAF45DD8FCEF792473F6ACE92D8127F3B25C44C44D4E3D285E0FDBB","role":"stdout_log","stored_in_repository":false},
+    {"name":"submission-a9475f8e5f57-agent.zip","bytes":333727,"sha256":"9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E","role":"attached_submission_zip","stored_in_repository":false},
+    {"name":"82a833cabe9e-template.zip","bytes":2340837,"sha256":"6D748CCDCE14D9C743097EE0685EC547C96F08D9291C9E57B8C7CC98BBA605A7","role":"platform_template_snapshot","stored_in_repository":false}
+  ],
+  "conflicts": [
+    {"field":"implementation_status_layers","description":"Runner events say 6/6 atomic children implemented and none verified, while run.json feature_implemented_count is 2/6 and final tests are 2/6.","resolution":"Keep runner lifecycle, API feature count, and final tests as distinct evidence layers."},
+    {"field":"test_source_layers","description":"Generation logs report no spec files in /workspace/tests and requirement-text checks, while final Playwright report contains six generated specs under the same root.","resolution":"Record both observations; bundled fallback hits remain zero."},
+    {"field":"submission_identity","description":"A local submission ZIP is present, but platform metadata does not bind its SHA-256 to the run.","resolution":"Keep the local hash separate and do not claim upload checksum verification."}
+  ],
+  "missing": [
+    "task_snapshot_id and platform build/commit identity",
+    "pre-evaluation clean database snapshot; attached template DB reflects post-test state",
+    "platform-native error-context bodies, video, trace, HAR, and test source files",
+    "platform checksum binding for the attached submission ZIP",
+    "a reproducible explanation for the REQ-7.2 10 second timeout and REQ-9.1 initial DOM miss"
+  ],
+  "source_precedence": [
+    "run JSON for final status, score, tests, metrics and identifiers",
+    "raw logs for entrypoint, tests directory, runner flow and lifecycle data",
+    "Playwright report for structured locators, timeouts and stack evidence",
+    "failure details and summary markdown for navigation only",
+    "template ZIP and snapshots for Stage 4 read-only analysis"
+  ],
+  "security": {
+    "status": "potential_unmasked_api_key_fields_detected",
+    "candidate_count": 4,
+    "values_copied_or_logged": false,
+    "raw_attachments_copied_to_repository": false,
+    "handling": "Do not propagate candidate values; verify and redact/rotate at the source if these are active credentials."
+  }
+}

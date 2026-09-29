@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "handoff_id": "82a833cabe9e-CFC4FE4C8DA4",
+  "run_id": "82a833cabe9e",
+  "submission_id": "a9475f8e5f57",
+  "task_key": "arc-bench-lite-evolution--keep",
+  "thread_id": "01a0ec96-3f05-7541-ac77-18df00d83a1c",
+  "thread_title": "11 项目阶段4 + arc-bench-lite-evolution--keep",
+  "manifest": "evidence/arc-bench/runs/82a833cabe9e/manifest.json",
+  "manifest_sha256": "CFC4FE4C8DA468453658200FA87F88D345486F59B45E676FCA2539ADF319F934",
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "execution_mode": "direct_current_conversation_on_registered_verified_thread",
+  "card": {
+    "platform_final": {"status":"FAILED","score":33.3,"pass_total":"2/6","failed_tests":["REQ-7.1","REQ-7.2","REQ-8.2","REQ-9.1"]},
+    "internal_acceptance": {"atomic_nodes":6,"runner_implemented":6,"runner_verified":0,"implement_turn_timeout_seconds":900,"final_check_timeout_seconds":1200},
+    "metering": {"platform_token_count":74573398,"cost_cny":43.156152,"duration_seconds":6809},
+    "platform_validation": {"entrypoint":"main.py","tests_dir":"/workspace/tests","bundled_fallback_hits":0,"test_workers":1,"test_timeout_ms":10000}
+  },
+  "required_ack": {"path":"evidence/arc-bench/runs/82a833cabe9e/phase4-ack.json","must_match":["handoff_id","run_id","task_key","thread_id","manifest_sha256"]},
+  "required_result": {"json_path":"evidence/arc-bench/runs/82a833cabe9e/phase4-result.json","markdown_path":"evidence/arc-bench/runs/82a833cabe9e/phase4-result.md","must_match":["handoff_id","run_id","task_key","thread_id","manifest_sha256"],"required_marker":"PHASE4_RESULT: complete|incomplete"},
+  "instructions": [
+    "Analyze only Run 82a833cabe9e; do not merge other run conclusions.",
+    "Use read-only source inspection and isolated clean-seed reproduction only; do not edit the source ZIP, Agent code, official tests, task snapshot, or runtime configuration.",
+    "Separate internal runner lifecycle status from platform feature count and final tests.",
+    "Classify each conclusion as confirmed, strong_candidate, or unknown.",
+    "Record security scan candidates only as redacted status; never copy candidate values.",
+    "Write phase4-result.json and phase4-result.md; do not trigger Stage 5 or create another platform Run."
+  ]
+}
