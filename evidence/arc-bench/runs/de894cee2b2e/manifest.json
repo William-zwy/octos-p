@@ -1,0 +1,497 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake with intermediate trace analysis",
+  "intake_label": "stage3-de894cee2b2e",
+  "status": "normalized_intake_complete_pending_phase4",
+  "run": {
+    "run_id": "de894cee2b2e",
+    "submission_id": "6be3ce5a778e",
+    "competition_id": "arc-bench-lite",
+    "task_id": "bookstack",
+    "task_key": "arc-bench-lite--bookstack",
+    "catalog": "competition",
+    "runtime": "python",
+    "agent_source": "upload",
+    "model": "deepseek-v4-flash",
+    "reasoning": null,
+    "original_filename": "octos-arc-bundle_urgent-bookstack-contract-fix-r2-platform-unverified.zip",
+    "created_at": "2026-09-29T12:40:45.585078",
+    "started_at": "2026-09-29T12:40:47.968072",
+    "finished_at": "2026-09-29T17:38:44.441162",
+    "status": "FAILED",
+    "score": 55.9,
+    "passed_count": 19,
+    "failed_count": 15,
+    "total_count": 34,
+    "test_pass_rate": 55.9,
+    "feature_implementation_rate": 55.9,
+    "failure_reason": "Runner exited with test failures or runtime errors",
+    "run_duration_seconds": 17685,
+    "time_budget_seconds": 51000
+  },
+  "intake_routing": {
+    "source_folder": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite",
+    "phase3_scope": "facts_manifest_trace_analysis_and_routing_only",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "phase4_auto_dispatch": "reuse_verified_task_thread",
+    "registered_thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+    "registered_thread_title": "06 项目阶段4 + arc-bench-lite--bookstack",
+    "registered_thread_status_at_intake": "complete",
+    "prior_runs_merged": [],
+    "stage5_triggered": false,
+    "old_thread_identity_check": {
+      "previous_run_id": "363336da9695",
+      "previous_ack_result_identity": "verified_from_persisted_files",
+      "thread_readback": "unavailable_invalid_app_tool_request",
+      "reuse_decision": "reuse_persisted_verified_task_thread; do not fork"
+    }
+  },
+  "platform_final": {
+    "source": "arcbench-run-de894cee2b2e.json and playwright-report-de894cee2b2e.json",
+    "status": "FAILED",
+    "score": 55.9,
+    "pass_total": "19/34",
+    "failed_count": 15,
+    "failed_status_counts": {
+      "timedOut": 15,
+      "failed": 0
+    },
+    "failure_stage": "final_playwright_execution",
+    "tests_reached": true,
+    "failed_tests": [
+      {
+        "req_id": "REQ-1.2",
+        "name": "Back to Homepage from Other Pages",
+        "status": "timedOut",
+        "duration_ms": 10017,
+        "locator": "getByRole('button', { name: /^BookStack$/i }).first()",
+        "helper": "returnHomeByLogo",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-2.2",
+        "name": "Log In Successfully",
+        "status": "timedOut",
+        "duration_ms": 10016,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "helper": "login/fillField",
+        "error_class": "locator.fill timeout"
+      },
+      {
+        "req_id": "REQ-3.1",
+        "name": "Enter Authenticated Homepage",
+        "status": "timedOut",
+        "duration_ms": 10018,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "helper": "login/fillField",
+        "error_class": "locator.fill timeout"
+      },
+      {
+        "req_id": "REQ-4.3.1",
+        "name": "Create Shelf",
+        "status": "timedOut",
+        "duration_ms": 10016,
+        "locator": "getByRole('form', { name: /^Create shelf form$/i }).getByRole('button', { name: /^Shelf Tags$/i })",
+        "helper": "fillShelfForm",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-4.5.1",
+        "name": "Save Shelf Edits",
+        "status": "timedOut",
+        "duration_ms": 10011,
+        "locator": "getByRole('form', { name: /^Edit shelf form$/i }).getByRole('button', { name: /^Shelf Tags$/i })",
+        "helper": "fillShelfForm",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-5.2.2",
+        "name": "Enter Book Details Page through Shelf Details Page",
+        "status": "timedOut",
+        "duration_ms": 10015,
+        "locator": "getByRole('button', { name: /Book\\s+5\\.2\\.2/i }).first()",
+        "helper": "openBookDetailsFromShelf/clickNamed",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-5.3.1",
+        "name": "Fill out and Save Book",
+        "status": "timedOut",
+        "duration_ms": 10016,
+        "locator": "getByRole('form', { name: /^Create book form$/i }).getByRole('button', { name: /^Book Tags$/i })",
+        "helper": "fillBookForm",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-5.4.1",
+        "name": "Save Book Edits",
+        "status": "timedOut",
+        "duration_ms": 10011,
+        "locator": "getByRole('form', { name: /^Edit book form$/i }).getByRole('button', { name: /^Book Tags$/i })",
+        "helper": "fillBookForm",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-5.6.1",
+        "name": "Fill out and Save Book with Shelf",
+        "status": "timedOut",
+        "duration_ms": 10012,
+        "locator": "getByRole('button', { name: /^New Book$/i }).first()",
+        "helper": "openBookCreationFromShelf/clickNamed",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-6.1.2",
+        "name": "Save Draft",
+        "status": "timedOut",
+        "duration_ms": 10016,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "helper": "login/fillField",
+        "error_class": "locator.fill timeout"
+      },
+      {
+        "req_id": "REQ-6.1.3",
+        "name": "Delete Draft",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "locator": "getByRole('button', { name: /^Edit$/i }).first()",
+        "helper": "openDraftPageEditor/clickNamed",
+        "error_class": "locator.click timeout"
+      },
+      {
+        "req_id": "REQ-7.1",
+        "name": "Add to Recently Viewed",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "helper": "login/fillField",
+        "error_class": "locator.fill timeout"
+      },
+      {
+        "req_id": "REQ-7.2",
+        "name": "Quick Navigation from Recently Viewed",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "helper": "login/fillField",
+        "error_class": "locator.fill timeout"
+      },
+      {
+        "req_id": "REQ-8.2",
+        "name": "Quick Navigation from Favorites",
+        "status": "timedOut",
+        "duration_ms": 10013,
+        "locator": "getByLabel(/Email\\s+address/i).first()",
+        "helper": "login/fillField",
+        "error_class": "locator.fill timeout"
+      },
+      {
+        "req_id": "REQ-9.1",
+        "name": "Quick Navigation from Recently Updated",
+        "status": "timedOut",
+        "duration_ms": 10016,
+        "locator": "getByRole('button', { name: /^BookStack$/i }).first()",
+        "helper": "returnHomeByLogo",
+        "error_class": "locator.click timeout"
+      }
+    ],
+    "failure_clusters": [
+      {
+        "cluster": "login_or_global_identity_entry",
+        "req_ids": ["REQ-1.2", "REQ-2.2", "REQ-3.1", "REQ-6.1.2", "REQ-7.1", "REQ-7.2", "REQ-8.2", "REQ-9.1"],
+        "count": 8,
+        "observed_contract": "BookStack logo or Email address locator never became available"
+      },
+      {
+        "cluster": "shelf_or_book_form_controls",
+        "req_ids": ["REQ-4.3.1", "REQ-4.5.1", "REQ-5.3.1", "REQ-5.4.1", "REQ-6.1.3"],
+        "count": 5,
+        "observed_contract": "form action control locator never became available"
+      },
+      {
+        "cluster": "shelf_context_navigation",
+        "req_ids": ["REQ-5.2.2", "REQ-5.6.1"],
+        "count": 2,
+        "observed_contract": "shelf-context book link or New Book locator never became available"
+      }
+    ]
+  },
+  "internal_acceptance": {
+    "source": "arcbench-de894cee2b2e-stdout.log and arcbench-de894cee2b2e-runner-events.jsonl",
+    "atomic_nodes": 34,
+    "implement_records": 34,
+    "unique_implement_status_counts": {
+      "ok": 29,
+      "failed": 5
+    },
+    "implement_failures": [
+      {"req_id":"REQ-2.2","duration_seconds":900,"tools":24,"reason":"octos turn timed out","wrote":true,"verified":true},
+      {"req_id":"REQ-3.1","duration_seconds":900,"tools":23,"reason":"octos turn timed out","wrote":true,"verified":false},
+      {"req_id":"REQ-5.2.2","duration_seconds":348,"tools":19,"reason":"upstream proxy HTTP 400 unexpected EOF","wrote":true,"verified":false},
+      {"req_id":"REQ-5.5.1","duration_seconds":900,"tools":40,"reason":"octos turn timed out","wrote":true,"verified":true},
+      {"req_id":"REQ-7.1","duration_seconds":900,"tools":78,"reason":"octos turn timed out","wrote":true,"verified":true}
+    ],
+    "additional_timeout": {
+      "req_id": "REQ-2.2",
+      "phase": "rewrite repair 1",
+      "duration_seconds": 599,
+      "tools": 9,
+      "reason": "octos turn timed out"
+    },
+    "final_internal_suite": {
+      "round_0": {"passed":31,"total":34,"failed_nodes":["REQ-5.6.1","REQ-6.1.2","REQ-6.1.3"]},
+      "round_1": {"passed":31,"total":34,"failed_nodes":["REQ-5.6.1","REQ-6.1.2","REQ-6.1.3"]},
+      "repair_policy": "same failures after one full-suite repair; stopped further repair"
+    },
+    "runner_final_state": {
+      "runner_state": "completed",
+      "message": "completed; nodes not verified: REQ-5.6.1, REQ-6.1.2, REQ-6.1.3",
+      "requirement_state_records": 312,
+      "runner_state_records": 2,
+      "signal_records": 410
+    }
+  },
+  "trace_analysis": {
+    "scope": "octos-events, runner-events and stdout.log; stdout/stderr duplicate lines were deduplicated for counts",
+    "octos_events": {
+      "file_bytes": 11692923,
+      "records": 16757,
+      "session_open": 46,
+      "turn_started": 46,
+      "turn_completed": 40,
+      "turn_error": 1,
+      "unclosed_turns": 5,
+      "tool_started": 1431,
+      "tool_completed": 1431,
+      "tool_success": 1265,
+      "tool_failures_or_non_success": 166,
+      "progress_updated": 10129,
+      "projection_envelope": 1745,
+      "message_delta": 917,
+      "reasoning_delta": 879,
+      "context_normalization_reported": 46,
+      "context_compaction_events": 0,
+      "provider_errors": ["one HTTP 400 proxy_error unexpected EOF"],
+      "unclosed_turns_map": [
+        {"started_at":"2026-09-29T13:05:50.991513106Z","session":"arc-bundle:026830c6","mapped_to":"REQ-2.2 implement"},
+        {"started_at":"2026-09-29T13:20:51.350172075Z","session":"arc-bundle:eb885351","mapped_to":"REQ-2.2 rewrite repair 1"},
+        {"started_at":"2026-09-29T13:30:50.714204810Z","session":"arc-bundle:40e3c142","mapped_to":"REQ-3.1 implement"},
+        {"started_at":"2026-09-29T15:27:11.989870357Z","session":"arc-bundle:7a85bfd2","mapped_to":"REQ-5.5.1 implement"},
+        {"started_at":"2026-09-29T16:56:29.158060263Z","session":"arc-bundle:e77e275e","mapped_to":"REQ-7.1 implement"}
+      ]
+    },
+    "runner_events": {
+      "file_bytes": 360561,
+      "records": 1347,
+      "runner_states": ["running at 12:41:02", "completed at 17:35:29"],
+      "requirement_state_records": 312,
+      "signal_records": 410,
+      "untyped_or_other_records": 623,
+      "interpretation": "Runner lifecycle completed; its final internal acceptance boundary was 31/34, distinct from the platform final 19/34."
+    },
+    "stdout": {
+      "file_bytes": 259895,
+      "logs_json_events_array_length": 0,
+      "flow_timeout_evidence": [
+        "REQ-2.2 implement FAILED in 900s; rewrite repair 1 FAILED in 599s",
+        "REQ-3.1 implement FAILED in 900s",
+        "REQ-5.5.1 implement FAILED in 900s",
+        "REQ-7.1 implement FAILED in 900s"
+      ],
+      "request_budget_guard_unique_events": 9,
+      "connection_reset_unique_acceptance_attempts": 2,
+      "postflight": {
+        "memory_max_bytes": 2147483648,
+        "memory_current_bytes": 502812672,
+        "memory_peak_bytes": 949313536,
+        "oom_kill": 0,
+        "stray_processes_killed": 210
+      },
+      "provider_totals": {
+        "requests": 1317,
+        "prompt_tokens": 40984195,
+        "completion_tokens": 862942,
+        "reasoning_tokens": 550288,
+        "prompt_cache_hit_tokens": 37640192,
+        "total_tokens": 41847137
+      }
+    },
+    "timeout_chain": [
+      {
+        "stage": "agent turn execution",
+        "finding": "Four unique implement turns hit the 900-second Octos cap; one additional REQ-2.2 repair hit 599 seconds.",
+        "evidence_level": "confirmed"
+      },
+      {
+        "stage": "turn composition",
+        "finding": "The timed-out turns were tool-heavy (23, 24, 40 and 78 tool starts), and repair attempts also hit the request-budget-10 guard.",
+        "evidence_level": "confirmed"
+      },
+      {
+        "stage": "local acceptance side effects",
+        "finding": "Two REQ-2.2 acceptance attempts observed ConnectionResetError for GET /favicon.ico while the backend was still running.",
+        "evidence_level": "confirmed"
+      },
+      {
+        "stage": "provider transport",
+        "finding": "REQ-5.2.2 ended with one HTTP 400 proxy_error unexpected EOF after 348 seconds.",
+        "evidence_level": "confirmed"
+      },
+      {
+        "stage": "resource pressure",
+        "finding": "Postflight found 210 stray processes, but cgroup memory.events reports zero OOM kills and peak memory was below half of the 2 GiB limit.",
+        "evidence_level": "confirmed"
+      },
+      {
+        "stage": "final evaluator",
+        "finding": "The generated app reached the evaluator and 19 tests passed; the 15 failures are all 10-second locator waits, not a runner-wide startup failure.",
+        "evidence_level": "confirmed"
+      }
+    ],
+    "optimization_opportunities": [
+      {
+        "priority": "P0",
+        "action": "Split each implementation into a bounded inspect -> minimal edit -> build/smoke checkpoint, with an explicit early stop before the 900-second cap and reserved repair budget.",
+        "why": "The 51000-second global budget was not exhausted; individual turns and tool-heavy exploration were the limiting path.",
+        "validation": "Track per-turn wall time, tool count, wrote/verified, and acceptance result; require repair budget to remain above 300 seconds when a node fails."
+      },
+      {
+        "priority": "P0",
+        "action": "Do not spend repair turns on repeated full-file exploration or a full rewrite after an identical failure; use a small patch turn tied to the first failing locator.",
+        "why": "REQ-2.2 consumed a 900-second implementation plus a 599-second rewrite and still had no repair budget; several later repairs hit request-budget-10 guards.",
+        "validation": "Bound repeated reads and require a concrete file edit or a recorded no-change diagnosis before another acceptance round."
+      },
+      {
+        "priority": "P1",
+        "action": "Make the smoke server lifecycle PID-scoped and ensure unknown paths such as /favicon.ico return a clean 404 without resetting the socket.",
+        "why": "The trace records two ConnectionResetError observations and postflight had to kill 210 stray processes; this is an infrastructure/noise amplifier, not by itself proof of the 15 final DOM failures.",
+        "validation": "Run repeated fresh-process acceptance with no orphan count growth, a 404 response for favicon, and no connection reset."
+      },
+      {
+        "priority": "P1",
+        "action": "Treat provider proxy_error unexpected EOF as a bounded retryable transport event, preserving the node checkpoint instead of consuming a feature repair cycle.",
+        "why": "REQ-5.2.2 stopped at the provider boundary after 348 seconds with wrote=true but verified=false.",
+        "validation": "Record request ID, retry count, backoff and resumed node state without claiming the feature passed."
+      },
+      {
+        "priority": "P1",
+        "action": "For the generated application, inspect the 15 missing accessible locators as separate UI/data-contract hypotheses; do not raise the Playwright timeout globally.",
+        "why": "The final failures cluster into login/global identity (8), shelf/book form controls (5) and shelf-context navigation (2), while 19 tests pass.",
+        "validation": "Stage 4 should use template/static snapshots and a fresh local reproduction to distinguish missing DOM, seed/route mismatch, navigation race and backend response failure."
+      }
+    ]
+  },
+  "platform_validation": {
+    "preflight": "passed",
+    "entrypoint": {
+      "value": "main.py",
+      "raw_log_verified": true
+    },
+    "generated_application_reached": true,
+    "tests_candidate_observed": "/workspace/tests (no *.spec.ts during generation)",
+    "public_tests_path_observed": "/workspace/submission/public-tests/arc-bench-web--bookstack (34 specs)",
+    "bundled_fallback": {
+      "status": "not_evidenced",
+      "note": "The logs show the public-tests path selection; no bundled ZIP fallback hit is recorded. The empty logs.json events array is retained as a source limitation."
+    },
+    "test_workers": 1,
+    "agent_acceptance_workers": 2,
+    "test_timeout_ms": 10000,
+    "runner_memory_limit_bytes": 2147483648,
+    "plaintext_api_key": {
+      "status": "not_found",
+      "note": "Only masked key presence was logged; no secret value is copied here."
+    }
+  },
+  "metering": {
+    "platform_token_count": 356919339,
+    "platform_cost_value": 180.582424,
+    "platform_cost_currency": "CNY",
+    "run_duration_seconds": 17685,
+    "provider_totals_from_stdout": {
+      "requests": 1317,
+      "prompt_tokens": 40984195,
+      "completion_tokens": 862942,
+      "reasoning_tokens": 550288,
+      "prompt_cache_hit_tokens": 37640192,
+      "total_tokens": 41847137
+    },
+    "octos_completed_turn_token_sum": {
+      "tokens_in": 2856548,
+      "tokens_out": 654241,
+      "cache_hit": 31217152
+    },
+    "note": "Platform token_count, provider totals and Octos turn sums are separate accounting scopes and must not be added."
+  },
+  "conflicts": [
+    {
+      "field": "logs_events_empty",
+      "description": "arcbench-run-de894cee2b2e-logs.json has events=[]; stdout contains the usable lifecycle/provider evidence.",
+      "resolution": "Use raw stdout plus separate octos-events/runner-events for trace analysis; do not treat the empty events array as no execution."
+    },
+    {
+      "field": "internal_implement_vs_final_tests",
+      "description": "The unique implement records are 29 ok/5 failed and the final internal full suite is 31/34, while platform final tests are 19/34 with 15 timedOut.",
+      "resolution": "Keep implementation turns, internal acceptance and final Playwright result as separate layers."
+    },
+    {
+      "field": "test_source_layers",
+      "description": "Generation observed no *.spec.ts under /workspace/tests and mapped public tests under /workspace/submission/public-tests/arc-bench-web--bookstack; final report paths are under /workspace/tests.",
+      "resolution": "Retain both observations; do not label the final suite as bundled fallback or infer test identity beyond the logged paths."
+    },
+    {
+      "field": "submission_identity",
+      "description": "The attached local submission ZIP has a local SHA, but the platform run does not expose an upload SHA/build/commit/payload binding.",
+      "resolution": "Use submission_id for run identity and retain the local ZIP hash as an unbound artifact hash only."
+    },
+    {
+      "field": "node_states",
+      "description": "run.json node_states contain lifecycle test-passed values that do not reproduce the 15 final test failures.",
+      "resolution": "Use tests[] and Playwright report for the authoritative platform final result."
+    }
+  ],
+  "missing": [
+    "task_snapshot_id",
+    "platform build ID, commit SHA, payload tree SHA and upload-package SHA binding",
+    "final browser trace, screenshots and platform-native error-context bodies from the executor container",
+    "visual model identifier and reasoning level in the run object",
+    "non-empty structured events array in logs.json",
+    "independent final DOM/network timeline for the 15 timed-out tests"
+  ],
+  "stage3_boundary": {
+    "confirmed": [
+      "The final evaluator ran against a reachable generated application and returned 19 passed plus 15 timedOut tests.",
+      "The agent-side timeout/provider/process evidence is real and independently visible in all three supplied trace streams.",
+      "The timeout/resource chain is a separate diagnostic dimension from the final application locator failures."
+    ],
+    "not_confirmed_in_stage3": [
+      "The exact application-side root cause for each missing locator",
+      "Whether the final 15 failures are primarily DOM, seed data, routing, navigation race or backend response defects",
+      "Whether changing agent turn controls alone would produce a 34/34 platform result"
+    ],
+    "phase4_required": "Read-only single-run diagnosis using the final template, snapshots, Playwright report and the three trace streams; preserve the separation above."
+  },
+  "artifacts": [
+    {"name":"arcbench-run-de894cee2b2e.json","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-run-de894cee2b2e.json","bytes":15367,"sha256":"FF3399E4399352C5B297E3336E1C7793EEAD657E474099506D1D20FF94F45978","role":"raw_run_object","stored_in_repository":false},
+    {"name":"arcbench-run-de894cee2b2e-logs.json","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-run-de894cee2b2e-logs.json","bytes":262592,"sha256":"495B119E53CA6C9FE0726F4DAAD15BB18D03F01751F4B5C02DDA4495D6CE3015","role":"raw_run_logs","stored_in_repository":false},
+    {"name":"arcbench-de894cee2b2e-octos-events.jsonl","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-de894cee2b2e-octos-events.jsonl","bytes":11692923,"sha256":"750EEF8DC3FD035F358DC89D04AAC5D44B5871D39625DBE51AEAB43E1AB84125","role":"octos_trace","stored_in_repository":false},
+    {"name":"arcbench-de894cee2b2e-runner-events.jsonl","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-de894cee2b2e-runner-events.jsonl","bytes":360561,"sha256":"1714569D63E58411A8092D5CC50FC1B0A268D7B5761CC58CF5B105DD99EF8850","role":"runner_trace","stored_in_repository":false},
+    {"name":"arcbench-de894cee2b2e-stdout.log","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-de894cee2b2e-stdout.log","bytes":259895,"sha256":"3210031FC6FE43207BE2D16E1AB7A8425B119A76D72B088E4889F7B8D6DB0C3B","role":"stdout_trace","stored_in_repository":false},
+    {"name":"playwright-report-de894cee2b2e.json","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\playwright-report-de894cee2b2e.json","bytes":66481,"sha256":"DDF3DDD8B59A3285522C33AFC0D10C543075AECE0000102386809B2C86503B54","role":"raw_playwright_report","stored_in_repository":false},
+    {"name":"arcbench-de894cee2b2e-failure-details.md","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-de894cee2b2e-failure-details.md","bytes":15523,"sha256":"243F92B9F4FCA2E9FD0AAAEEA2C63AE1C5088075C6DA2ADBD2A3673AE38B1406","role":"failure_details","stored_in_repository":false},
+    {"name":"de894cee2b2e-template.zip","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\de894cee2b2e-template.zip","bytes":9796783,"sha256":"F69C4817EDBE8D1631DBF4D8709D5E033F893B90F27F9E541105F2CCD9F83923","role":"platform_generated_template","stored_in_repository":false},
+    {"name":"submission-6be3ce5a778e-agent.zip","source_path":"C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\submission-6be3ce5a778e-agent.zip","bytes":333727,"sha256":"9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E","role":"attached_submission_unbound_hash","stored_in_repository":false}
+  ],
+  "source_precedence": [
+    "run JSON for final status, score, lifecycle and IDs",
+    "Playwright report for final test statuses, locators and timeouts",
+    "raw logs JSON stdout for provider totals, path checks and internal flow",
+    "octos-events and runner-events for intermediate turn and lifecycle evidence",
+    "failure details and summary only for navigation; structured sources take precedence"
+  ],
+  "security": {
+    "plaintext_api_key_found": false,
+    "api_key_status": "masked presence only",
+    "log_scan_scope": "supplied run object, logs JSON, stdout and three trace artifacts"
+  }
+}

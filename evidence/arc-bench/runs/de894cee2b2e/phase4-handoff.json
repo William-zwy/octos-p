@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "handoff_id": "de894cee2b2e-648946CAC9B6",
+  "run_id": "de894cee2b2e",
+  "submission_id": "6be3ce5a778e",
+  "task_key": "arc-bench-lite--bookstack",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "thread_title": "06 项目阶段4 + arc-bench-lite--bookstack",
+  "manifest_path": "evidence/arc-bench/runs/de894cee2b2e/manifest.json",
+  "manifest_sha256": "648946CAC9B65D92366B001C0438AAA318CAFC596995D0B9FC6FA03E34B5F563",
+  "ack_path": "evidence/arc-bench/runs/de894cee2b2e/phase4-ack.json",
+  "result_path": "evidence/arc-bench/runs/de894cee2b2e/phase4-result.json",
+  "result_md_path": "evidence/arc-bench/runs/de894cee2b2e/phase4-result.md",
+  "source": "stage3_normalized_intake",
+  "analysis_scope": "phase4_read_only_single_run_diagnosis",
+  "run_state_boundary": "Final platform FAILED 19/34; 15 failures are Playwright locator timeouts. Analyze only this Run and retain the separate internal acceptance and trace layers.",
+  "card": {
+    "platform_final": {
+      "status": "FAILED",
+      "score": 55.9,
+      "pass_total": "19/34",
+      "failed_tests": ["REQ-1.2","REQ-2.2","REQ-3.1","REQ-4.3.1","REQ-4.5.1","REQ-5.2.2","REQ-5.3.1","REQ-5.4.1","REQ-5.6.1","REQ-6.1.2","REQ-6.1.3","REQ-7.1","REQ-7.2","REQ-8.2","REQ-9.1"],
+      "failure_shape": "15 timedOut at approximately 10 seconds; 0 assertion failures"
+    },
+    "internal_acceptance": {
+      "atomic_nodes": 34,
+      "implement_records": "29 ok / 5 failed",
+      "implement_failures": ["REQ-2.2 900s turn timeout","REQ-3.1 900s turn timeout","REQ-5.2.2 348s proxy_error","REQ-5.5.1 900s turn timeout","REQ-7.1 900s turn timeout"],
+      "final_internal_suite": "31/34; REQ-5.6.1, REQ-6.1.2, REQ-6.1.3 remained unverified after one repair"
+    },
+    "trace_summary": {
+      "octos": "46 started / 40 completed / 1 error / 5 unclosed; 1431 tool pairs; 0 compaction events",
+      "runner": "running -> completed; 312 requirement states; final internal boundary 31/34",
+      "stdout": "4 unique 900s implementation timeouts plus one 599s repair timeout; 9 request-budget guards; 2 favicon ConnectionResetError observations; 210 stray processes cleaned postflight",
+      "resource_boundary": "2 GiB limit, 0.95 GiB peak, oom_kill=0; global 51000s budget not exhausted"
+    },
+    "optimization_entry": [
+      "Bound each node to inspect -> minimal edit -> build/smoke, preserving at least 300s repair budget.",
+      "Stop repeated full rewrites after identical failure; patch against the first failing locator.",
+      "Use PID-scoped server cleanup and clean 404 handling for unknown paths such as /favicon.ico.",
+      "Handle proxy_error unexpected EOF with bounded retry/checkpoint preservation.",
+      "Diagnose final locator clusters as DOM/seed/route/navigation hypotheses; do not raise global timeout."
+    ]
+  },
+  "source_precedence": [
+    "manifest.json",
+    "run JSON and Playwright report for final result",
+    "octos-events, runner-events and stdout.log for intermediate trace analysis",
+    "failure details, snapshots and template ZIP for read-only root-cause diagnosis"
+  ],
+  "required_ack": {
+    "path": "evidence/arc-bench/runs/de894cee2b2e/phase4-ack.json",
+    "must_match": ["handoff_id","run_id","task_key","thread_id","manifest_sha256"]
+  },
+  "required_result": {
+    "json_path": "evidence/arc-bench/runs/de894cee2b2e/phase4-result.json",
+    "markdown_path": "evidence/arc-bench/runs/de894cee2b2e/phase4-result.md",
+    "must_match": ["handoff_id","run_id","task_key","thread_id","manifest_sha256"],
+    "required_marker": "PHASE4_RESULT: complete|incomplete"
+  },
+  "allowed_actions": [
+    "read the manifest and de894cee2b2e attachments",
+    "diagnose final failures and trace timeout causes with confirmed/strong_candidate/unknown labels",
+    "write matching phase4 ACK and result files"
+  ],
+  "forbidden_actions": [
+    "analyze another Run or merge prior Run conclusions",
+    "create, resume, rerun or upload a platform Run",
+    "modify Agent code, official tests, task snapshots, ZIPs, assets or runtime configuration",
+    "trigger Stage 5 or implement optimization changes"
+  ]
+}
