@@ -1,13 +1,71 @@
 {
- "ticket-booking--ticket-booking": "火车票预订演示系统",
- "smoke--counter": "ARC Counter Smoke Test",
- "smoke--dice": "ARC Dice Smoke Test",
- "smoke-evolution--counter": "ARC Counter Evolution Smoke Test",
- "smoke-evolution--dice": "ARC Dice Evolution Smoke Test",
- "arc-bench-web--12306": "Train Ticket Booking System",
- "arc-bench-web--bookstack": "BookStack Knowledge Base System",
- "arc-bench-web--ctrip": "Ctrip Travel System",
- "arc-bench-web--keep": "Keep",
- "arc-bench-web--prestashop": "PrestaShop E-commerce Website",
- "arc-bench-web--stackoverflow": "Stack Overflow Platform"
+  "version": 2,
+  "fingerprint": "sha256-canonical-json-v1",
+  "suites": [
+    {
+      "id": "ticket-booking--ticket-booking",
+      "title": "火车票预订演示系统",
+      "requirement_tree_sha256": "0503013780aee13e332c9688aef9598fa24c167161333792410a3b182477d309"
+    },
+    {
+      "id": "smoke--counter",
+      "title": "ARC Counter Smoke Test",
+      "requirement_tree_sha256": "e3ae94d8be93d20f75fb0e1077d7c350d84683d5e9346ecf4f5100c5459ed36a"
+    },
+    {
+      "id": "smoke--dice",
+      "title": "ARC Dice Smoke Test",
+      "requirement_tree_sha256": "5e2f37ace2053dc5e1d39f052a655361112dbcd52674a1f665f14c1080a06fa3"
+    },
+    {
+      "id": "smoke-evolution--counter",
+      "title": "ARC Counter Evolution Smoke Test",
+      "requirement_tree_sha256": "4e29cfbc615f884febce6351a34d4ade41efead9df214132f4ae5eec7c9c2edd"
+    },
+    {
+      "id": "smoke-evolution--dice",
+      "title": "ARC Dice Evolution Smoke Test",
+      "requirement_tree_sha256": "da28d0f998a159c68fb0aadbe86d2bef83e1545755b4ea16eb428b5739490b1c"
+    },
+    {
+      "id": "arc-bench-web--12306",
+      "title": "Train Ticket Booking System",
+      "requirement_tree_sha256": "075b782260a117993542498d23b74bbc254d4a7e135b15f3fd1191642a6e3f43"
+    },
+    {
+      "id": "arc-bench-web--bookstack",
+      "title": "BookStack Knowledge Base System",
+      "requirement_tree_sha256": "32587777926bb99a4e5d27cfa0b4abdc038080779ff99c675ed7ef65ee162e13"
+    },
+    {
+      "id": "arc-bench-web--ctrip",
+      "title": "Ctrip Travel System",
+      "requirement_tree_sha256": "bc33267e92a15d96cc1c77c522285a2457ad63e02631baa5178be11c17d66158"
+    },
+    {
+      "id": "arc-bench-web--keep",
+      "title": "Keep",
+      "requirement_tree_sha256": "cff6ffe96926130d7f188b330f4cf0f369cf8ab604c007445f81fd3fe8de6d29"
+    },
+    {
+      "id": "arc-bench-web--prestashop",
+      "title": "PrestaShop E-commerce Website",
+      "requirement_tree_sha256": "cb29afe7b5fd064b73ef177e315f96b5823ab95204727a815df9ce10b5d01b96"
+    },
+    {
+      "id": "arc-bench-web--stackoverflow",
+      "title": "Stack Overflow Platform",
+      "requirement_tree_sha256": "13c5eaa1598772ea20fad1da1de4143bf8ad46baa9c6f5a0c0d23c852bec21b2"
+    },
+    {
+      "id": "arc-bench-lite--bookstack",
+      "title": "BookStack Knowledge Base System",
+      "requirement_tree_sha256": "5a3df8405030c7b24df6f684bfcc317a5b261bb3400416013400c077e355173d"
+    },
+    {
+      "id": "arc-bench-lite--keep",
+      "title": "Keep",
+      "requirement_tree_sha256": "a43ddded539be5b4b79e59b70b59e6b0f430c837b100dfb654d5ddcdcebd53d9"
+    }
+  ]
 }

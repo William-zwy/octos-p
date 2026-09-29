@@ -1,5 +1,21 @@
 # arc/ 适配层改动记录（工作流 A，分支 `wf-adapter`）
 
+## 2026-09-29｜Lite/Web 测试身份精确路由候选（平台未验证）
+
+- 根因证据：Run `334c6c6736b4` 的平台任务为 `arc-bench-lite--bookstack`，最终
+  `25/34`；Agent 内部却对 `/workspace/submission/public-tests/arc-bench-web--bookstack`
+  得到 `34/34`。旧 `locate_acceptance_tests()` 只比较需求树根标题，而 Lite/Web 的
+  BookStack 标题相同，导致 bundled fallback 静默选错套件。
+- 从冻结官方快照 `20260917-150121Z` 原字节复制 Lite BookStack 与 Lite Keep 的
+  public tests，并逐文件核对 SHA-256；测试内容未修改。
+- bundled manifest 升级为 requirement-tree canonical JSON SHA-256 身份表，覆盖所有
+  已打包套件。平台注入目录仍优先；bundled 仅在指纹精确匹配时启用。旧 manifest
+  只保留唯一标题匹配兼容；同名歧义或指纹不匹配会记录并禁用内部验收，绝不猜测 Web。
+- 本轮不调整模型、超时、请求预算或 repair 轮数。Run 中 static self-check 虽发现 heading、
+  route/element 与 Book Tags toggle 问题，但 implementation 后调用为 `enqueue=False`，且错误
+  Web 套件随后全绿；考虑现有动态 route/placeholder 检查可能误报，静态 findings 继续保持
+  advisory，不强制注入 repair。
+
 ## 2026-09-29｜紧急合并 UI 契约与静态自检候选（平台未验证）
 
 - 证据来源：BookStack Lite Run `53cc4b062b0d` 平台 `24/34`，以及历史

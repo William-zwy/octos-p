@@ -466,3 +466,11 @@ Pop-Location
 - **跨任务与端到端门禁：**以 Keep、StackOverflow、PrestaShop、12306、Ctrip、ticket-booking 和 counter/dice 做创建/导航语义 canary；再用新 Agent 做非 mock 生成，绑定 commit、ZIP SHA、build ID、task snapshot、模型与运行配置，最后运行完整 BookStack 34 项。旧模板手工补丁或旧 Run 通过数不得转移为新 Agent 成绩。
 - **平台门禁：**平台上传与新 Run 必须单独授权。严格 A/B 至少三组配对、交替顺序、同任务快照和同配置；B 组两项目标题题均须 3/3，非 `REQ-8.1` 集合须 `33/33` 且无新失败。Token、费用、耗时中位数不得高于 A 组 10%；高于 20% 或出现新失败即 `NO-GO`。
 - **`REQ-8.1` 独立决策：**维持 `strong_candidate / timing_sensitive`。只补真实评分前 seed、同一 fresh-copy 至少 10 轮的点击→请求→响应→DOM→DB 时间线；不得为了它新增 heading 包装、扩大本次语义切片或重跑整套 P5-017。若本地执行环境继续 `preflight_blocked`，记录为基础设施阻断并转交可运行的隔离复现工作区，不伪造结论。
+
+## 28. Run `334c6c6736b4`：Lite/Web bundled 测试身份路由修复（2026-09-29）
+
+- **平台与内部结果分层：**平台任务 `arc-bench-lite--bookstack` 最终为 `25/34`；Agent 内部 `34/34` 实际加载的是 `/workspace/submission/public-tests/arc-bench-web--bookstack`。平台 9 项失败为 `REQ-1.2`、`REQ-5.6.1`、`REQ-6.1.1`、`REQ-6.1.2`、`REQ-6.1.3`、`REQ-7.1`、`REQ-7.2`、`REQ-8.2`、`REQ-9.1`；其中导航类为 6 项，不是此前阶段 4 文本所称 7 项。
+- **根因：**旧 bundled 路由只把 `manifest.json` 的标题与 `tree.name` 比较；Lite/Web BookStack 根标题同为 `BookStack Knowledge Base System`，当前 ZIP 又缺 Lite BookStack 套件，因此错误 Web 套件被静默选中并产生误导性全绿。
+- **实现裁决：**从官方快照 `20260917-150121Z` 机械复制 Lite BookStack 和 Lite Keep public tests，逐文件 SHA-256 相等，不修改官方测试。manifest v2 为所有 bundled suite 保存解析后 requirement tree 的 canonical JSON SHA-256。运行时顺序保持 `ARCBENCH_TESTS_DIR` → `/workspace/tests` → bundled；bundled 新格式只接受精确指纹，旧格式仅接受唯一标题，同标题无精确指纹时记录歧义并禁用内部验收。
+- **静态自检边界：**本 Run 曾记录 `declared heading 'Book Created 5.6.1' is missing`、多条 route/element 缺口和 Book Tags toggle，但 implementation 后调用使用 `enqueue=False`；错误 Web 套件随后全绿，所以这些 findings 未进入 repair。现有 placeholder/dynamic-route 检查存在假阳性风险，本切片不把全部 finding 强制送入 repair；static self-check 继续 advisory，仅测试身份歧义会阻止 bundled 内部验收。
+- **非改动项与状态：**不改模型、超时、请求预算、repair 轮数或官方测试；候选分支为 `codex/lite-test-identity-routing-fix`，父提交 `9c9d701091c91ae4966fa21ad763d92ec7e1bb21`。本地验证、源码提交、ZIP SHA 和三方远端 SHA 以同名 evidence build record 为准。当前仅为平台未验证候选，必须把后续 Run 绑定到精确 ZIP SHA 后才能判断修复收益。

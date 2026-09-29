@@ -102,6 +102,95 @@ class InlineSpecTests(unittest.TestCase):
             self.assertEqual(inline_spec_text(tests, ["REQ-1.spec.ts", "support/e2e.ts"], 10), "")
 
 
+class AcceptanceSuiteIdentityTests(unittest.TestCase):
+    def _tree(self, task_id, title, marker):
+        return {
+            "id": task_id,
+            "name": title,
+            "type": "FOLDER",
+            "description": marker,
+            "dependencies": [],
+            "children": [node("REQ-1", marker)],
+        }
+
+    def _bundle(self, root, manifest, suite_ids):
+        import json
+        bundled = root / "public-tests"
+        bundled.mkdir()
+        (bundled / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        for suite_id in suite_ids:
+            suite = bundled / suite_id
+            suite.mkdir()
+            (suite / "REQ-1.spec.ts").write_text("test('identity', () => {})", encoding="utf-8")
+        return bundled
+
+    def _v2(self, *entries):
+        return {"version": 2, "fingerprint": "sha256-canonical-json-v1", "suites": list(entries)}
+
+    def _entry(self, suite_id, tree):
+        return {
+            "id": suite_id,
+            "title": tree["name"],
+            "requirement_tree_sha256": m.requirement_tree_fingerprint(tree),
+        }
+
+    def test_should_select_lite_bookstack_by_exact_tree_identity(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        lite = self._tree("ROOT", "BookStack Knowledge Base System", "lite")
+        web = self._tree("ROOT", "BookStack Knowledge Base System", "web")
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}):
+            root = Path(tmp)
+            self._bundle(root, self._v2(
+                self._entry("arc-bench-web--bookstack", web),
+                self._entry("arc-bench-lite--bookstack", lite),
+            ), ["arc-bench-web--bookstack", "arc-bench-lite--bookstack"])
+            self.assertEqual(m.locate_acceptance_tests(lite, root).name, "arc-bench-lite--bookstack")
+
+    def test_should_select_web_bookstack_by_exact_tree_identity(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        lite = self._tree("ROOT", "BookStack Knowledge Base System", "lite")
+        web = self._tree("ROOT", "BookStack Knowledge Base System", "web")
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}):
+            root = Path(tmp)
+            self._bundle(root, self._v2(
+                self._entry("arc-bench-web--bookstack", web),
+                self._entry("arc-bench-lite--bookstack", lite),
+            ), ["arc-bench-web--bookstack", "arc-bench-lite--bookstack"])
+            self.assertEqual(m.locate_acceptance_tests(web, root).name, "arc-bench-web--bookstack")
+
+    def test_should_disable_bundled_tests_when_same_title_has_no_exact_identity(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        lite = self._tree("ROOT", "BookStack Knowledge Base System", "lite")
+        web = self._tree("ROOT", "BookStack Knowledge Base System", "web")
+        unknown = self._tree("ROOT", "BookStack Knowledge Base System", "unknown")
+        messages = []
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}), mock.patch.object(m, "log", messages.append):
+            root = Path(tmp)
+            self._bundle(root, self._v2(
+                self._entry("arc-bench-web--bookstack", web),
+                self._entry("arc-bench-lite--bookstack", lite),
+            ), ["arc-bench-web--bookstack", "arc-bench-lite--bookstack"])
+            self.assertIsNone(m.locate_acceptance_tests(unknown, root))
+        self.assertTrue(any("identity ambiguity" in line and "disabled" in line for line in messages))
+
+    def test_should_keep_unique_title_compatibility_for_legacy_manifest(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        tree = self._tree("ROOT", "Legacy Task", "legacy")
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}):
+            root = Path(tmp)
+            self._bundle(root, {"legacy--task": "Legacy Task"}, ["legacy--task"])
+            self.assertEqual(m.locate_acceptance_tests(tree, root).name, "legacy--task")
+
+
 class InlineSourcesTests(unittest.TestCase):
     def test_should_quote_small_files_and_omit_those_over_budget(self):
         import tempfile

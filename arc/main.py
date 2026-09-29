@@ -58,6 +58,7 @@ Environment (all optional):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -1153,32 +1154,131 @@ def inline_spec_text(tests_dir: Path, files: list[str], max_chars: int) -> str:
     return INLINE_SPEC_HEADER + "".join(parts) if parts else ""
 
 
+def requirement_tree_fingerprint(tree: dict) -> str:
+    """Return a stable identity for the parsed requirement tree.
+
+    The input is the same object returned by ``load_requirement_tree``.  JSON
+    key ordering and YAML formatting therefore cannot change the identity, but
+    any semantic tree difference (including Lite versus Web) does.
+    """
+    canonical = json.dumps(
+        tree, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _bundled_suite_entries(manifest_data: object) -> tuple[list[dict[str, str]], bool]:
+    """Normalize v2 and legacy test manifests.
+
+    Legacy manifests map suite id to title.  They remain usable only through
+    the unique-title compatibility path; v2 manifests require an exact tree
+    fingerprint and never silently fall back to title matching.
+    """
+    if isinstance(manifest_data, dict) and isinstance(manifest_data.get("suites"), list):
+        entries: list[dict[str, str]] = []
+        for raw in manifest_data["suites"]:
+            if not isinstance(raw, dict):
+                continue
+            suite_id = str(raw.get("id", "")).strip()
+            title = str(raw.get("title", "")).strip()
+            fingerprint = str(raw.get("requirement_tree_sha256", "")).strip().lower()
+            if suite_id and title and re.fullmatch(r"[0-9a-f]{64}", fingerprint):
+                entries.append({
+                    "id": suite_id,
+                    "title": title,
+                    "requirement_tree_sha256": fingerprint,
+                })
+        return entries, False
+    if isinstance(manifest_data, dict):
+        return [
+            {"id": str(suite_id), "title": str(title), "requirement_tree_sha256": ""}
+            for suite_id, title in manifest_data.items()
+            if isinstance(title, str)
+        ], True
+    raise ValueError("manifest must be an object")
+
+
 def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
-    """ARCBENCH_TESTS_DIR, then the runner's /workspace/tests, then the public
-    specs shipped in the bundle (matched by requirement root name)."""
-    candidates: list[Path] = []
+    """Locate tests without confusing same-title Lite and Web task suites.
+
+    Platform-provided directories are authoritative.  A bundled suite is used
+    only when its parsed requirement-tree fingerprint matches exactly.  The
+    sole compatibility exception is an old-style manifest with one unique
+    title match; ambiguous identities disable internal acceptance instead of
+    guessing a suite.
+    """
+    platform_candidates: list[Path] = []
     env_dir = os.environ.get("ARCBENCH_TESTS_DIR")
     if env_dir:
-        candidates.append(Path(env_dir))
-    candidates.append(Path("/workspace/tests"))
-    bundled = bundle_dir / "public-tests"
-    manifest = bundled / "manifest.json"
-    if manifest.is_file():
-        try:
-            mapping = json.loads(manifest.read_text(encoding="utf-8"))
-            root_name = str(tree.get("name", "")).strip()
-            for req_id, title in mapping.items():
-                if str(title).strip() == root_name and (bundled / req_id).is_dir():
-                    candidates.append(bundled / req_id)
-        except Exception as exc:  # noqa: BLE001
-            log(f"[tests] manifest unreadable: {exc}")
-    for cand in candidates:
+        platform_candidates.append(Path(env_dir))
+    platform_candidates.append(Path("/workspace/tests"))
+    for cand in platform_candidates:
         try:
             if cand.is_dir() and any(cand.rglob("*.spec.ts")):
                 return cand.resolve()
             log(f"[tests] candidate {cand}: {'no *.spec.ts' if cand.is_dir() else 'absent'}")
         except Exception as exc:  # noqa: BLE001
             log(f"[tests] candidate {cand} unreadable: {exc}")
+
+    bundled = bundle_dir / "public-tests"
+    manifest = bundled / "manifest.json"
+    if not manifest.is_file():
+        log(f"[tests] bundled manifest absent: {manifest}")
+        return None
+    try:
+        manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+        entries, legacy = _bundled_suite_entries(manifest_data)
+    except Exception as exc:  # noqa: BLE001
+        log(f"[tests] manifest unreadable: {exc}")
+        return None
+
+    root_name = str(tree.get("name", "")).strip()
+    fingerprint = requirement_tree_fingerprint(tree)
+    exact = [e for e in entries if e["requirement_tree_sha256"] == fingerprint]
+    exact_dirs = [bundled / e["id"] for e in exact if (bundled / e["id"]).is_dir()]
+    if len(exact_dirs) == 1:
+        cand = exact_dirs[0]
+        if any(cand.rglob("*.spec.ts")):
+            log(f"[tests] bundled suite identity matched {cand.name}: {fingerprint}")
+            return cand.resolve()
+        log(f"[tests] bundled suite {cand.name} has no *.spec.ts; internal acceptance disabled")
+        return None
+    if len(exact) > 1 or len(exact_dirs) > 1:
+        ids = [e["id"] for e in exact]
+        log(f"[tests] bundled suite identity ambiguity for fingerprint {fingerprint}: {ids}; "
+            "internal acceptance disabled")
+        return None
+    if exact:
+        log(f"[tests] exact bundled suite is unavailable for fingerprint {fingerprint}; "
+            "internal acceptance disabled")
+        return None
+
+    title_matches = [e for e in entries if e["title"] == root_name]
+    if not legacy:
+        if len(title_matches) > 1:
+            log(f"[tests] bundled suite identity ambiguity for title {root_name!r}: "
+                f"{[e['id'] for e in title_matches]}; fingerprint {fingerprint} matched none; "
+                "internal acceptance disabled")
+        elif title_matches:
+            log(f"[tests] bundled suite fingerprint mismatch for title {root_name!r}: "
+                f"{fingerprint}; internal acceptance disabled")
+        else:
+            log(f"[tests] no bundled suite identity for title {root_name!r}, fingerprint {fingerprint}")
+        return None
+
+    legacy_dirs = [bundled / e["id"] for e in title_matches if (bundled / e["id"]).is_dir()]
+    if len(legacy_dirs) != 1:
+        if len(title_matches) > 1:
+            log(f"[tests] legacy bundled suite title ambiguity for {root_name!r}: "
+                f"{[e['id'] for e in title_matches]}; internal acceptance disabled")
+        else:
+            log(f"[tests] no unique legacy bundled suite for title {root_name!r}")
+        return None
+    cand = legacy_dirs[0]
+    if any(cand.rglob("*.spec.ts")):
+        log(f"[tests] using unique-title legacy bundled suite {cand.name}")
+        return cand.resolve()
+    log(f"[tests] legacy bundled suite {cand.name} has no *.spec.ts; internal acceptance disabled")
     return None
 
 
