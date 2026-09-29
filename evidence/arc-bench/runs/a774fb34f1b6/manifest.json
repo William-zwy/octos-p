@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake for phase 4 handoff",
+  "intake_label": "stage3-a774fb34f1b6",
+  "status": "normalized_intake_complete_phase4_ready",
+  "run": {
+    "run_id": "a774fb34f1b6",
+    "submission_id": "a9475f8e5f57",
+    "competition_id": "arc-bench-lite-evolution",
+    "task_id": "bookstack",
+    "task_key": "arc-bench-lite-evolution--bookstack",
+    "task_snapshot_id": null,
+    "agent_source": "upload",
+    "status": "FAILED",
+    "score": 66.7,
+    "passed_count": 4,
+    "failed_count": 2,
+    "total_count": 6,
+    "feature_implementation_rate": 66.7,
+    "run_duration_seconds": 5143,
+    "token_count": 52743819,
+    "cost_cny": 30.110252,
+    "failure_reason": "Runner exited with test failures or runtime errors"
+  },
+  "platform_final": {
+    "failure_stage": "final_playwright_execution",
+    "failed_tests": [
+      {
+        "req_id": "REQ-10.2",
+        "status": "failed",
+        "duration_ms": 484,
+        "error_class": "execution_context_destroyed_during_navigation"
+      },
+      {
+        "req_id": "REQ-11.1",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "error_class": "expected_review_heading_not_visible"
+      }
+    ],
+    "passed_tests": ["REQ-10.1", "REQ-11.2", "REQ-12.1", "REQ-12.2"]
+  },
+  "stage3_verified_facts": {
+    "entrypoint": "main.py",
+    "tests_dir": "/workspace/tests",
+    "bundled_fallback": false,
+    "plaintext_api_key": false,
+    "platform_exception": false,
+    "official_test_source_note": "The supplied summary records no *.spec.ts under /workspace/tests and requirement-text-derived platform testing; this must remain separate from any internal acceptance signal.",
+    "generation_identity": {
+      "agent_build_id": null,
+      "commit_sha": null,
+      "task_snapshot_id": null,
+      "platform_upload_sha_binding": null
+    }
+  },
+  "metering": {
+    "platform_token_count": 52743819,
+    "provider_totals": null,
+    "cost_cny": 30.110252,
+    "duration_seconds": 5143,
+    "note": "Provider totals are not asserted here without independently normalized raw-log fields."
+  },
+  "stage4_input": {
+    "p0": [
+      {
+        "id": "P0-1",
+        "req_id": "REQ-10.2",
+        "finding": "Sorting after save navigates via window.location.href and destroys the Playwright execution context.",
+        "requested_boundary": "Update the list in place after save; avoid immediate reload."
+      },
+      {
+        "id": "P0-2",
+        "req_id": "REQ-11.1",
+        "finding": "Comment POST is persisted, but the final test looks for heading 'This page needs review.'; current implementation renders a li and relies on reload.",
+        "requested_boundary": "Provide stable accessible comment text and update the view in place after POST success."
+      }
+    ],
+    "generator_optimizations": [
+      {"priority": "P1", "item": "Fix structural inspection path mismatch between backend/server.js and backend/src/server.js."},
+      {"priority": "P1", "item": "Set 600-750 second implementation budgets per node while reserving time for final checks."},
+      {"priority": "P1", "item": "Replace unbounded large-file/reference-image reads with targeted reads."},
+      {"priority": "P1", "item": "Track service PIDs for cleanup; avoid broad pkill and zombie processes."},
+      {"priority": "P1", "item": "Separate local self-validation from platform Playwright acceptance."},
+      {"priority": "P2", "item": "Fix runner node_states to tests[] status mapping."},
+      {"priority": "P2", "item": "When official specs are unavailable, generate minimal locator-level regression tests."}
+    ],
+    "stage5_triggered": false,
+    "prior_runs_merged": []
+  },
+  "evidence_files": [
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6.json", "sha256": "CD8199523136B0184CD4FEDDD884E3FDF19131686106963036662B6C5436DA81"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6-logs.json", "sha256": "C0C34F6785FD239A49C84EB0252F95014BB775BAA4A717DB16C21168BF3C6CC6"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\playwright-report-a774fb34f1b6.json", "sha256": "755865D0FFB9F9B67FCCD8AF23ED4EEEF0F1E4E28D15BB87D70C944B8C49757D"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-failure-details.md", "sha256": "D8C8FAE53E9EE568D282F867FC6E4FA12ECE147E774E2917D845322D238DD214"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\a774fb34f1b6-template.zip", "sha256": "D19F7683E11F47EB375CF34658BCD203320DDAC5659AAC8C275C2931977DCF60"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\submission-a9475f8e5f57-agent.zip", "sha256": "9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E", "platform_bound": false}
+  ]
+}

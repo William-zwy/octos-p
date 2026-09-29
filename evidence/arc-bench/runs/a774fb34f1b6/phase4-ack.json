@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "PHASE4_HANDOFF_ACK": "a774fb34f1b6-5C8C42D46488",
+  "handoff_id": "a774fb34f1b6-5C8C42D46488",
+  "run_id": "a774fb34f1b6",
+  "submission_id": "a9475f8e5f57",
+  "task_key": "arc-bench-lite-evolution--bookstack",
+  "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
+  "manifest_sha256": "5C8C42D4648800CD74693170F471B196C68E8012FDCACD4B5C02475837A87DF3",
+  "received_at": "2026-09-30T00:00:00+08:00",
+  "status": "received",
+  "read_only": true,
+  "scope": "single_run_phase4_read_only_diagnosis",
+  "note": "Stage 4 is triggered from the normalized Stage 3 intake and supplied intermediate conclusions. No platform mutation or rerun is authorized."
+}

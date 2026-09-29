@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "handoff_id": "a774fb34f1b6-5C8C42D46488",
+  "run_id": "a774fb34f1b6",
+  "submission_id": "a9475f8e5f57",
+  "task_key": "arc-bench-lite-evolution--bookstack",
+  "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
+  "thread_title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
+  "manifest": "evidence/arc-bench/runs/a774fb34f1b6/manifest.json",
+  "manifest_sha256": "5C8C42D4648800CD74693170F471B196C68E8012FDCACD4B5C02475837A87DF3",
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "source_precedence": [
+    "run JSON for final status, lifecycle, tests and identifiers",
+    "raw logs and traceability artifacts for execution path and configuration",
+    "Playwright report and failure details for final test evidence",
+    "template ZIP for static implementation evidence",
+    "stage3 manifest and supplied intermediate conclusions for routing context",
+    "summary markdown for navigation only"
+  ],
+  "card": {
+    "platform_final": {
+      "status": "FAILED",
+      "score": 66.7,
+      "pass_total": "4/6",
+      "failed_count": 2,
+      "failed_tests": ["REQ-10.2", "REQ-11.1"]
+    },
+    "stage4_priority_input": ["P0-1 REQ-10.2", "P0-2 REQ-11.1"],
+    "generator_optimization_input": ["P1 structural path", "P1 node budgets", "P1 targeted reads", "P1 PID cleanup", "P1 validation separation", "P2 status mapping", "P2 minimal locator regression"]
+  },
+  "required_ack": {
+    "path": "evidence/arc-bench/runs/a774fb34f1b6/phase4-ack.json",
+    "must_match": ["handoff_id", "run_id", "submission_id", "task_key", "thread_id", "manifest_sha256"]
+  },
+  "required_result": {
+    "json_path": "evidence/arc-bench/runs/a774fb34f1b6/phase4-result.json",
+    "markdown_path": "evidence/arc-bench/runs/a774fb34f1b6/phase4-result.md",
+    "must_match": ["handoff_id", "run_id", "submission_id", "task_key", "thread_id", "manifest_sha256"],
+    "required_marker": "PHASE4_RESULT: complete|incomplete"
+  },
+  "instructions": [
+    "Analyze only Run a774fb34f1b6; preserve d9608977de9c and f7073dc2de0e as explicitly marked history.",
+    "Use the supplied P0/P1/P2 conclusions as hypotheses and verify them against the run artifacts before classifying evidence.",
+    "Keep final platform tests separate from any internal/evolution implement flow or intermediate run state.",
+    "Do not rerun, resume, upload, modify Agent code, official tests, task snapshots, ZIPs, assets or runtime configuration.",
+    "Do not trigger Stage 5; write only a Stage 4 result and bounded recommendations."
+  ]
+}
