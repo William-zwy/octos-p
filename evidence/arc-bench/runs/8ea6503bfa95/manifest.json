@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake with final and intermediate trace analysis",
+  "intake_label": "stage3-8ea6503bfa95",
+  "status": "normalized_intake_complete_pending_phase4_reconciliation",
+  "source_folder": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite",
+  "run": {
+    "run_id": "8ea6503bfa95",
+    "submission_id": "6be3ce5a778e",
+    "competition_id": "arc-bench-lite",
+    "task_id": "keep",
+    "task_key": "arc-bench-lite--keep",
+    "catalog": "competition",
+    "runtime": "python",
+    "agent_source": "upload",
+    "model": "deepseek-v4-flash",
+    "reasoning": "low",
+    "original_filename": "octos-arc-bundle_urgent-bookstack-contract-fix-r2-platform-unverified.zip",
+    "created_at": "2026-09-29T12:40:46.177309",
+    "started_at": "2026-09-29T12:40:47.887803",
+    "finished_at": "2026-09-29T18:27:20.586266",
+    "status": "FAILED",
+    "score": 56.2,
+    "passed_count": 18,
+    "failed_count": 14,
+    "total_count": 32,
+    "test_pass_rate": 56.2,
+    "feature_implementation_rate": 56.2,
+    "failure_reason": "Runner exited with test failures or runtime errors",
+    "run_duration_seconds": 20611,
+    "platform_time_budget_seconds": null
+  },
+  "intake_routing": {
+    "phase3_scope": "facts_manifest_trace_analysis_and_routing_only",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "phase4_auto_dispatch": "blocked_until_task_thread_reconciliation",
+    "stage5_triggered": false,
+    "prior_runs_merged": [],
+    "registered_thread_id": "01a0b57a-7a65-77d0-a08a-e202167e4f70",
+    "registered_thread_title": "05 项目阶段4 + arc-bench-lite--keep",
+    "registered_thread_status_at_intake": "needs_reconciliation",
+    "reconciliation_required": true,
+    "blocking_run_id": "32e08aaca2e4",
+    "blocking_handoff_id": "32e08aaca2e4-750C96456665",
+    "routing_note": "The registered Keep phase 4 mapping has an unverified late result with missing manifest_sha256 and missing JSON PHASE4_RESULT marker. Existing app read/list attempts returned Invalid app tool request, so this Run is persisted but not sent to an unverified or duplicate thread."
+  },
+  "platform_final": {
+    "source": "arcbench-run-8ea6503bfa95.json and playwright-report-8ea6503bfa95.json",
+    "status": "FAILED",
+    "score": 56.2,
+    "pass_total": "18/32",
+    "failed_status_counts": {
+      "timedOut": 14,
+      "failed": 0
+    },
+    "failure_stage": "final_playwright_execution",
+    "tests_reached": true,
+    "test_workers": 1,
+    "test_timeout_ms": 10000,
+    "failed_tests": [
+      {"req_id":"REQ-2.3.1","name":"Delete","status":"timedOut","duration_ms":10019,"observed":"Expected Note trashed button was not found"},
+      {"req_id":"REQ-2.5.1","name":"Archive","status":"timedOut","duration_ms":10021,"observed":"Per-note Archive button was not found in the matching article"},
+      {"req_id":"REQ-2.5.2","name":"Archive Undo","status":"timedOut","duration_ms":10026,"observed":"Per-note Archive button was not found in the matching article"},
+      {"req_id":"REQ-2.5.3","name":"Show archived notes","status":"timedOut","duration_ms":10028,"observed":"Per-note Archive button was not found in the matching article"},
+      {"req_id":"REQ-2.5.4","name":"Unarchive","status":"timedOut","duration_ms":10023,"observed":"Per-note Archive button was not found in the matching article"},
+      {"req_id":"REQ-2.6.1","name":"Change note color","status":"timedOut","duration_ms":10024,"observed":"Per-note Change color button was not found in the matching article"},
+      {"req_id":"REQ-2.7.1","name":"Assign label to a note","status":"timedOut","duration_ms":10032,"observed":"Note editor Work checkbox was not found"},
+      {"req_id":"REQ-2.7.2","name":"Remove label from a note","status":"timedOut","duration_ms":10022,"observed":"Note editor Work checkbox was not found"},
+      {"req_id":"REQ-2.7.4","name":"Assign default label when creating note","status":"timedOut","duration_ms":10025,"observed":"Created card did not contain Reminders"},
+      {"req_id":"REQ-2.8.1","name":"Pin note","status":"timedOut","duration_ms":10014,"observed":"Pinned title was not found in the matching article"},
+      {"req_id":"REQ-2.8.3","name":"Pin note when creating it","status":"timedOut","duration_ms":10022,"observed":"Pinned title was not found in the created article"},
+      {"req_id":"REQ-3.1","name":"Initial suggested filters","status":"timedOut","duration_ms":10026,"observed":"Reminders filter button was not found in the listbox"},
+      {"req_id":"REQ-4.1","name":"Setting options list","status":"timedOut","duration_ms":10019,"observed":"Settings button was not found"},
+      {"req_id":"REQ-4.2","name":"Detailed settings","status":"timedOut","duration_ms":10020,"observed":"Settings button was not found"}
+    ],
+    "failure_clusters": [
+      {"cluster":"note_action_controls_or_trash_state","req_ids":["REQ-2.3.1","REQ-2.5.1","REQ-2.5.2","REQ-2.5.3","REQ-2.5.4","REQ-2.6.1"],"count":6,"evidence_level":"confirmed_symptom"},
+      {"cluster":"label_editor_and_default_label_state","req_ids":["REQ-2.7.1","REQ-2.7.2","REQ-2.7.4"],"count":3,"evidence_level":"confirmed_symptom"},
+      {"cluster":"pin_state","req_ids":["REQ-2.8.1","REQ-2.8.3"],"count":2,"evidence_level":"confirmed_symptom"},
+      {"cluster":"initial_filter_and_settings_controls","req_ids":["REQ-3.1","REQ-4.1","REQ-4.2"],"count":3,"evidence_level":"confirmed_symptom"}
+    ]
+  },
+  "internal_acceptance": {
+    "source": "arcbench-8ea6503bfa95-stdout.log and arcbench-8ea6503bfa95-runner-events.jsonl",
+    "atomic_nodes": 32,
+    "agent_declared_time_budget_seconds": 48000,
+    "internal_workers": 2,
+    "candidate_root_observed": "/workspace/tests",
+    "candidate_root_result": "no *.spec.ts",
+    "selected_suite_observed": "/workspace/submission/public-tests/arc-bench-web--keep",
+    "selected_suite_task_identity": "arc-bench-web--keep",
+    "selected_suite_matches_run_task": false,
+    "full_suite_rounds": [
+      {"round":0,"passed":"29/32","failing_nodes":["REQ-2.6.1","REQ-2.7.4","REQ-2.7.5"]},
+      {"round":1,"passed":"29/32","failing_nodes":["REQ-2.6.1","REQ-2.7.4","REQ-2.7.5"]}
+    ],
+    "full_suite_repair_result": "same failures as previous round; stopping repairs",
+    "implement_turn_timeouts": [
+      {"req_id":"REQ-2.3.1","duration_seconds":900,"tools":49,"wrote":true,"verified":true},
+      {"req_id":"REQ-2.5.1","duration_seconds":900,"tools":49,"wrote":true,"verified":true},
+      {"req_id":"REQ-2.7.1","duration_seconds":900,"tools":23,"wrote":true,"verified":false},
+      {"req_id":"REQ-2.7.4","duration_seconds":900,"tools":53,"wrote":true,"verified":true},
+      {"req_id":"REQ-2.7.5","duration_seconds":900,"tools":16,"wrote":true,"verified":false}
+    ],
+    "repair_interruptions": [
+      {"req_id":"REQ-2.7.1","kind":"octos_turn_timeout","duration_seconds":584},
+      {"req_id":"REQ-2.7.4","kind":"octos_turn_timeout","duration_seconds":599},
+      {"req_id":"REQ-2.6.2","kind":"proxy_error_then_tool_repairs","duration_seconds":359}
+    ],
+    "runner_final_state": {"implemented":32,"verified":29,"unverified_nodes":["REQ-2.6.1","REQ-2.7.4","REQ-2.7.5"]},
+    "note": "Runner lifecycle, internal acceptance, platform feature count and final Playwright results are kept as separate evidence layers. The internal 29/32 result is not predictive of the final 18/32 because the selected internal suite task identity differs from the Run task identity."
+  },
+  "trace_analysis": {
+    "octos_events": {
+      "bytes": 13768976,
+      "lines_parsed": 15198,
+      "turn_started": 56,
+      "turn_completed": 48,
+      "turn_error": 1,
+      "unclosed_turns": 7,
+      "tool_started": 1289,
+      "tool_completed": 1288,
+      "progress_updated": 9511,
+      "reasoning_delta": 751,
+      "message_delta": 718,
+      "context_normalization": 56,
+      "error_class": "REQ-2.6.2 repair: HTTP 400 proxy_error / upstream unexpected EOF",
+      "evidence_level": "confirmed"
+    },
+    "runner_events": {
+      "bytes": 364872,
+      "lines_parsed": 1324,
+      "requirement_state_events": 257,
+      "signal_events": 345,
+      "start_agent_info_events": 689,
+      "run_tests_info_events": 12,
+      "runner_final_state": "completed",
+      "terminal_platform_parse": "passed=18 failed=14 score=56.2",
+      "evidence_level": "confirmed"
+    },
+    "stdout": {
+      "bytes": 446723,
+      "provider_requests": 1180,
+      "provider_prompt_tokens": 33391932,
+      "provider_completion_tokens": 1134421,
+      "provider_reasoning_tokens": 904873,
+      "provider_prompt_cache_hit_tokens": 29967360,
+      "provider_total_tokens": 34526353,
+      "unique_stdout_connection_reset_errors": 6,
+      "unique_stdout_proxy_errors": 1,
+      "unique_stdout_900_second_turn_caps": 5,
+      "unique_stdout_request_budget_10_guards": 13,
+      "postflight_stray_processes_killed": 402,
+      "evidence_level": "confirmed"
+    }
+  },
+  "metering": {
+    "platform_token_count": 432984489,
+    "provider_total_tokens": 34526353,
+    "provider_requests": 1180,
+    "cost": {"amount": 215.543912,"currency":"CNY","source":"run JSON token_cost_usd and token_cost_currency"},
+    "duration_seconds": 20611,
+    "note": "Platform token count and provider totals are different accounting scopes and are not added together."
+  },
+  "platform_configuration": {
+    "agent_time_budget_seconds": 48000,
+    "final_test_workers": 1,
+    "internal_acceptance_workers": 2,
+    "playwright_version": "1.57.0",
+    "final_test_timeout_ms": 10000,
+    "agent_tests_root_observed": "/workspace/tests",
+    "agent_tests_root_spec_count": 0,
+    "internal_suite_routing_observed": "/workspace/submission/public-tests/arc-bench-web--keep",
+    "task_suite_identity_conflict": true
+  },
+  "platform_validation": {
+    "entrypoint": {"value":"main.py","raw_log_verified":true},
+    "generated_application_reached": true,
+    "frontend_build": "passed",
+    "backend_startup": "passed",
+    "official_tests": {"value":"final Playwright report with 32 requirement-derived specs","raw_report_verified":true},
+    "bundled_agent_tests_fallback": "not observed; internal suite identity mismatch remains",
+    "oom_or_cgroup_kill": "not evidenced",
+    "global_time_budget_exhaustion": "not evidenced"
+  },
+  "generation_identity": {
+    "build_id": null,
+    "commit_sha": null,
+    "platform_upload_sha256": null,
+    "attached_submission_zip_sha256": "9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E",
+    "submission_zip_platform_binding_verified": false,
+    "task_snapshot_id": null,
+    "note": "The local Agent ZIP is hashed, but the platform did not provide a build, task snapshot, or uploaded ZIP checksum binding."
+  },
+  "conclusions": {
+    "primary_confirmed_routing_issue": "The agent's internal acceptance suite selection used arc-bench-web--keep while the Run task is arc-bench-lite--keep. This makes the internal 29/32 acceptance result a non-matching-suite result.",
+    "primary_confirmed_execution_issue": "Five implementation turns hit the 900 second Octos cap; later repair turns were bounded by request guards and remaining budget, leaving three final internal nodes unverified.",
+    "primary_confirmed_platform_symptom": "The final official suite reached the application and produced 14 Playwright timeouts, all waiting for missing controls or state, with no assertion-status failures.",
+    "secondary_confirmed_provider_issue": "One REQ-2.6.2 repair turn terminated with an upstream proxy_error unexpected EOF.",
+    "implementation_root_cause_status": "The exact final-code causes behind each missing control/state remain phase4 read-only diagnosis work; phase3 does not infer them from timeout symptoms alone."
+  },
+  "optimization_candidates": [
+    {"priority":"P0","action":"Make internal acceptance task-key strict: require arc-bench-lite--keep suite identity, fail closed on a web-suite mismatch, and report the selected suite in the run contract.","expected_effect":"Prevents false 29/32 confidence and directs repair turns at the official contract."},
+    {"priority":"P1","action":"Mirror final worker and timeout settings during self-acceptance (workers=1, official suite, 10s test timeout) and run a small targeted smoke before cumulative suites.","expected_effect":"Reduces validation drift and separates UI contract failures from harness latency."},
+    {"priority":"P1","action":"Bound each node by a small inspect -> patch -> targeted test loop; stop repeated file-path/tool retries and avoid full rewrites when the failure is a single locator contract.","expected_effect":"Reduces 900s turn hits, request-budget guards and unfinished repair states."},
+    {"priority":"P1","action":"Reserve repair budget for nodes whose official-task test actually fails; do not spend late budget on cross-suite cumulative failures.","expected_effect":"Improves repair convergence before the remaining budget becomes negative."},
+    {"priority":"P2","action":"Keep startup/server cleanup isolated and assert no process accumulation after each smoke; 402 stray processes were reaped postflight.","expected_effect":"Reduces environmental noise and possible later interaction instability; not proven as the final root cause in this Run."}
+  ],
+  "missing": [
+    "platform task_snapshot_id, build_id, commit_sha and upload ZIP checksum binding",
+    "executor error-context bodies, traces, screenshots, HAR and official test source",
+    "phase4 code-level diagnosis of the final template against arc-bench-lite--keep tests",
+    "a clean-seed before/after hash proving whether final template data state contributed to the pin/label failures"
+  ],
+  "artifacts": [
+    {"name":"arcbench-run-8ea6503bfa95.json","bytes":14277,"sha256":"CBF32468D59666E43DAE8AF2F0BB83E5DA2F888833616769571E1038C86D6F97","role":"raw_run_object","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95.json","stored_in_repository":false},
+    {"name":"arcbench-run-8ea6503bfa95-logs.json","bytes":450136,"sha256":"DC2F3FE2BC844A4AE2C1B1B7278D04AF05E1EBC8BFD39A6A04320A54E08B8CFA","role":"raw_run_logs","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95-logs.json","stored_in_repository":false},
+    {"name":"arcbench-run-8ea6503bfa95-midrun.json","bytes":12958,"sha256":"469B1A4408FC191B611D96E1781A2DD14966AEFE5E6C126BCF232250E395465C","role":"midrun_run_object","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95-midrun.json","stored_in_repository":false},
+    {"name":"arcbench-run-8ea6503bfa95-midrun-logs.json","bytes":450136,"sha256":"DC2F3FE2BC844A4AE2C1B1B7278D04AF05E1EBC8BFD39A6A04320A54E08B8CFA","role":"midrun_logs","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95-midrun-logs.json","stored_in_repository":false},
+    {"name":"arcbench-run-8ea6503bfa95-midrun-traceability.json","bytes":13409,"sha256":"D19C313DC826C18A957A9314D5B5CD4B4195B65537124EF63671A8F5C2DE1B8B","role":"midrun_traceability","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95-midrun-traceability.json","stored_in_repository":false},
+    {"name":"arcbench-run-8ea6503bfa95-traceability.json","bytes":13409,"sha256":"D19C313DC826C18A957A9314D5B5CD4B4195B65537124EF63671A8F5C2DE1B8B","role":"final_traceability","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95-traceability.json","stored_in_repository":false},
+    {"name":"arcbench-run-8ea6503bfa95-summary.md","bytes":3832,"sha256":"ADC62C5C3B4F0263A0DFA51389348E5636284A3B71DF19A8474D247C00612786","role":"summary_navigation_only","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95-summary.md","stored_in_repository":false},
+    {"name":"playwright-report-8ea6503bfa95.json","bytes":63700,"sha256":"C586C7C20A445C3E73F0C9E576897C92EA68D63E4D238E835776D900E88B1371","role":"raw_playwright_report","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/playwright-report-8ea6503bfa95.json","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-failure-details.md","bytes":15364,"sha256":"034150D6F7C1CD645EE8FC461C0FEA97BB640377D747EE6B370542FE38CF64E0","role":"failure_details","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-failure-details.md","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-snapshots.json","bytes":38483,"sha256":"41BE24E9E45FE2192B0A4D07B69FA343A0A6B03B5F9B1CEED42CC3034A2699F8","role":"arc_snapshots","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-snapshots.json","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-design-midrun.json","bytes":9082,"sha256":"6861A46D4D6B3F501DEC8FF1E2159593A340FA77FFAC954EE03CC4765A6481F8","role":"design_midrun","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-design-midrun.json","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-arc-extra.json","bytes":2578887,"sha256":"A3E9FB7EF74158F1670867AC324C9880C3128A375BE8014221B2896D3BDD0B86","role":"arc_extra_evidence","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-arc-extra.json","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-octos-events.jsonl","bytes":13768976,"sha256":"0FAAE19101397E4DDF107AC97A68A869E749A83507D78C3E84F5BC4E5A440FDB","role":"octos_event_stream","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-octos-events.jsonl","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-runner-events.jsonl","bytes":364872,"sha256":"CD06E4DDD9B6415579417CC21A4E79C995366A8F4985F4E380C55511A925EE55","role":"runner_event_stream","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-runner-events.jsonl","stored_in_repository":false},
+    {"name":"arcbench-8ea6503bfa95-stdout.log","bytes":446723,"sha256":"17A734DC49B17F2A21D8B1A95B34045C73565714EE2CE92B513D4FFD1FDB904A","role":"stdout_log","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-stdout.log","stored_in_repository":false},
+    {"name":"submission-6be3ce5a778e-agent.zip","bytes":333727,"sha256":"9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E","role":"attached_submission_zip","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/submission-6be3ce5a778e-agent.zip","stored_in_repository":false},
+    {"name":"8ea6503bfa95-template.zip","bytes":1839557,"sha256":"6B4520DA91B0DE3AD0529E4F056B5343B55043CC87C54DF3B2B5053BA7868EA6","role":"platform_template_snapshot","source_path":"C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/8ea6503bfa95-template.zip","stored_in_repository":false}
+  ],
+  "source_precedence": [
+    "run JSON for final status, score, tests, metrics and identifiers",
+    "octos-events, runner-events and stdout for intermediate lifecycle, suite routing, repair and provider evidence",
+    "Playwright report and failure-details for final locator/state symptoms",
+    "summary markdown for navigation only",
+    "template ZIP and snapshots for phase4 read-only code diagnosis"
+  ],
+  "security": {
+    "status": "redacted_only",
+    "values_copied_or_logged_in_repository": false,
+    "handling": "stdout records only an OPENAI_API_KEY set/length marker; no candidate value is copied into repository evidence."
+  }
+}

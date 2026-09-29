@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "handoff_id": "8ea6503bfa95-437048B007EC",
+  "run_id": "8ea6503bfa95",
+  "submission_id": "6be3ce5a778e",
+  "task_key": "arc-bench-lite--keep",
+  "thread_id": "01a0b57a-7a65-77d0-a08a-e202167e4f70",
+  "thread_title": "05 项目阶段4 + arc-bench-lite--keep",
+  "manifest": "evidence/arc-bench/runs/8ea6503bfa95/manifest.json",
+  "manifest_sha256": "437048B007EC797D83F8A6784CEEE261F6F01FEF46206FCB92716C054A0CCBCA",
+  "analysis": "evidence/arc-bench/runs/8ea6503bfa95/phase3-analysis.md",
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "execution_mode": "reuse_registered_task_thread_only_after_reconciliation",
+  "dispatch_status": "manual_trigger_rejected_before_execution",
+  "card": {
+    "platform_final": {
+      "status": "FAILED",
+      "score": 56.2,
+      "pass_total": "18/32",
+      "failed_tests": ["REQ-2.3.1","REQ-2.5.1","REQ-2.5.2","REQ-2.5.3","REQ-2.5.4","REQ-2.6.1","REQ-2.7.1","REQ-2.7.2","REQ-2.7.4","REQ-2.8.1","REQ-2.8.3","REQ-3.1","REQ-4.1","REQ-4.2"],
+      "failure_shape": "14 timedOut, 0 failed; final locator/state symptoms are detailed in manifest and phase3-analysis.md"
+    },
+    "intermediate_traces": {
+      "octos": "15198 parsed lines; 56 started, 48 completed, 1 error, 7 unclosed; 1289 tool starts / 1288 completions",
+      "runner": "1324 parsed lines; final runner completed but REQ-2.6.1/2.7.4/2.7.5 remained unverified",
+      "stdout": "internal suite selected arc-bench-web--keep for a Run keyed arc-bench-lite--keep; 5 implement turns hit 900s and full suite stayed 29/32"
+    },
+    "internal_acceptance": {
+      "selected_suite_matches_run_task": false,
+      "round_0": "29/32",
+      "round_1": "29/32",
+      "workers": 2,
+      "official_workers": 1
+    },
+    "execution_chain": {
+      "implement_turn_timeout_seconds": 900,
+      "implement_timeout_nodes": ["REQ-2.3.1","REQ-2.5.1","REQ-2.7.1","REQ-2.7.4","REQ-2.7.5"],
+      "repair_interruptions": ["REQ-2.7.1 at 584s","REQ-2.7.4 at 599s","REQ-2.6.2 proxy_error at 359s"],
+      "global_budget_exhausted": false,
+      "startup_crash": false,
+      "oom_or_cgroup_kill": false
+    },
+    "metering": {
+      "platform_token_count": 432984489,
+      "provider_total_tokens": 34526353,
+      "provider_requests": 1180,
+      "cost_cny": 215.543912,
+      "duration_seconds": 20611
+    }
+  },
+  "required_ack": {
+    "path": "evidence/arc-bench/runs/8ea6503bfa95/phase4-ack.json",
+    "must_match": ["handoff_id","run_id","task_key","thread_id","manifest_sha256"]
+  },
+  "required_result": {
+    "json_path": "evidence/arc-bench/runs/8ea6503bfa95/phase4-result.json",
+    "markdown_path": "evidence/arc-bench/runs/8ea6503bfa95/phase4-result.md",
+    "must_match": ["handoff_id","run_id","task_key","thread_id","manifest_sha256"],
+    "required_marker": "PHASE4_RESULT: complete|incomplete"
+  },
+  "instructions": [
+    "Analyze only Run 8ea6503bfa95; do not merge other Keep or BookStack Run conclusions.",
+    "Read phase3-analysis.md and all three supplied traces before making a root-cause claim.",
+    "First verify the internal suite identity mismatch: arc-bench-web--keep was selected while the Run task is arc-bench-lite--keep.",
+    "Separate harness/test-routing failure, Octos turn/proxy execution failure and final-template DOM/state symptoms.",
+    "Classify every root-cause statement as confirmed, strong_candidate or unknown.",
+    "Use read-only source inspection and isolated clean-seed reproduction only; do not edit the source ZIP, Agent code, official tests, task snapshot or runtime configuration.",
+    "Do not trigger Stage 5, create a platform Run, upload a ZIP or modify official tests.",
+    "Write phase4-ack.json and phase4-result.json/phase4-result.md only after the existing Keep thread mapping is reconciled and the identity fields match this card."
+  ],
+  "read_first": [
+    "evidence/arc-bench/runs/8ea6503bfa95/manifest.json",
+    "evidence/arc-bench/runs/8ea6503bfa95/phase3-analysis.md",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-8ea6503bfa95.json",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/playwright-report-8ea6503bfa95.json",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-octos-events.jsonl",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-runner-events.jsonl",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-8ea6503bfa95-stdout.log",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/8ea6503bfa95-template.zip"
+  ],
+  "blocking_note": "The registered arc-bench-lite--keep thread is needs_reconciliation because a prior late phase4 result for 32e08aaca2e4 lacks manifest_sha256 and the JSON PHASE4_RESULT marker. A manual send_message_to_thread attempt at 2026-09-30T03:32:44.7462711+08:00 was rejected before execution with -32602 Invalid app tool request; no message was delivered and no ACK was produced. Do not claim delivery or create a duplicate thread until reconciliation succeeds."
+}
