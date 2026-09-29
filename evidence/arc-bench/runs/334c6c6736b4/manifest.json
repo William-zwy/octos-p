@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake",
+  "intake_label": "stage3-334c6c6736b4",
+  "status": "normalized_intake_complete_pending_phase4",
+  "run": {
+    "run_id": "334c6c6736b4",
+    "submission_id": "0e905281c3dd",
+    "display_name": "luyun18029839909@163.com",
+    "original_filename": "octos-arc-bundle_urgent-bookstack-contract-fix-unverified.zip",
+    "catalog": "competition",
+    "competition_id": "arc-bench-lite",
+    "task_id": "bookstack",
+    "task_key": "arc-bench-lite--bookstack",
+    "task_snapshot_id": null,
+    "runtime": "python",
+    "agent_source": "upload",
+    "created_at": "2026-09-28T20:18:12.510860",
+    "started_at": "2026-09-28T20:18:14.841114",
+    "finished_at": "2026-09-28T23:15:59.125360",
+    "status": "FAILED",
+    "score": 73.5,
+    "test_pass_rate": 73.5,
+    "passed_count": 25,
+    "failed_count": 9,
+    "feature_implementation_rate": 73.5,
+    "run_duration_seconds": 10533,
+    "failure_reason": "Runner exited with test failures or runtime errors"
+  },
+  "intake_routing": {
+    "phase3_scope": "facts_manifest_and_routing_only",
+    "phase4_auto_dispatch": "reuse_verified_bookstack_thread",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "stage5_triggered": false,
+    "prior_runs_merged": [],
+    "registered_thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+    "registered_thread_title": "06 项目阶段4 + arc-bench-lite--bookstack",
+    "registered_thread_status_at_intake": "verified"
+  },
+  "platform_final": {
+    "status": "FAILED",
+    "score": 73.5,
+    "passed": 25,
+    "total": 34,
+    "failure_stage": "final_playwright_execution",
+    "failed_tests": [
+      {"name": "REQ-1.2: Back to Homepage from Other Pages", "file": "REQ-1.2.spec.ts", "status": "timedOut", "duration_ms": 10018, "observed_locator": "getByRole('button', { name: /^BookStack$/i })"},
+      {"name": "REQ-5.6.1: Fill out and Save Book with Shelf", "file": "REQ-5.6.1.spec.ts", "status": "timedOut", "duration_ms": 10015, "observed_locator": "getByRole('button', { name: /^New Book$/i })"},
+      {"name": "REQ-6.1.1: Save Page", "file": "REQ-6.1.1.spec.ts", "status": "timedOut", "duration_ms": 10019, "observed_locator": "getByRole('heading', { name: /Page\\s+Created\\s+6\\.1\\.1/i })"},
+      {"name": "REQ-6.1.2: Save Draft", "file": "REQ-6.1.2.spec.ts", "status": "timedOut", "duration_ms": 10022, "observed_locator": "getByRole('button', { name: /^BookStack$/i })"},
+      {"name": "REQ-6.1.3: Delete Draft", "file": "REQ-6.1.3.spec.ts", "status": "timedOut", "duration_ms": 10017, "observed_locator": "getByRole('button', { name: /^Edit$/i })"},
+      {"name": "REQ-7.1: Add to Recently Viewed", "file": "REQ-7.1.spec.ts", "status": "timedOut", "duration_ms": 10016, "observed_locator": "getByRole('button', { name: /^BookStack$/i })"},
+      {"name": "REQ-7.2: Quick Navigation from Recently Viewed", "file": "REQ-7.2.spec.ts", "status": "timedOut", "duration_ms": 10016, "observed_locator": "getByRole('button', { name: /^BookStack$/i })"},
+      {"name": "REQ-8.2: Quick Navigation from Favorites", "file": "REQ-8.2.spec.ts", "status": "timedOut", "duration_ms": 10016, "observed_locator": "getByRole('button', { name: /^BookStack$/i })"},
+      {"name": "REQ-9.1: Quick Navigation from Recently Updated", "file": "REQ-9.1.spec.ts", "status": "timedOut", "duration_ms": 10018, "observed_locator": "getByRole('button', { name: /^BookStack$/i })"}
+    ],
+    "source_precedence": ["arcbench-run-334c6c6736b4.json", "playwright-report-334c6c6736b4.json", "arcbench-334c6c6736b4-failure-details.md"]
+  },
+  "internal_acceptance": {
+    "available": true,
+    "source": "arcbench-run-334c6c6736b4-logs.json flow records",
+    "atomic_nodes": 34,
+    "unique_flow_status_counts": {"ok": 34, "failed": 0},
+    "all_nodes": {"wrote": true, "verified": true},
+    "note": "The internal implement flow completed all 34 nodes successfully; this is retained separately from the final platform Playwright result of 25/34. The raw log repeats stdout/stderr lines, so node counts are deduplicated by req_id."
+  },
+  "metering": {
+    "platform_token_count": 54870146,
+    "provider_totals": {
+      "requests": 1672,
+      "prompt_tokens": 54094204,
+      "completion_tokens": 775846,
+      "reasoning_tokens": 441350,
+      "prompt_cache_hit_tokens": 50333440,
+      "total_tokens": 54870050
+    },
+    "cost": {"amount": 23.298623, "currency": "CNY", "source": "run JSON token_cost_usd/token_cost_currency fields"},
+    "duration_seconds": 10533,
+    "note": "Run JSON token_count and raw-log provider totals are separate accounting scopes and must not be added."
+  },
+  "platform_configuration": {
+    "model": "deepseek-v4-flash",
+    "visual_model": null,
+    "reasoning": "low",
+    "time_budget_seconds": 51000,
+    "agent_acceptance_workers": 2,
+    "test_workers": 1,
+    "playwright_version": "1.57.0",
+    "test_timeout_ms": 10000,
+    "agent_tests_source_observed": "/workspace/submission/public-tests/arc-bench-web--bookstack",
+    "runner_tests_candidate_observed": "/workspace/tests"
+  },
+  "platform_validation": {
+    "entrypoint": {"value": "main.py", "raw_log_verified": true},
+    "tests_directory": {"value": "/workspace/tests", "raw_log_verified": true},
+    "official_tests": {"value": "platform Playwright suite", "raw_log_verified": true},
+    "bundled_fallback_hits": 0,
+    "plaintext_api_key_hits": 0,
+    "preflight": "passed",
+    "generated_application_reached": true
+  },
+  "generation_identity": {
+    "build_id": null,
+    "commit_sha": null,
+    "payload_tree_sha256": null,
+    "platform_upload_sha256": null,
+    "task_snapshot_id": null,
+    "note": "The supplied run object does not bind the platform submission to a build, commit, payload, task snapshot, or uploaded ZIP SHA."
+  },
+  "artifacts": [
+    {"name": "arcbench-run-334c6c6736b4.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/arcbench-run-334c6c6736b4.json", "role": "raw_run_object", "bytes": 14884, "sha256": "B673A51BCEF9732F2ED9C3B78A4011D0152CDE08C70F2F6D287D02D28BD2C2BE", "stored_in_repository": false},
+    {"name": "arcbench-run-334c6c6736b4-logs.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/arcbench-run-334c6c6736b4-logs.json", "role": "raw_run_logs", "bytes": 217907, "sha256": "EECA46C67E43C8B2C0EE8F094CE24C089814D1FE396B6F95DFAEF22CE6C0DB58", "stored_in_repository": false},
+    {"name": "arcbench-run-334c6c6736b4-summary.md", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/arcbench-run-334c6c6736b4-summary.md", "role": "human_normalized_summary_navigation_only", "bytes": 5207, "sha256": "D2A478A8B26CE0058FDCF10C06D6FC8435AC9DE4784E39BD826ECF64F67FD70C", "stored_in_repository": false},
+    {"name": "arcbench-334c6c6736b4-failure-details.md", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/arcbench-334c6c6736b4-failure-details.md", "role": "failure_details", "bytes": 2516, "sha256": "A95FBB2AECD96A6CD036788017D020EBF7FD26AC6049174A122B837F57B545A9", "stored_in_repository": false},
+    {"name": "playwright-report-334c6c6736b4.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/playwright-report-334c6c6736b4.json", "role": "raw_playwright_report", "bytes": 55750, "sha256": "7FC25B52FCA21980267D4A6C143A1618D2DFA0F6AD3AB6FE85285361521B02F5", "stored_in_repository": false},
+    {"name": "arcbench-334c6c6736b4-snapshots.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/arcbench-334c6c6736b4-snapshots.json", "role": "arc_design_and_codegen_snapshots", "bytes": 76404, "sha256": "B139C799795068305A74D2CA1B254E171F28E2134927FD52891B960318D8D613", "stored_in_repository": false},
+    {"name": "334c6c6736b4-template.zip", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/334c6c6736b4-template.zip", "role": "platform_generated_template_snapshot", "bytes": 9791348, "sha256": "91C7515908023E9AC1139B856E05C84BA237457014F954388B75978345CBFF30", "stored_in_repository": false},
+    {"name": "submission-0e905281c3dd-agent.zip", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite/submission-0e905281c3dd-agent.zip", "role": "user_provided_candidate_submission_zip_not_platform_bound", "bytes": 333004, "sha256": "210F6DBCDFA1C32E053766E08DCDDB22578C53CAC9669CE22ED18403D65C6955", "stored_in_repository": false}
+  ],
+  "conflicts": [
+    {"field": "internal_implement_vs_final_tests", "description": "All 34 internal implement nodes are marked ok, while the final platform Playwright result is 25/34 with 9 timedOut tests.", "resolution": "Keep internal_acceptance and platform_final separate; Stage 3 does not infer a business root cause."},
+    {"field": "test_source_layers", "description": "Agent logs first report no spec files under /workspace/tests, then report 34 mapped public tests under /workspace/submission/public-tests/arc-bench-web--bookstack; the final platform report is a separate Playwright artifact.", "resolution": "Record both observed paths and do not classify this as bundled fallback because the logs contain no bundled fallback hit."},
+    {"field": "token_accounting", "description": "run JSON token_count=54870146 differs slightly from provider total_tokens=54870050.", "resolution": "Retain both accounting scopes; do not add them."}
+  ],
+  "missing": [
+    "task_snapshot_id",
+    "platform build ID, commit SHA, payload tree SHA and upload-package SHA binding",
+    "platform-native error-context.md bodies, screenshots and trace archive",
+    "platform result_path",
+    "visual model identifier"
+  ],
+  "source_precedence": [
+    "run JSON for final status, score, tests, metrics and identifiers",
+    "raw logs JSON for entrypoint, test paths, provider totals and internal flow records",
+    "Playwright report for structured locator and timeout evidence",
+    "failure details for human-readable failure excerpts",
+    "summary markdown for navigation and conflict recording only",
+    "snapshots and template ZIP for later Stage 4 diagnosis"
+  ],
+  "security": {"plaintext_api_key_found": false, "log_scan_scope": "supplied run logs and artifacts", "masked_key_status_only": true}
+}
