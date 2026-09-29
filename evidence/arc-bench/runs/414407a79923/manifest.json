@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake",
+  "intake_label": "stage3-414407a79923",
+  "status": "normalized_intake_complete_needs_phase4_reconciliation",
+  "run": {
+    "run_id": "414407a79923",
+    "submission_id": "e2a8ea92ca57",
+    "display_name": "luyun18029839909@163.com",
+    "original_filename": "octos-arc-bundle_lite-test-identity-routing-fix-unverified.zip",
+    "catalog": "competition",
+    "competition_id": "arc-bench-lite",
+    "task_id": "keep",
+    "task_key": "arc-bench-lite--keep",
+    "task_snapshot_id": null,
+    "runtime": "python",
+    "agent_source": "upload",
+    "created_at": "2026-09-29T04:19:43.657124",
+    "started_at": "2026-09-29T04:19:46.625254",
+    "finished_at": "2026-09-29T06:23:05.562662",
+    "status": "FAILED",
+    "score": 78.1,
+    "test_pass_rate": 78.1,
+    "passed_count": 25,
+    "failed_count": 7,
+    "feature_implementation_rate": 78.1,
+    "run_duration_seconds": 7292,
+    "failure_reason": "Runner exited with test failures or runtime errors"
+  },
+  "intake_routing": {
+    "phase3_scope": "facts_manifest_and_routing_only",
+    "phase4_auto_dispatch": "blocked_old_keep_handoff_unverified",
+    "next_stage": "phase4_read_only_single_run_diagnosis_after_reconciliation",
+    "stage5_triggered": false,
+    "prior_runs_merged": [],
+    "registered_thread_id": "01a0b57a-7a65-77d0-a08a-e202167e4f70",
+    "registered_thread_title": "05 项目阶段4 + arc-bench-lite--keep",
+    "registered_thread_status_at_intake": "needs_reconciliation",
+    "reconciliation_required": true,
+    "blocking_run_id": "32e08aaca2e4",
+    "blocking_handoff_id": "32e08aaca2e4-750C96456665",
+    "blocking_reason": "The registered Keep Stage 4 thread has a late ACK/result for 32e08aaca2e4, but its result JSON is missing manifest_sha256 and the required JSON PHASE4_RESULT marker. The prior mapping must be reconciled before a new Run handoff is sent.",
+    "prior_unrouted_run": "fb59eaf67f65",
+    "prior_unrouted_reason": "fb59eaf67f65 was registered after the same reconciliation block and intentionally received no Stage 4 handoff.",
+    "boundary": "Stage 3 records normalized facts and routing state; root-cause judgment remains in Stage 4."
+  },
+  "platform_final": {
+    "status": "FAILED",
+    "score": 78.1,
+    "passed": 25,
+    "total": 32,
+    "failure_stage": "final_playwright_execution",
+    "failed_tests": [
+      {
+        "name": "REQ-2.4: Update Note",
+        "file": "REQ-2.4.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10027,
+        "error": "locator.fill: Test timeout of 10000ms exceeded",
+        "observed_locator": "dialog Note editor -> textbox Note content"
+      },
+      {
+        "name": "REQ-2.7.1: Assign label to a note",
+        "file": "REQ-2.7.1.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10025,
+        "error": "locator.check: Test timeout of 10000ms exceeded",
+        "observed_locator": "dialog Note editor -> checkbox Work"
+      },
+      {
+        "name": "REQ-2.7.2: Remove label from a note",
+        "file": "REQ-2.7.2.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10027,
+        "error": "locator.uncheck: Test timeout of 10000ms exceeded",
+        "observed_locator": "dialog Note editor -> checkbox Work"
+      },
+      {
+        "name": "REQ-2.7.4: Assign default label when creating note",
+        "file": "REQ-2.7.4.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10028,
+        "error": "locator.check: Test timeout of 10000ms exceeded",
+        "observed_locator": "dialog Note editor -> checkbox Reminders"
+      },
+      {
+        "name": "REQ-2.7.6.3: View Reminders",
+        "file": "REQ-2.7.6.3.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10025,
+        "error": "Expected Movie list article count 0 but received 1",
+        "observed_locator": "article containing /Movie list/i"
+      },
+      {
+        "name": "REQ-2.8.1: Pin note",
+        "file": "REQ-2.8.1.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10027,
+        "error": "Expected Pinned marker to be visible; element not found",
+        "observed_locator": "article containing /Meeting agenda 2.8.1/i -> title Pinned"
+      },
+      {
+        "name": "REQ-2.8.3: Pin note when creating it",
+        "file": "REQ-2.8.3.spec.ts",
+        "status": "timedOut",
+        "duration_ms": 10023,
+        "error": "Expected Pinned marker to be visible; element not found",
+        "observed_locator": "article containing /Meeting agenda created/i -> title Pinned"
+      }
+    ],
+    "source_precedence": [
+      "arcbench-run-414407a79923.json",
+      "playwright-report-414407a79923.json",
+      "arcbench-414407a79923-failure-details.md"
+    ]
+  },
+  "internal_acceptance": {
+    "available": true,
+    "source": "arcbench-run-414407a79923-logs.json stdout flow records",
+    "atomic_nodes": 32,
+    "unique_flow_status_counts": {
+      "ok": 32,
+      "failed": 0
+    },
+    "all_nodes": {
+      "wrote": true,
+      "verified": true
+    },
+    "final_check": {
+      "status": "ok",
+      "duration_seconds": 583,
+      "tools": 76,
+      "wrote": true,
+      "verified": true
+    },
+    "note": "The internal implement flow completed all 32 nodes successfully, while the final platform Playwright result was 25/32. Raw stdout/stderr lines are deduplicated by req_id."
+  },
+  "metering": {
+    "platform_token_count": 74199232,
+    "provider_totals": {
+      "requests": 1068,
+      "prompt_tokens": 29128459,
+      "completion_tokens": 457513,
+      "reasoning_tokens": 244957,
+      "prompt_cache_hit_tokens": 26772992,
+      "total_tokens": 29585972
+    },
+    "cost": {
+      "amount": 33.345294,
+      "currency": "CNY",
+      "source": "run JSON token_cost_usd/token_cost_currency fields"
+    },
+    "duration_seconds": 7292,
+    "note": "Run JSON token_count and raw-log provider totals are separate accounting scopes and must not be added."
+  },
+  "platform_configuration": {
+    "model": "deepseek-v4-flash",
+    "visual_model": null,
+    "reasoning": "low",
+    "time_budget_seconds": 48000,
+    "agent_acceptance_workers": null,
+    "test_workers": 1,
+    "playwright_version": "1.57.0",
+    "test_timeout_ms": 10000,
+    "agent_tests_source_observed": "/workspace/tests; no *.spec.ts found",
+    "runner_tests_candidate_observed": "/workspace/tests"
+  },
+  "platform_validation": {
+    "entrypoint": {
+      "value": "main.py",
+      "raw_log_verified": true
+    },
+    "tests_directory": {
+      "value": "/workspace/tests",
+      "raw_log_verified": true,
+      "observation": "The generation agent found no *.spec.ts and built checks from requirement text only. The final Playwright report separately contains 32 generated spec files under the same root."
+    },
+    "official_tests": {
+      "value": "final Playwright report with 32 requirement-derived specs",
+      "raw_report_verified": true
+    },
+    "bundled_suite_identity_ambiguity": {
+      "value": true,
+      "title": "Keep",
+      "candidate_suites": [
+        "arc-bench-web--keep",
+        "arc-bench-lite--keep"
+      ],
+      "fingerprint": "6af24293bd8b5856ca6f4240282132e8f664293a834947e9995ecd8adf274fb2",
+      "matched": false,
+      "internal_acceptance_disabled": true
+    },
+    "bundled_fallback_hits": 0,
+    "plaintext_api_key_hits": 0,
+    "preflight": "passed",
+    "generated_application_reached": true
+  },
+  "generation_identity": {
+    "build_id": null,
+    "commit_sha": null,
+    "payload_tree_sha256": null,
+    "platform_upload_sha256": null,
+    "task_snapshot_id": null,
+    "note": "The supplied run object does not bind the platform submission to a build, commit, payload, task snapshot, or uploaded ZIP SHA. The supplied submission ZIP is retained as a user-provided candidate artifact but is not platform-bound by SHA."
+  },
+  "artifacts": [
+    {
+      "name": "arcbench-run-414407a79923.json",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-414407a79923.json",
+      "role": "raw_run_object",
+      "bytes": 13738,
+      "sha256": "036366CF98DB7945261A323BE58EDA1DE31027FB073C61676DAB983E3DF8FF87",
+      "stored_in_repository": false
+    },
+    {
+      "name": "arcbench-run-414407a79923-logs.json",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-414407a79923-logs.json",
+      "role": "raw_run_logs",
+      "bytes": 120764,
+      "sha256": "9C49A72D9663FD3C9870B938F0C389C859360D61079992FC26780570961DBA91",
+      "stored_in_repository": false
+    },
+    {
+      "name": "arcbench-run-414407a79923-summary.md",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-run-414407a79923-summary.md",
+      "role": "human_normalized_summary_navigation_only",
+      "bytes": 5965,
+      "sha256": "A519EA7FE5F8495FE938451952BC34E327589E27933871CEBBD4794F5A9D67CC",
+      "stored_in_repository": false
+    },
+    {
+      "name": "arcbench-414407a79923-failure-details.md",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-414407a79923-failure-details.md",
+      "role": "failure_details",
+      "bytes": 2340,
+      "sha256": "252A59BAC289451DEE2360FABDA3BDF6A643AB41DA005AD7CEFDF4823C59AB22",
+      "stored_in_repository": false
+    },
+    {
+      "name": "playwright-report-414407a79923.json",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/playwright-report-414407a79923.json",
+      "role": "raw_playwright_report",
+      "bytes": 51606,
+      "sha256": "8162854FC53CFB9CE41496DDD1826EB28AE7F07A2746FCE42B0D26FA0D96ACCA",
+      "stored_in_repository": false
+    },
+    {
+      "name": "arcbench-414407a79923-snapshots.json",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/arcbench-414407a79923-snapshots.json",
+      "role": "arc_design_and_codegen_snapshots",
+      "bytes": 58052,
+      "sha256": "2B76E815A282631E5C4D9AE296BFAFD6CC0FB67921DCC2C2DF49153C9DAD2D2A",
+      "stored_in_repository": false
+    },
+    {
+      "name": "414407a79923-template.zip",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/414407a79923-template.zip",
+      "role": "platform_generated_template_snapshot",
+      "bytes": 1834863,
+      "sha256": "0EA399C254CE91CD8F3DDA4EE8C38359417208343FC7D9CFF308AB30A33D39FE",
+      "stored_in_repository": false
+    },
+    {
+      "name": "submission-e2a8ea92ca57-agent.zip",
+      "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-keep-lite/submission-e2a8ea92ca57-agent.zip",
+      "role": "user_provided_candidate_submission_zip_not_platform_bound",
+      "bytes": 370167,
+      "sha256": "6096441BF7FAAB548011150014E99C5F5657783660DA89BEB9056F5A4C9E5B24",
+      "stored_in_repository": false
+    }
+  ],
+  "conflicts": [
+    {
+      "field": "internal_implement_vs_final_tests",
+      "description": "All 32 internal implement nodes are marked ok, while the final platform result is 25/32 with seven timed-out tests.",
+      "resolution": "Keep internal_acceptance and platform_final separate; Stage 3 does not infer a business root cause."
+    },
+    {
+      "field": "test_source_layers",
+      "description": "The generation agent reports no spec files under /workspace/tests and requirement-text-only checks; the final Playwright report contains 32 spec files under /workspace/tests.",
+      "resolution": "Record both layers and retain the bundled-suite identity ambiguity; do not silently label the final generated suite as the agent's bundled tests."
+    },
+    {
+      "field": "token_accounting",
+      "description": "run JSON token_count=74199232 differs from raw-log provider total_tokens=29585972.",
+      "resolution": "Retain both accounting scopes; do not add them."
+    },
+    {
+      "field": "submission_identity",
+      "description": "The supplied submission ZIP can be hashed locally, but the platform does not bind it to the run by upload SHA, build ID or original filename.",
+      "resolution": "Retain the local ZIP hash without treating it as platform identity."
+    }
+  ],
+  "missing": [
+    "task_snapshot_id",
+    "platform build ID, commit SHA, payload tree SHA and upload-package SHA binding",
+    "platform-native error-context.md bodies, screenshots and trace archive",
+    "platform result_path",
+    "visual model identifier",
+    "agent acceptance worker count from raw logs"
+  ],
+  "source_precedence": [
+    "run JSON for final status, score, tests, metrics and identifiers",
+    "raw logs JSON for entrypoint, test-source observations, provider totals and internal flow records",
+    "Playwright report for structured locator, timeout and stack evidence",
+    "failure details for human-readable failure navigation only",
+    "summary markdown for navigation and conflict recording only",
+    "snapshots and template ZIP for later Stage 4 diagnosis",
+    "submission ZIP for candidate-package inventory only; it is not platform identity"
+  ],
+  "security": {
+    "plaintext_api_key_found": false,
+    "log_scan_scope": "supplied run logs and artifacts",
+    "masked_key_status_only": true
+  }
+}
