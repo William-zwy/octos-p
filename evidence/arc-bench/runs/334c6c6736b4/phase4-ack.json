@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 4 read-only diagnosis",
+  "handoff_id": "334c6c6736b4-4050430A102F",
+  "run_id": "334c6c6736b4",
+  "task_key": "arc-bench-lite--bookstack",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "status": "received",
+  "read_only": true,
+  "manifest_path": "evidence/arc-bench/runs/334c6c6736b4/manifest.json",
+  "manifest_sha256": "4050430A102F8F3B2B1D9497B6C07B617D032E6C6B530E5D52ECA625443B7DFB",
+  "handoff_path": "evidence/arc-bench/runs/334c6c6736b4/phase4-handoff.json",
+  "result_path": "evidence/arc-bench/runs/334c6c6736b4/phase4-result.json",
+  "result_md_path": "evidence/arc-bench/runs/334c6c6736b4/phase4-result.md",
+  "scope": "Only Run 334c6c6736b4; ignore all prior and other Runs except when explicitly labeled history.",
+  "allowed_actions": [
+    "read the 334c6c6736b4 manifest and supplied attachments",
+    "classify final Playwright facts, internal-flow facts, root-cause candidates, exclusions and evidence gaps",
+    "write the matching phase4 result files"
+  ],
+  "forbidden_actions_acknowledged": [
+    "create or rerun a platform or local Run",
+    "upload anything",
+    "modify Agent code, official tests, task snapshots, ZIPs, assets or runtime configuration",
+    "trigger or write Stage 5 decisions",
+    "analyze any other Run"
+  ],
+  "received_at": "2026-09-29T00:00:00+08:00"
+}
