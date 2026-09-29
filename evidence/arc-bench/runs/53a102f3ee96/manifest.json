@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake",
+  "intake_label": "stage3-53a102f3ee96",
+  "status": "normalized_intake_complete_phase4_handoff_unverified",
+  "run": {
+    "run_id": "53a102f3ee96",
+    "submission_id": "362bc0d7b112",
+    "competition_id": "arc-bench-web",
+    "task_id": "bookstack",
+    "task_key": "arc-bench-web--bookstack",
+    "runtime": "python",
+    "agent_source": "upload",
+    "model": "deepseek-v4-flash",
+    "reasoning": "low",
+    "created_at": "2026-09-29T12:41:54.490642",
+    "started_at": "2026-09-29T12:41:56.027887",
+    "finished_at": "2026-09-29T17:18:09.279131",
+    "status": "PASSED",
+    "score": 100,
+    "passed_count": 34,
+    "failed_count": 0,
+    "total_count": 34,
+    "run_duration_seconds": 16537,
+    "failure_reason": null
+  },
+  "platform_final": {
+    "source": "arcbench-run-53a102f3ee96.json and playwright-report-53a102f3ee96.json",
+    "status": "PASSED",
+    "score": 100,
+    "pass_total": "34/34",
+    "failed_tests": [],
+    "feature_implementation_rate": 100,
+    "test_workers": 1,
+    "test_timeout_ms": 10000,
+    "playwright_version": "1.57.0",
+    "all_final_test_statuses": "passed"
+  },
+  "internal_acceptance": {
+    "source": "arcbench-53a102f3ee96-stdout.log, arcbench-53a102f3ee96-runner-events.jsonl and octos-events.jsonl",
+    "atomic_nodes": 34,
+    "skeleton_seconds": 239,
+    "implement_records": 34,
+    "implement_ok_records": 28,
+    "implement_failed_records": 6,
+    "implement_failures": [
+      {"req_id": "REQ-2.2", "duration_seconds": 900, "tools": 35, "reason": "octos turn timed out", "wrote": true, "verified": true},
+      {"req_id": "REQ-4.2.1", "duration_seconds": 900, "tools": 35, "reason": "octos turn timed out", "wrote": true, "verified": true},
+      {"req_id": "REQ-5.5.2", "duration_seconds": 250, "tools": 1, "reason": "upstream proxy HTTP 400 unexpected EOF", "wrote": true, "verified": false},
+      {"req_id": "REQ-6.1.1", "duration_seconds": 900, "tools": 42, "reason": "octos turn timed out", "wrote": true, "verified": false},
+      {"req_id": "REQ-6.1.2", "duration_seconds": 900, "tools": 42, "reason": "octos turn timed out", "wrote": true, "verified": true},
+      {"req_id": "REQ-6.1.3", "duration_seconds": 900, "tools": 86, "reason": "octos turn timed out", "wrote": true, "verified": true}
+    ],
+    "repair_evidence": [
+      "REQ-4.2.1 repair 589s",
+      "REQ-4.3.1 repair 320s",
+      "REQ-6.1.1 repairs 246s and 93s",
+      "REQ-6.1.2 repairs 185s and 86s",
+      "REQ-6.1.3 repairs 85s, 66s and rewrite 123s",
+      "REQ-7.2 rewrite 309s"
+    ],
+    "acceptance_rounds": "intermediate node rounds had temporary failures; final full suite round 0 was 34/34",
+    "runner_events": {"requirement_state_records": 312, "runner_state_records": 2, "turn_started": 48, "turn_completed": 42, "turn_error": 1, "tool_started": 1389, "tool_completed": 1389},
+    "octos_events": {"session_open": 45, "turn_started": 48, "turn_completed": 42, "turn_error": 1, "progress_updated": 9713, "tool_started": 1389, "tool_completed": 1389, "context_compaction": 0},
+    "midrun_state": "partial and non-authoritative: REQ-4.2.1, REQ-5.5.2, REQ-6.1.1, REQ-6.1.2 and REQ-6.1.3 were temporarily failed; final run supersedes it"
+  },
+  "metering": {
+    "platform_token_count": 315086357,
+    "platform_cost_value": 161.881459,
+    "platform_cost_currency": "CNY",
+    "duration_seconds": 16537,
+    "provider_totals_from_stdout": {"requests": 1272, "prompt_tokens": 39345094, "completion_tokens": 688152, "reasoning_tokens": 429690, "prompt_cache_hit_tokens": 36101632, "total_tokens": 40033246},
+    "note": "run.json token/cost totals and process stdout provider totals are different accounting scopes; both are retained"
+  },
+  "platform_validation": {
+    "entrypoint": {"value": "main.py", "verified": true},
+    "agent_tests_candidate": {"value": "/workspace/tests", "observed": "no *.spec.ts"},
+    "public_tests_used": {"value": "/workspace/submission/public-tests/arc-bench-web--bookstack", "spec_count": 34, "observed": true},
+    "bundled_fallback": {"status": "not evidenced", "note": "the agent selected the public-tests path; no bundled ZIP fallback hit was recorded"},
+    "generated_application_reached": true,
+    "final_evaluator": "34 Playwright specs passed"
+  },
+  "trace_analysis": {
+    "timeout_class": "recoverable turn-budget exhaustion, not final test timeout",
+    "primary_causes": [
+      "Four implement turns reached the 900 second Octos cap: REQ-2.2, REQ-4.2.1, REQ-6.1.1 and REQ-6.1.2; REQ-6.1.3 also reached the cap and required rewrite/repair.",
+      "The 51000 second global budget was not the limiting value; individual turns and tool-heavy debugging were the bottleneck.",
+      "REQ-5.5.2 was interrupted by an upstream proxy HTTP 400 unexpected EOF, not by application behavior.",
+      "Repair turns repeatedly hit a ten-request guard and several acceptance attempts hit ConnectionResetError on /favicon.ico while the backend was still running.",
+      "Postflight killed 196 stray processes; cgroup peak was about 1.08GB against a 2GB limit, with no OOM event."
+    ],
+    "optimization_opportunities": [
+      "Use a shorter per-node implementation budget or explicit stop-and-verify checkpoints before the 900 second cap.",
+      "Reserve repair budget for the nodes with concrete test failures; avoid repeated full-file exploration and full rewrites.",
+      "Use stable PID-scoped server cleanup and make unknown paths return 404, preventing favicon connection resets from poisoning acceptance rounds.",
+      "Separate structural checks from full acceptance and avoid spending 106 tools on a single late node such as REQ-5.6.1.",
+      "Treat provider proxy errors as retryable infrastructure events with bounded backoff rather than consuming a feature repair cycle."
+    ],
+    "final_effect": "All six intermediate failures were repaired or retried successfully; no final functional failure remains."
+  },
+  "conflicts": [
+    {"field": "cost_currency", "description": "run.json reports token_cost_currency=CNY and value 161.881459, while the supplied archive summary describes the same value as $161.88 USD.", "resolution": "Use run.json as structured source and retain the summary/user wording as an unresolved unit conflict."},
+    {"field": "test_workers", "description": "generation stdout reports workers=2, while final Playwright report uses one evaluator worker.", "resolution": "Record generation and final evaluator concurrency separately."},
+    {"field": "midrun_vs_final", "description": "midrun objects contain temporary failed nodes and incomplete tests, while final run and report are PASSED 34/34.", "resolution": "Treat midrun as temporal evidence only; final run is authoritative for outcome."},
+    {"field": "logs_events", "description": "logs.json events array is empty although its stdout field and the separately archived event streams contain the execution trace.", "resolution": "Use the archived octos-events, runner-events and stdout files for trace analysis."}
+  ],
+  "missing": [
+    "platform build/commit identity and task_snapshot_id",
+    "platform binding of the attached submission ZIP SHA",
+    "native provider retry metadata beyond the recorded proxy error",
+    "exact generated spec source for the intermediate node acceptance rounds"
+  ],
+  "security": {
+    "status": "masked_api_key_environment_observed",
+    "values_copied_or_logged": false,
+    "handling": "Only masked OPENAI_API_KEY=set(len=46) metadata was retained; no credential value is propagated."
+  },
+  "artifacts": [
+    {"name": "arcbench-run-53a102f3ee96.json", "bytes": 14130, "sha256": "DB4BF09530D6C8CCFE4BE57ED4B114A05673B0B7F14F934A7C66097CD2A79530", "role": "raw_run_object"},
+    {"name": "arcbench-run-53a102f3ee96-logs.json", "bytes": 247202, "sha256": "DA67E2CA10D2949B77FF80CEB6AD7094F8525BFD5B826F200D2DCCECC6091356", "role": "raw_run_logs"},
+    {"name": "arcbench-run-53a102f3ee96-summary.md", "bytes": 3463, "sha256": "5595B9C2ABC3B2AD1F4850658BFD0BABECA442508C17EA0DCB27671470CDE140", "role": "summary_navigation_only"},
+    {"name": "arcbench-run-53a102f3ee96-traceability.json", "bytes": 9662, "sha256": "BF4AE5E11DDE200A7BCEBA55DE05E08B70C407A837BB6825F61D2DEDE219F39E", "role": "final_traceability"},
+    {"name": "arcbench-run-53a102f3ee96-midrun.json", "bytes": 3726, "sha256": "FA377F5278D278B1425D2DD75F34495A411FBD43E4B84E66F95851366B35665E", "role": "midrun_run_object"},
+    {"name": "arcbench-run-53a102f3ee96-midrun-logs.json", "bytes": 224008, "sha256": "BCF679AD2F6245786D677AC6FDC2699D1C88C1C8DB8B1A58D245E0228D13CA1B", "role": "midrun_logs"},
+    {"name": "arcbench-run-53a102f3ee96-midrun-traceability.json", "bytes": 6827, "sha256": "64053CCD9B8FDAA953B9B501D215140F762D6908EFD4CC9A8311AC20348CBEC3", "role": "midrun_traceability"},
+    {"name": "playwright-report-53a102f3ee96.json", "bytes": 42276, "sha256": "00E34B02E18CD15271B4666D123ACB04A06F2769B0C02B3232686132D7470175", "role": "final_playwright_report"},
+    {"name": "arcbench-53a102f3ee96-failure-details.md", "bytes": 538, "sha256": "CB204E0295505F4E8734E920F45DBE8AFB8ED934E4DFA77843EB56F89D470B11", "role": "failure_details"},
+    {"name": "arcbench-53a102f3ee96-snapshots.json", "bytes": 48271, "sha256": "A0B9D3D9B433E4907D92AF1A711DA39769EB703D67AFEC6E5B9B1B79974A3BDF", "role": "snapshots"},
+    {"name": "arcbench-53a102f3ee96-design-midrun.json", "bytes": 8939, "sha256": "2F35A143ECE3B250F00557FE4B6346778098CFF70D3A8A57FAAEBD0D6EA5B56D", "role": "midrun_design"},
+    {"name": "arcbench-53a102f3ee96-octos-events.jsonl", "bytes": 10826287, "sha256": "76AC66C29A0723621665E6F48880E6025111A83352FCDFA742A6FAE0FB1378AF", "role": "octos_event_stream"},
+    {"name": "arcbench-53a102f3ee96-runner-events.jsonl", "bytes": 346845, "sha256": "41B790B61A6A58DB0BBC54882F303C53753F73A96E5B69B64A26E3EC8B37C0E8", "role": "runner_event_stream"},
+    {"name": "arcbench-53a102f3ee96-stdout.log", "bytes": 244755, "sha256": "1A8E86B8483921F129BC0E7820A90FB118F0D2B02E345B24376239BA03D814C5", "role": "stdout_log"},
+    {"name": "53a102f3ee96-template.zip", "bytes": 9796703, "sha256": "C6567BC7E7573EDC4D702A7FCD7BFE7DE25FE2380E16C34C1D701C5A2382A3CB", "role": "template_snapshot"},
+    {"name": "submission-362bc0d7b112-agent.zip", "bytes": 333727, "sha256": "9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E", "role": "attached_submission"}
+  ],
+  "source_precedence": [
+    "run JSON for final status, IDs and platform metrics",
+    "Playwright report for final test statuses",
+    "stdout and separate octos/runner event streams for intermediate lifecycle and timeout analysis",
+    "summary and failure details for navigation only",
+    "midrun objects and snapshots for temporal evidence"
+  ],
+  "intake_routing": {
+    "phase3_scope": "facts_manifest_and_routing_only",
+    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "registered_thread_id": "01a0b8a0-1851-7693-b8cf-1fbbfcbbbf7e",
+    "registered_thread_title": "08 项目阶段4 + arc-bench-web--bookstack",
+    "registered_thread_status_at_intake": "verified",
+    "reconciliation_required": false,
+    "dispatch_status": "handoff_unverified",
+    "dispatch_error": "codex_app/send_message_to_thread returned Invalid app tool request (-32602) before execution on two attempts; no message delivery or phase4 ACK is evidenced",
+    "stage5_triggered": false,
+    "prior_runs_merged": []
+  }
+}
