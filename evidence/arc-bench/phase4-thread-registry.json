@@ -177,7 +177,7 @@
     "arc-bench-lite-evolution--bookstack": {
       "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
       "title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
-      "status": "handoff_pending",
+      "status": "complete",
       "last_run_id": "a774fb34f1b6",
       "previous_run_id": "d9608977de9c",
       "last_handoff_id": "a774fb34f1b6-5C8C42D46488",
@@ -187,15 +187,15 @@
       "ack_path": "evidence/arc-bench/runs/a774fb34f1b6/phase4-ack.json",
       "result_path": "evidence/arc-bench/runs/a774fb34f1b6/phase4-result.json",
       "result_md_path": "evidence/arc-bench/runs/a774fb34f1b6/phase4-result.md",
-      "result_status": "pending",
-      "evidence_revision": "a774fb34f1b6-stage3-intake",
-      "verification_method": "stage3_manifest_and_phase4_handoff_ack_created",
-      "verified_at": null,
+      "result_status": "complete",
+      "evidence_revision": "a774fb34f1b6-phase4-complete",
+      "verification_method": "ack_result_identity_manifest_sha_and_git_checks",
+      "verified_at": "2026-09-30T00:55:50+08:00",
       "previous_quarantined_run_id": "1dbe8860eda8",
       "previous_quarantined_handoff_id": "1dbe8860eda8-E8A76BAD453A",
       "reconciled_prior_run": {"run_id": "f7073dc2de0e", "handoff_id": "f7073dc2de0e-BFE0597F162B", "manifest": "evidence/arc-bench/runs/f7073dc2de0e/manifest.json", "result_status": "complete", "verification": "ack/result identity and manifest SHA matched"},
       "dispatch_error": "Codex app read/list operations returned Invalid app tool request before execution for the existing mapped thread. No app message was delivered; the already-authorized direct current-conversation fallback produced and validated the d9608977de9c ACK/result files.",
-      "reason": "The existing evolution BookStack Thread was reused by identity. Prior f7073dc2de0e evidence was reconciled from persistent files, and d9608977de9c is complete and verified from matching ACK/result files. No duplicate thread was created; Stage 5 remains untriggered."
+      "reason": "Run a774fb34f1b6 has a complete Phase 4 result with matching handoff identity and manifest SHA. REQ-10.2 is confirmed as a navigation lifecycle defect and REQ-11.1 as an accessible DOM contract defect; Stage 5 remains untriggered."
     },
     "arc-bench-lite-evolution--keep": {
       "thread_id": "01a0ec96-3f05-7541-ac77-18df00d83a1c",
