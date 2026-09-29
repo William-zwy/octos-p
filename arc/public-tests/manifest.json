@@ -66,6 +66,17 @@
       "id": "arc-bench-lite--keep",
       "title": "Keep",
       "requirement_tree_sha256": "a43ddded539be5b4b79e59b70b59e6b0f430c837b100dfb654d5ddcdcebd53d9"
+    },
+    {
+      "id": "arc-bench-lite-evolution--bookstack",
+      "title": "BookStack Knowledge Base System",
+      "requirement_tree_sha256": "5995450bf29ec1e1611568297e90fb7e3cf736813164e7a846728c33cefe9815",
+      "source_kind": "observed_proxy",
+      "evidence": [
+        "d9608977de9c",
+        "896e9a68c798",
+        "1dbe8860eda8"
+      ]
     }
   ]
 }

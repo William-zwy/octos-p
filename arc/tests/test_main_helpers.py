@@ -127,12 +127,15 @@ class AcceptanceSuiteIdentityTests(unittest.TestCase):
     def _v2(self, *entries):
         return {"version": 2, "fingerprint": "sha256-canonical-json-v1", "suites": list(entries)}
 
-    def _entry(self, suite_id, tree):
-        return {
+    def _entry(self, suite_id, tree, source_kind=None):
+        entry = {
             "id": suite_id,
             "title": tree["name"],
             "requirement_tree_sha256": m.requirement_tree_fingerprint(tree),
         }
+        if source_kind:
+            entry["source_kind"] = source_kind
+        return entry
 
     def test_should_select_lite_bookstack_by_exact_tree_identity(self):
         import tempfile
@@ -189,6 +192,83 @@ class AcceptanceSuiteIdentityTests(unittest.TestCase):
             root = Path(tmp)
             self._bundle(root, {"legacy--task": "Legacy Task"}, ["legacy--task"])
             self.assertEqual(m.locate_acceptance_tests(tree, root).name, "legacy--task")
+
+    def test_should_select_evolution_proxy_by_exact_fingerprint_and_report_source_kind(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        tree = self._tree("ROOT", "BookStack Knowledge Base System", "evolution")
+        entry = self._entry("arc-bench-lite-evolution--bookstack", tree, "observed_proxy")
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}):
+            root = Path(tmp)
+            self._bundle(root, self._v2(entry), [entry["id"]])
+            selected = m.select_acceptance_tests(tree, root)
+        self.assertEqual(selected.suite_id, "arc-bench-lite-evolution--bookstack")
+        self.assertEqual(selected.source_kind, "observed_proxy")
+        self.assertEqual(selected.requirement_tree_sha256, m.requirement_tree_fingerprint(tree))
+
+    def test_bundled_evolution_proxy_should_bind_the_frozen_platform_fingerprint(self):
+        from unittest import mock
+        fingerprint = "5995450bf29ec1e1611568297e90fb7e3cf736813164e7a846728c33cefe9815"
+        tree = self._tree("ROOT", "BookStack Knowledge Base System", "platform tree unavailable locally")
+        with mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}), \
+                mock.patch.object(m, "requirement_tree_fingerprint", return_value=fingerprint):
+            selected = m.select_acceptance_tests(tree, m.BUNDLE_DIR)
+        self.assertEqual(selected.suite_id, "arc-bench-lite-evolution--bookstack")
+        self.assertEqual(selected.source_kind, "observed_proxy")
+        self.assertEqual(selected.requirement_tree_sha256, fingerprint)
+        self.assertEqual(len(list(selected.path.glob("*.spec.ts"))), 6)
+
+    def test_should_emit_machine_readable_unavailable_status_without_claiming_execution(self):
+        import json
+        from pathlib import Path
+        from unittest import mock
+        selected = m.AcceptanceSelection(None, "none", None, "a" * 64, "no exact suite")
+        messages = []
+        with mock.patch.object(m, "log", messages.append):
+            m.emit_acceptance_status(selected, "acceptance_unavailable", stage="selection")
+        prefix = "ARC_ACCEPTANCE_STATUS "
+        payload = json.loads(next(line[len(prefix):] for line in messages if line.startswith(prefix)))
+        self.assertEqual(payload["status"], "acceptance_unavailable")
+        self.assertEqual(payload["executed"], 0)
+        self.assertEqual(payload["passed"], 0)
+        self.assertIsNone(payload["tests_dir"])
+
+    def test_should_disable_duplicate_exact_fingerprint_entries_even_with_one_directory(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        tree = self._tree("ROOT", "BookStack Knowledge Base System", "evolution")
+        entry = self._entry("arc-bench-lite-evolution--bookstack", tree, "observed_proxy")
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(m.os.environ, {"ARCBENCH_TESTS_DIR": ""}):
+            root = Path(tmp)
+            self._bundle(root, self._v2(entry, dict(entry)), [entry["id"]])
+            selected = m.select_acceptance_tests(tree, root)
+        self.assertIsNone(selected.path)
+        self.assertEqual(selected.source_kind, "none")
+        self.assertEqual(selected.reason, "ambiguous exact fingerprint")
+
+
+class EvolutionInteractionContractTests(unittest.TestCase):
+    def test_should_inject_contract_only_for_evolution(self):
+        import argparse
+        from pathlib import Path
+        flow = m.Flow(argparse.Namespace(web_port=3000), Path("."), Path("."))
+        self.assertEqual(flow.evolution_interaction_contract(), "")
+        flow.evolution = True
+        text = flow.evolution_interaction_contract()
+        self.assertIn("fire-and-forget", text)
+        self.assertIn("entity-scoped Search", text)
+        self.assertIn("semantic heading", text)
+        self.assertIn("Alphabetical/Name", text)
+
+    def test_should_label_observed_proxy_without_calling_it_official(self):
+        import argparse
+        from pathlib import Path
+        flow = m.Flow(argparse.Namespace(web_port=3000), Path("."), Path("."))
+        flow.acceptance_selection = m.AcceptanceSelection(
+            Path("proxy"), "observed_proxy", "suite", "b" * 64, "evidence-derived")
+        self.assertEqual(flow.acceptance_label(), "evidence-derived observed proxy tests")
 
 
 class InlineSourcesTests(unittest.TestCase):
@@ -293,7 +373,7 @@ class RewriteBudgetTests(unittest.TestCase):
 class CodegenPromptTests(unittest.TestCase):
     def test_should_format_without_placeholder_errors_and_keep_build_command(self):
         import main as m
-        text = m.CODEGEN_PROMPT.format(node_id="REQ-1", description="S", spec="T", port=3000, ports=" P", size_rule="R")
+        text = m.CODEGEN_PROMPT.format(acceptance_label="official acceptance tests", node_id="REQ-1", description="S", spec="T", port=3000, ports=" P", size_rule="R")
         self.assertIn("do not output them", text)
         self.assertIn("REQ-1", text)
 
@@ -306,9 +386,9 @@ class CreateResultContractTests(unittest.TestCase):
             "ui_full": m.UI_CONTRACT,
             "design": m.DESIGN_PROMPT.format(node_id="item", node_spec="Create an item",
                                            ancestors="", tests=""),
-            "codegen": m.CODEGEN_PROMPT.format(node_id="item", description="Create an item",
-                                              spec="", port=3000, ports="", size_rule=""),
-            "repair": m.REPAIR_PROMPT.format(node_id="item", passed=0, total=1,
+            "codegen": m.CODEGEN_PROMPT.format(acceptance_label="official acceptance tests", node_id="item", description="Create an item",
+                                               spec="", port=3000, ports="", size_rule=""),
+            "repair": m.REPAIR_PROMPT.format(acceptance_label="official acceptance tests", node_id="item", passed=0, total=1,
                                             failures="missing result", corrections="",
                                             slow="", sources="", smoke=3001, port=3000),
         }
@@ -361,9 +441,9 @@ class CreateResultContractTests(unittest.TestCase):
         prompts = {
             "design": m.DESIGN_PROMPT.format(node_id="item", node_spec="Edit an item",
                                              ancestors="", tests=""),
-            "codegen": m.CODEGEN_PROMPT.format(node_id="item", description="Edit an item",
-                                                spec="", port=3000, ports="", size_rule=""),
-            "repair": m.REPAIR_PROMPT.format(node_id="item", passed=0, total=1,
+            "codegen": m.CODEGEN_PROMPT.format(acceptance_label="official acceptance tests", node_id="item", description="Edit an item",
+                                                 spec="", port=3000, ports="", size_rule=""),
+            "repair": m.REPAIR_PROMPT.format(acceptance_label="official acceptance tests", node_id="item", passed=0, total=1,
                                               failures="missing action", corrections="",
                                               slow="", sources="", smoke=3001, port=3000),
         }

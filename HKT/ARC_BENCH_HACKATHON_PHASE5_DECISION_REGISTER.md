@@ -447,6 +447,24 @@ Pop-Location
 - **相关 Run 边界：**`4bab82404c52` 已确认模板占位符只替换第一处和草稿路由被通用 pageId 路由遮蔽，两处最小生成应用补丁可使三个场景 3/3 通过，但不证明 Agent 已修；`6d41952769f7` 的 internal `0/34` 是无效 trace 配置，不是应用分数；`88c08161c4d3`、`32e08aaca2e4` 尚未完成阶段四；本地 e04 的 `13/34` 混入请求上限和 429，全部不得与 `P5-017` 合并。
 - **当前状态：**`code_change_authorized=false`、`implementation_dispatched=false`、`new_platform_run_authorized=false`、`business_go=false`、`strict_ab_comparable=false`。本轮只更新文档和协调索引，不修改 Agent、生成应用或官方测试。
 
+## 29. `P5-023`：Evolution BookStack 选择器与验收状态边界（2026-09-29）
+
+- **问题与用户可见改进：**Evolution 任务与普通 Lite/Web BookStack 共用根标题；仅按标题选择会把观察到的代理测试
+  静默当成官方套件，进而让内部通过数失去意义。修复后，Evolution 只在需求树 canonical JSON SHA-256
+  为 `5995450bf29ec1e1611568297e90fb7e3cf736813164e7a846728c33cefe9815` 时选择
+  `arc-bench-lite-evolution--bookstack`。
+- **验收口径：**该套件在 manifest 中明确为 `source_kind=observed_proxy`，测试文件首行和 helper 也保留该边界；
+  它是从冻结平台观察记录重建的 selector proxy，不是 official acceptance test，不提供平台分数。
+  平台注入的 `ARCBENCH_TESTS_DIR` 与 `/workspace/tests` 仍然优先。
+- **状态证据：**运行时统一输出 `ARC_ACCEPTANCE_STATUS` JSON，携带 status、stage、source_kind、suite_id、
+  requirement_tree_sha256、executed/passed/total 和 reason。没有套件或 runner 不可用时明确为未执行，
+  implementation 完成不会被标成 acceptance 通过。重复精确指纹也 fail-closed。
+- **实现范围：**修正所有直接 prompt 格式化调用，注入 Evolution 交互契约（稳定异步结果、实体作用域 Search、
+  comment heading/textarea 和既有导航语义），增加 selector、状态和 prompt 集成回归；官方测试内容未修改。
+- **验证与限制：**定向 `17/17`、`py_compile` exit `0`；Windows 全量 `107` 项为 `103` 通过、`3` 失败、`1`
+  错误，失败为路径分隔符、Unix `npm_config_cache` 和临时 `.git/objects` 权限基线。构建标为
+  `platform_unverified`，不上传平台、不创建 Run；后续门禁是将精确 ZIP SHA 绑定到经单独授权的平台 Run。
+
 ## 27. `P5-017` 最近问题的改动决策（2026-09-24）
 
 ### 后续本地实施修订（2026-09-25）

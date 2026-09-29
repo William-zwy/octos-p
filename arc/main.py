@@ -69,6 +69,7 @@ import sys
 import tempfile
 import threading
 import time
+from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -967,12 +968,20 @@ UI contract (the hidden Playwright tests depend on these; a violation scores 0):
 - Text only: never OCR reference images. Write files in your first actions.
 """ + CREATE_RESULT_CONTRACT
 
+EVOLUTION_INTERACTION_CONTRACT = """\
+Evolution/change-node interaction contract (apply only while extending an existing app):
+- Mutation completion must be observable and stable. Never start a fire-and-forget `fetch(...)` and then call `location.reload()` while the test can immediately read the DOM. Prefer a normal form/navigation that the browser can await, or update the current DOM synchronously before awaiting persistence; after the action resolves, the required result must already be readable without a competing navigation.
+- A broad accessible-name locator must have one intended first match. On an entity-detail page, keep the entity-scoped Search control named exactly `Search` and preserve that entity's URL/context; rename or remove the accessible `Search` name from earlier global controls so they cannot steal the locator.
+- After append/create actions such as adding a comment, render the exact submitted text in one stable visible semantic heading while preserving the original page heading and body. Keep the editable `Comment` textarea as the first label match and name the surrounding landmark without `Comment`/`Comments`.
+- Preserve the existing `Alphabetical/Name` native button, Comment textarea, Discussion landmark, create-result heading, BookStack logo button, routes, labels, and already-passing behavior.
+"""
+
 CODEGEN_SYSTEM = "You write complete, minimal web apps. Reply only with file blocks in the requested format."
 
 CODEGEN_PROMPT = """\
 Requirement {node_id}: {description}
 
-Acceptance test (ground truth):
+{acceptance_label}:
 {spec}
 Files: frontend/src/index.html (+ one html per further route); backend/server.js = CommonJS (require) Node http server on process.env.PORT||{port} serving ../frontend/dist files (index.html for /, <name>.html for /<name>) plus any API routes the requirement needs (in-memory state), 404 for anything else, wrapped in try/catch and process.on('uncaughtException').{ports} Both package.json files already exist (build copies src/* to dist; start runs server.js): do not output them.
 Rules: texts, button names, labels and test ids exactly as in the test; the initial state is literally in the HTML; state lives in the page script unless the requirement says it is persisted; no external resources, no CSS, no comments, no notes; Playwright strict mode: every locator in the test must match exactly one element on the served page (no duplicate links, labels, texts or ids; each label's for= resolves to its own control). {size_rule}
@@ -1097,7 +1106,7 @@ Read the files you need before changing them, keep every existing route, label a
 """
 
 REPAIR_PROMPT = """\
-The official acceptance tests for requirement node {node_id} just ran against your app: {passed}/{total} passed. Failing tests (Feature / where it failed / what was observed / the last steps before failure):
+The {acceptance_label} for requirement node {node_id} just ran against your app: {passed}/{total} passed. Failing tests (Feature / where it failed / what was observed / the last steps before failure):
 {failures}
 {corrections}{slow}{sources}
 
@@ -1129,6 +1138,10 @@ Fix the project so this sequence works (typical causes: a require() path that do
 
 ACCEPTANCE_TESTS_PROMPT = """\
 OFFICIAL ACCEPTANCE TESTS (ground truth; when prose and spec disagree, the spec wins) live under {tests_dir}. Files: {files}. They define routes, hrefs, accessible names, option labels, exact texts, error wording and action order. Never modify, copy or delete them.
+"""
+
+ACCEPTANCE_PROXY_TESTS_PROMPT = """\
+EVIDENCE-DERIVED OBSERVED PROXY TESTS (not official and not score authority) live under {tests_dir}. Files: {files}. They reconstruct observed platform selectors and failures to guide local repair. Never modify them; satisfy both these checks and the requirement prose, and treat the platform evaluator as final authority.
 """
 
 INLINE_SPEC_HEADER = """\
@@ -1167,6 +1180,34 @@ def requirement_tree_fingerprint(tree: dict) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+@dataclass(frozen=True)
+class AcceptanceSelection:
+    path: Path | None
+    source_kind: str
+    suite_id: str | None
+    requirement_tree_sha256: str
+    reason: str
+
+
+def emit_acceptance_status(selection: AcceptanceSelection, status: str, *, stage: str,
+                           executed: int = 0, passed: int = 0, total: int = 0,
+                           reason: str = "") -> None:
+    """Emit one parseable record; implement-node completion is never acceptance."""
+    payload = {
+        "status": status,
+        "stage": stage,
+        "source_kind": selection.source_kind,
+        "suite_id": selection.suite_id,
+        "requirement_tree_sha256": selection.requirement_tree_sha256,
+        "tests_dir": str(selection.path) if selection.path else None,
+        "executed": executed,
+        "passed": passed,
+        "total": total,
+        "reason": reason or selection.reason,
+    }
+    log("ARC_ACCEPTANCE_STATUS " + json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
 def _bundled_suite_entries(manifest_data: object) -> tuple[list[dict[str, str]], bool]:
     """Normalize v2 and legacy test manifests.
 
@@ -1187,18 +1228,20 @@ def _bundled_suite_entries(manifest_data: object) -> tuple[list[dict[str, str]],
                     "id": suite_id,
                     "title": title,
                     "requirement_tree_sha256": fingerprint,
+                    "source_kind": str(raw.get("source_kind") or "bundled").strip(),
                 })
         return entries, False
     if isinstance(manifest_data, dict):
         return [
-            {"id": str(suite_id), "title": str(title), "requirement_tree_sha256": ""}
+            {"id": str(suite_id), "title": str(title), "requirement_tree_sha256": "",
+             "source_kind": "legacy_bundled"}
             for suite_id, title in manifest_data.items()
             if isinstance(title, str)
         ], True
     raise ValueError("manifest must be an object")
 
 
-def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
+def select_acceptance_tests(tree: dict, bundle_dir: Path) -> AcceptanceSelection:
     """Locate tests without confusing same-title Lite and Web task suites.
 
     Platform-provided directories are authoritative.  A bundled suite is used
@@ -1207,15 +1250,17 @@ def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
     title match; ambiguous identities disable internal acceptance instead of
     guessing a suite.
     """
-    platform_candidates: list[Path] = []
+    fingerprint = requirement_tree_fingerprint(tree)
+    platform_candidates: list[tuple[Path, str]] = []
     env_dir = os.environ.get("ARCBENCH_TESTS_DIR")
     if env_dir:
-        platform_candidates.append(Path(env_dir))
-    platform_candidates.append(Path("/workspace/tests"))
-    for cand in platform_candidates:
+        platform_candidates.append((Path(env_dir), "platform_env"))
+    platform_candidates.append((Path("/workspace/tests"), "platform_workspace"))
+    for cand, source_kind in platform_candidates:
         try:
             if cand.is_dir() and any(cand.rglob("*.spec.ts")):
-                return cand.resolve()
+                return AcceptanceSelection(cand.resolve(), source_kind, None, fingerprint,
+                                           "platform-provided tests take precedence")
             log(f"[tests] candidate {cand}: {'no *.spec.ts' if cand.is_dir() else 'absent'}")
         except Exception as exc:  # noqa: BLE001
             log(f"[tests] candidate {cand} unreadable: {exc}")
@@ -1224,34 +1269,35 @@ def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
     manifest = bundled / "manifest.json"
     if not manifest.is_file():
         log(f"[tests] bundled manifest absent: {manifest}")
-        return None
+        return AcceptanceSelection(None, "none", None, fingerprint, "bundled manifest absent")
     try:
         manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
         entries, legacy = _bundled_suite_entries(manifest_data)
     except Exception as exc:  # noqa: BLE001
         log(f"[tests] manifest unreadable: {exc}")
-        return None
+        return AcceptanceSelection(None, "none", None, fingerprint, f"manifest unreadable: {exc}")
 
     root_name = str(tree.get("name", "")).strip()
-    fingerprint = requirement_tree_fingerprint(tree)
     exact = [e for e in entries if e["requirement_tree_sha256"] == fingerprint]
     exact_dirs = [bundled / e["id"] for e in exact if (bundled / e["id"]).is_dir()]
-    if len(exact_dirs) == 1:
+    if len(exact) == 1 and len(exact_dirs) == 1:
         cand = exact_dirs[0]
         if any(cand.rglob("*.spec.ts")):
             log(f"[tests] bundled suite identity matched {cand.name}: {fingerprint}")
-            return cand.resolve()
+            entry = next(e for e in exact if e["id"] == cand.name)
+            return AcceptanceSelection(cand.resolve(), entry["source_kind"], cand.name, fingerprint,
+                                       "exact requirement-tree fingerprint match")
         log(f"[tests] bundled suite {cand.name} has no *.spec.ts; internal acceptance disabled")
-        return None
+        return AcceptanceSelection(None, "none", cand.name, fingerprint, "matched suite has no specs")
     if len(exact) > 1 or len(exact_dirs) > 1:
         ids = [e["id"] for e in exact]
         log(f"[tests] bundled suite identity ambiguity for fingerprint {fingerprint}: {ids}; "
             "internal acceptance disabled")
-        return None
+        return AcceptanceSelection(None, "none", None, fingerprint, "ambiguous exact fingerprint")
     if exact:
         log(f"[tests] exact bundled suite is unavailable for fingerprint {fingerprint}; "
             "internal acceptance disabled")
-        return None
+        return AcceptanceSelection(None, "none", exact[0]["id"], fingerprint, "exact suite unavailable")
 
     title_matches = [e for e in entries if e["title"] == root_name]
     if not legacy:
@@ -1264,7 +1310,7 @@ def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
                 f"{fingerprint}; internal acceptance disabled")
         else:
             log(f"[tests] no bundled suite identity for title {root_name!r}, fingerprint {fingerprint}")
-        return None
+        return AcceptanceSelection(None, "none", None, fingerprint, "v2 identity mismatch or ambiguity")
 
     legacy_dirs = [bundled / e["id"] for e in title_matches if (bundled / e["id"]).is_dir()]
     if len(legacy_dirs) != 1:
@@ -1273,13 +1319,19 @@ def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
                 f"{[e['id'] for e in title_matches]}; internal acceptance disabled")
         else:
             log(f"[tests] no unique legacy bundled suite for title {root_name!r}")
-        return None
+        return AcceptanceSelection(None, "none", None, fingerprint, "legacy title not unique")
     cand = legacy_dirs[0]
     if any(cand.rglob("*.spec.ts")):
         log(f"[tests] using unique-title legacy bundled suite {cand.name}")
-        return cand.resolve()
+        return AcceptanceSelection(cand.resolve(), "legacy_bundled", cand.name, fingerprint,
+                                   "unique legacy title match")
     log(f"[tests] legacy bundled suite {cand.name} has no *.spec.ts; internal acceptance disabled")
-    return None
+    return AcceptanceSelection(None, "none", cand.name, fingerprint, "legacy suite has no specs")
+
+
+def locate_acceptance_tests(tree: dict, bundle_dir: Path) -> Path | None:
+    """Compatibility wrapper for callers that only need the selected path."""
+    return select_acceptance_tests(tree, bundle_dir).path
 
 
 def spec_base_ports(tests_dir: Path | None) -> list[int]:
@@ -1298,12 +1350,14 @@ def spec_base_ports(tests_dir: Path | None) -> list[int]:
 
 
 def acceptance_tests_prompt(tests_dir: Path | None, web_port: int, smoke_port: int,
-                            files: list[str] | None = None, inline: bool = False) -> str:
+                            files: list[str] | None = None, inline: bool = False,
+                            source_kind: str = "official") -> str:
     if not tests_dir:
         return ""
     if files is None:
         files = sorted(str(p.relative_to(tests_dir)) for p in tests_dir.rglob("*.ts"))
-    text = ACCEPTANCE_TESTS_PROMPT.format(tests_dir=tests_dir, files=", ".join(files[:40]) or "(none)")
+    template = ACCEPTANCE_PROXY_TESTS_PROMPT if source_kind == "observed_proxy" else ACCEPTANCE_TESTS_PROMPT
+    text = template.format(tests_dir=tests_dir, files=", ".join(files[:40]) or "(none)")
     if inline:
         text += inline_spec_text(tests_dir, files, int(os.environ.get("OCTOS_ARC_INLINE_SPEC_CHARS", "24000")))
     extra = [p for p in spec_base_ports(tests_dir) if p != web_port]
@@ -1359,6 +1413,7 @@ class Flow:
         self.probe_summaries: dict = {}
         self.aliases: dict[str, str] = {}
         self.runner: AcceptanceRunner | None = None
+        self.acceptance_selection = AcceptanceSelection(None, "none", None, "", "not selected")
         self.designs: dict[str, dict] = {}
         self.test_verdict: dict[str, bool | None] = {}
         self.impl_failed: list[str] = []
@@ -1670,6 +1725,14 @@ class Flow:
             blocks.append(UI_CONTRACT_SESSION)
         return "".join(blocks)
 
+    def evolution_interaction_contract(self) -> str:
+        return EVOLUTION_INTERACTION_CONTRACT if self.evolution else ""
+
+    def acceptance_label(self) -> str:
+        return ("evidence-derived observed proxy tests"
+                if self.acceptance_selection.source_kind == "observed_proxy"
+                else "official acceptance tests")
+
     SHELL_TOOLS = {"bash", "shell", "exec_command"}
 
     def minimal_mode(self, total_nodes: int) -> bool:
@@ -1751,19 +1814,28 @@ class Flow:
             support = sorted(str(p.relative_to(self.tests_dir)) for p in self.tests_dir.rglob("*.ts")
                              if not p.name.endswith(".spec.ts"))
             n_specs = len(list(self.tests_dir.rglob("*.spec.ts")))
-            return (f"The official Playwright specs ({n_specs} files) live under {self.tests_dir}; each later turn "
+            suite_label = ("evidence-derived observed proxy specs"
+                           if self.acceptance_selection.source_kind == "observed_proxy"
+                           else "official Playwright specs")
+            return (f"The {suite_label} ({n_specs} files) live under {self.tests_dir}; each later turn "
                     f"receives the spec files for its own node. In THIS turn read only the shared helpers "
                     f"({', '.join(support[:10]) or 'none'}) and at most two spec files to learn the base URL, "
                     f"navigation and header conventions; do not implement the features yet.\n"
-                    + acceptance_tests_prompt(self.tests_dir, self.web_port, self.smoke_port, []).split("\n", 1)[-1])
+                    + acceptance_tests_prompt(
+                        self.tests_dir, self.web_port, self.smoke_port, [],
+                        source_kind=self.acceptance_selection.source_kind,
+                    ).split("\n", 1)[-1])
         # Own spec only for the prompt; ancestor regression is run, not injected.
         files = list(self.spec_map.get(node_id) or []) if node_id else []
         support = sorted(str(p.relative_to(self.tests_dir)) for p in self.tests_dir.rglob("*.ts")
                          if not p.name.endswith(".spec.ts"))
         if not files:  # node without its own spec: show everything
             files = sorted(str(p.relative_to(self.tests_dir)) for p in self.tests_dir.rglob("*.spec.ts"))
-        return acceptance_tests_prompt(self.tests_dir, self.web_port, self.smoke_port, files + support,
-                                       inline=os.environ.get("OCTOS_ARC_INLINE_SPECS", "1") != "0")
+        return acceptance_tests_prompt(
+            self.tests_dir, self.web_port, self.smoke_port, files + support,
+            inline=os.environ.get("OCTOS_ARC_INLINE_SPECS", "1") != "0",
+            source_kind=self.acceptance_selection.source_kind,
+        )
 
     def ancestors_text(self, node_id: str, ordered: list[dict]) -> str:
         anc = ancestors_of(node_id, ordered)
@@ -1821,6 +1893,8 @@ class Flow:
                 root, env_extra = installed
         if root is None:
             log("[acceptance] Playwright unavailable; nodes will be judged by the final check only")
+            emit_acceptance_status(self.acceptance_selection, "runner_unavailable", stage="runner_setup",
+                                   reason="Playwright runner unavailable; no acceptance specs executed")
             return
         limit = container_memory_limit()
         self.mem_limit = limit
@@ -1930,8 +2004,21 @@ class Flow:
             if err is None:
                 err = server.start()
             if err is not None:
-                return RunSummary(error=err)
-            return self.runner.run(specs, f"http://127.0.0.1:{self.smoke_port}", workers=workers)
+                summary = RunSummary(error=err)
+                emit_acceptance_status(self.acceptance_selection, "infrastructure_error", stage="spec_run",
+                                       reason=err)
+                return summary
+            summary = self.runner.run(specs, f"http://127.0.0.1:{self.smoke_port}", workers=workers)
+            emit_acceptance_status(
+                self.acceptance_selection,
+                "infrastructure_error" if summary.error else ("passed" if summary.total and summary.passed == summary.total else "failed"),
+                stage="spec_run",
+                executed=summary.total,
+                passed=summary.passed,
+                total=summary.total,
+                reason=summary.error or "actual Playwright results",
+            )
+            return summary
         finally:
             server.stop()
             restore_worktree(git_run)
@@ -2049,11 +2136,13 @@ class Flow:
                     self.turn(prompt, min(self.node_timeout, left), f"{node_id} rewrite (repair {attempt + 1})",
                               request_budget=rewrite_budget)
                 continue
-            prompt = self.application_context_text(node_id) + REPAIR_PROMPT.format(node_id=node_id, passed=passed, total=summary.total,
+            prompt = self.application_context_text(node_id) + REPAIR_PROMPT.format(
+                                          acceptance_label=self.acceptance_label(), node_id=node_id,
+                                          passed=passed, total=summary.total,
                                           failures=failures or "(no detail)", corrections=self.corrections_text(),
                                           slow=slow_text, smoke=self.smoke_port, port=self.web_port,
                                           sources=self.sources_text())
-            prompt = time_pressure_repair + prompt
+            prompt = time_pressure_repair + prompt + self.evolution_interaction_contract()
             if self.codegen_mode():
                 self.codegen_turn(prompt + "\nReturn every file you change as a complete file block.",
                                   min(self.node_timeout, left), f"{node_id} repair {attempt + 1}/{self.repair_rounds}")
@@ -2154,18 +2243,22 @@ class Flow:
         prompt = self.application_context_text(node_id) + NODE_PROMPT.format(node_id=node_id, node_spec=describe_node(node), design=design_text,
                                     preamble=preamble, ancestors=self.ancestors_text(node_id, ordered),
                                     tests=self.tests_prompt_for(node_id), smoke=self.smoke_port, port=self.web_port,
-                                    performance=self.perf_text(), ui=self.ui_contract(), verify=self.verify_text(total))
+                                    performance=self.perf_text(),
+                                    ui=self.ui_contract() + self.evolution_interaction_contract(),
+                                    verify=self.verify_text(total))
         prompt = self.corrections_text() + time_pressure_hint + prompt
         codegen_prompt = None
         implement_timeout = min(self.node_timeout, self.implement_fraction * node_budget, deadline - time.time())
         if self.codegen_mode():
-            compact = CODEGEN_PROMPT.format(node_id=node_id, description=str(node.get("description") or "").strip(),
+            compact = CODEGEN_PROMPT.format(acceptance_label=self.acceptance_label(), node_id=node_id,
+                                            description=str(node.get("description") or "").strip(),
                                             spec=self.spec_bodies(node_id), port=self.web_port, ports=self.codegen_ports_clause(),
                                             size_rule=CODEGEN_SIZE_SMALL if self.n_nodes <= 1 else CODEGEN_SIZE_FULL)
             compact = self.application_context_text(node_id) + compact
             if self.has_app():  # evolution: keep the existing app, return every changed file complete
                 compact = (compact.replace("Files:", "Existing app below; keep everything that works and output "
                                            "every changed file complete. Files:", 1)
+                           + self.evolution_interaction_contract()
                            + inline_sources(self.output_dir, 30000, exts=(".html", ".js")))
             codegen_prompt = compact
             write_codegen_manifests(self.output_dir)
@@ -2381,13 +2474,15 @@ class Flow:
             if not failing:
                 failing = ["all nodes"]
             prompt = self.application_context_text(", ".join(failing)) + REPAIR_PROMPT.format(
-                node_id=", ".join(failing), passed=summary.passed, total=summary.total, failures=failures,
+                acceptance_label=self.acceptance_label(), node_id=", ".join(failing),
+                passed=summary.passed, total=summary.total, failures=failures,
                 sources=self.sources_text(),
                 corrections=self.corrections_text() + "The grader runs all spec files IN PARALLEL against one "
                 "server; tests from different files must not interfere through shared server state "
                 "(e.g. a counter that every browser session shares). Keep persisted data only where the "
                 "requirement demands persistence.\n",
                 slow="", smoke=self.smoke_port, port=self.web_port)
+            prompt += self.evolution_interaction_contract()
             self.turn(prompt, min(self.node_timeout, max(120, self.remaining() - 200)),
                       f"full-suite repair {attempt + 1}/{rounds}")
             self.commit(f"fix: full-suite repair {attempt + 1}")
@@ -2471,14 +2566,19 @@ class Flow:
             self.nodes_to_implement = len([n for n in node_ids if n not in unchanged])
             self.n_nodes = len(ordered)
 
-            self.tests_dir = locate_acceptance_tests(tree, BUNDLE_DIR)
+            self.acceptance_selection = select_acceptance_tests(tree, BUNDLE_DIR)
+            self.tests_dir = self.acceptance_selection.path
             if self.tests_dir:
                 specs = sorted(str(p.relative_to(self.tests_dir)) for p in self.tests_dir.rglob("*.spec.ts"))
                 self.spec_map, self.aliases = map_specs_to_nodes(specs, node_ids)
                 log(f"[tests] {len(specs)} spec files at {self.tests_dir}; mapping "
                     f"{ {k: v for k, v in self.spec_map.items() if v} }; aliases {self.aliases}")
+                emit_acceptance_status(self.acceptance_selection, "available", stage="selection",
+                                       total=len(specs), reason="suite selected; no specs executed yet")
             else:
                 log("[tests] no acceptance specs found; building from requirement text only")
+                emit_acceptance_status(self.acceptance_selection, "acceptance_unavailable", stage="selection",
+                                       reason=self.acceptance_selection.reason)
             self.initialize_application_contract(tree, ordered)
 
             self.runtime.git.ensure_repo()
@@ -2539,7 +2639,8 @@ class Flow:
                     final_ok, _ = self.turn(self.application_context_text(None) + FINAL_CHECK_PROMPT.format(
                                                                       smoke=self.smoke_port, port=self.web_port,
                                                                       tests=self.tests_prompt_for(None),
-                                                                      performance=self.perf_text(), ui=self.ui_contract()),
+                                                                      performance=self.perf_text(),
+                                                                      ui=self.ui_contract() + self.evolution_interaction_contract()),
                                             self.node_timeout, "final check")
                     self.commit("chore: final verification pass")
                 rehearsed = self.rehearsal()
@@ -2563,6 +2664,12 @@ class Flow:
             self.mark_folders()
             self.commit("chore: traceability and acceptance state")
             failed = [i for i in node_ids if self.test_verdict.get(i) is not True]
+            if self.tests_dir is None:
+                emit_acceptance_status(
+                    self.acceptance_selection, "acceptance_unavailable", stage="run_complete",
+                    reason=(f"implementation completed for {len(self.implemented_nodes)} node(s), "
+                            "but zero acceptance specs were executed"),
+                )
             if failed:
                 self.events.mark_run_completed(f"completed; nodes not verified: {', '.join(failed)}")
             else:

@@ -1,5 +1,18 @@
 # arc/ 适配层改动记录（工作流 A，分支 `wf-adapter`）
 
+## 2026-09-29｜Evolution BookStack 选择器集成修复（平台未验证）
+
+- 完成 Evolution 验收选择器集成：`arc-bench-lite-evolution--bookstack` 只绑定冻结需求树指纹
+  `5995450bf29ec1e1611568297e90fb7e3cf736813164e7a846728c33cefe9815`，不再按同名
+  `BookStack Knowledge Base System` 猜测套件。
+- Evolution 套件明确标记为 `source_kind=observed_proxy`；它由平台观察证据重建，只用于本地修复引导，
+  不是官方测试资产，也不是平台评分权威。提示词会明确区分 observed proxy 与 official acceptance tests。
+- 验收选择、提示词格式化、Evolution 交互契约和重复精确指纹 fail-closed 回归调用已全部接通；运行时输出
+  机器可读 `ARC_ACCEPTANCE_STATUS`，区分套件可用、实际 Playwright 通过/失败、基础设施错误和未执行验收，
+  不把 implementation 完成冒充 acceptance 执行。
+- 定向测试 `17/17`、语法检查 exit `0`。Windows 全量 `arc/tests` 为 `107` 项：`103` 通过、`3` 失败、`1`
+  错误，均为既有路径/权限环境基线；未上传平台，未创建 Run。
+
 ## 2026-09-29｜Lite/Web 测试身份精确路由候选（平台未验证）
 
 - 根因证据：Run `334c6c6736b4` 的平台任务为 `arc-bench-lite--bookstack`，最终

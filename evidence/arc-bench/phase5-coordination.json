@@ -1289,6 +1289,45 @@
       "business_go": false,
       "strict_ab_comparable": false,
       "next_gate": "Upload the exact ZIP, bind its SHA to a new Lite BookStack Run, confirm the internal suite path is arc-bench-lite--bookstack, then return the Run through phases 3 and 4."
+    },
+    {
+      "key": "local:P5-023:evolution-bookstack-selector",
+      "run_id": null,
+      "task_key": "arc-bench-lite-evolution--bookstack",
+      "issue_id": "P5-023",
+      "status": "source_committed_artifact_built_platform_unverified",
+      "decision": "route_evolution_by_exact_requirement_tree_fingerprint_and_surface_acceptance_status",
+      "code_change_authorized": true,
+      "implementation_dispatched": true,
+      "implementation_thread_role": "single writer takeover",
+      "base_commit_sha": "76860d0d9cd72475b39a4cebfebc3c234da2a956",
+      "source_commit_sha": null,
+      "branch": "codex/lite-evolution-bookstack-fix",
+      "requirement_tree_sha256": "5995450bf29ec1e1611568297e90fb7e3cf736813164e7a846728c33cefe9815",
+      "source_kind": "observed_proxy",
+      "acceptance_status_event": "ARC_ACCEPTANCE_STATUS",
+      "build_record": "evidence/arc-bench/builds/lite-evolution-bookstack-fix-unverified/build-record.json",
+      "agent_zip_path": "octos-arc-bundle_lite-evolution-bookstack-fix-unverified.zip",
+      "agent_zip_sha256": null,
+      "focused_tests": {"passed": 17, "total": 17, "exit_code": 0},
+      "full_tests": {
+        "passed": 103,
+        "total": 107,
+        "failures": 3,
+        "errors": 1,
+        "exit_code": 1,
+        "known_windows_baseline": [
+          "two path-separator assertions",
+          "one Unix npm_config_cache path assertion",
+          "one temporary .git/objects cleanup PermissionError"
+        ]
+      },
+      "official_tests_modified": false,
+      "new_platform_run_created_by_task": false,
+      "upload_performed_by_task": false,
+      "business_go": false,
+      "strict_ab_comparable": false,
+      "next_gate": "Keep this ZIP platform_unverified. Upload and create a Run only after separate explicit authorization; bind the exact ZIP SHA, platform task, submission/build identity, and observed-proxy-versus-official test source in returned evidence."
     }
   ]
 }
