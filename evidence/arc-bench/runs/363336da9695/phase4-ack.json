@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "ack_status": "accepted",
+  "run_id": "363336da9695",
+  "task_key": "arc-bench-lite--bookstack",
+  "handoff_id": "363336da9695-9342DC14E7F5",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "manifest_sha256": "9342DC14E7F5B4D236143C6B8F6EE6032D38F4D2BED08BBDE148264FFC5E12E9",
+  "scope": "single_run_phase4_read_only_diagnosis",
+  "forbidden_actions_acknowledged": [
+    "no rerun or resume",
+    "no upload or platform mutation",
+    "no Agent, official test, asset, task snapshot or configuration modification",
+    "no Stage 5 execution",
+    "no merge of prior Run conclusions"
+  ],
+  "received_at": "2026-09-29T18:00:00+08:00"
+}

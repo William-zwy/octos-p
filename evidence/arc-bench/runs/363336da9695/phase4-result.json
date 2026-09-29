@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "PHASE4_RESULT": "complete",
+  "source": "platform_run_attachments",
+  "read_only": true,
+  "stage5_executed": false,
+  "handoff_id": "363336da9695-9342DC14E7F5",
+  "run_id": "363336da9695",
+  "submission_id": "e2a8ea92ca57",
+  "task_key": "arc-bench-lite--bookstack",
+  "thread_id": "01a0b582-3586-7bc1-875e-d4670592d5ba",
+  "manifest_sha256": "9342DC14E7F5B4D236143C6B8F6EE6032D38F4D2BED08BBDE148264FFC5E12E9",
+  "scope": {
+    "single_run_only": true,
+    "prior_runs_merged": [],
+    "forbidden_actions_not_performed": [
+      "rerun",
+      "resume",
+      "upload",
+      "agent_modification",
+      "official_test_modification",
+      "asset_modification",
+      "task_snapshot_modification",
+      "configuration_modification",
+      "stage5_execution"
+    ]
+  },
+  "platform_final": {
+    "status": "FAILED",
+    "score": 85.3,
+    "pass_total": "29/34",
+    "failed_count": 5,
+    "failure_stage": "final_playwright_execution",
+    "duration_seconds": 9059,
+    "failure_reason": "Runner exited with test failures or runtime errors",
+    "failed_tests": [
+      {
+        "req_id": "REQ-4.3.1",
+        "status": "timedOut",
+        "duration_ms": 10014,
+        "locator": "getByRole('button', { name: /Shelf\\s+4\\.3\\.1/i }).first()",
+        "helper": "openShelfDetails"
+      },
+      {
+        "req_id": "REQ-4.3.2",
+        "status": "timedOut",
+        "duration_ms": 10018,
+        "locator": "getByRole('button', { name: /Shelf\\s+4\\.3\\.2/i }).first()",
+        "helper": "openShelfDetails"
+      },
+      {
+        "req_id": "REQ-6.1.2",
+        "status": "timedOut",
+        "duration_ms": 10016,
+        "locator": "getByRole('button', { name: /^Save Draft$/i }).first()",
+        "helper": "clickNamed"
+      },
+      {
+        "req_id": "REQ-6.1.3",
+        "status": "timedOut",
+        "duration_ms": 10018,
+        "locator": "getByRole('button', { name: /^Edit$/i }).first()",
+        "helper": "openDraftPageEditor"
+      },
+      {
+        "req_id": "REQ-7.1",
+        "status": "failed",
+        "duration_ms": 511,
+        "error": "page.goto('/') was interrupted by another navigation to the same URL",
+        "helper": "openHome"
+      }
+    ]
+  },
+  "confirmed_facts": [
+    {
+      "finding": "The authoritative platform result is FAILED with score 85.3: 29 of 34 final Playwright tests passed and 5 failed.",
+      "evidence": ["manifest.json:run/platform_final", "arcbench-run-363336da9695.json:status/score/tests"]
+    },
+    {
+      "finding": "REQ-4.3.1 and REQ-4.3.2 both fail before the creation form because the official helpers cannot open the required context shelves.",
+      "evidence": ["playwright-report-363336da9695.json:REQ-4.3.1/REQ-4.3.2", "official-snapshot public-tests/REQ-4.3.1.spec.ts and REQ-4.3.2.spec.ts"]
+    },
+    {
+      "finding": "The final template database contains shelves Shelf 4.1, Shelf 4.2.1, Shelf 4.4.2, Shelf 4.5.1, Shelf 4.5.2, Shelf 5.2.2, Shelf 5.6.1, Shelf 7.1 and Shelf 7.2, but no Shelf 4.3.1 or Shelf 4.3.2.",
+      "evidence": ["363336da9695-template.zip::template/backend/data/db.json"]
+    },
+    {
+      "finding": "REQ-6.1.2 opens the New Page flow and then expects Save Draft. The inspected New Page template contains Save Page and Cancel only; the separate New Draft route contains Save Draft.",
+      "evidence": ["official-snapshot public-tests/REQ-6.1.2.spec.ts and helpers.ts", "363336da9695-template.zip::template/backend/src/server.js:servePageCreate and servePageDraftCreate"]
+    },
+    {
+      "finding": "REQ-6.1.3 opens the draft named Draft 6.1.3 and then expects an Edit control. The inspected draft route directly renders Edit Draft with Save Draft and Delete Draft, but no Edit control.",
+      "evidence": ["official-snapshot public-tests/REQ-6.1.3.spec.ts and helpers.ts", "363336da9695-template.zip::template/backend/src/server.js:servePageDraftEdit", "template db draft_pages"]
+    },
+    {
+      "finding": "REQ-7.1 failed with a same-URL navigation interruption at helpers.ts:159 during openHome. The test calls login and then openShelfDetails; the template login handler performs window.location.href='/' after the login API resolves.",
+      "evidence": ["playwright-report-363336da9695.json:REQ-7.1", "official-snapshot public-tests/REQ-7.1.spec.ts and helpers.ts", "363336da9695-template.zip::template/frontend/src/js/app.js"]
+    },
+    {
+      "finding": "The generated application was reached, preflight passed, main.py was executed, the runner path was /workspace/tests, bundled fallback hits were zero, and plaintext API-key hits were zero.",
+      "evidence": ["arcbench-run-363336da9695-logs.json", "manifest.json:platform_validation"]
+    },
+    {
+      "finding": "The internal implement flow marked all 34 atomic nodes OK and verified, but the final platform Playwright result was 29/34; the two signals remain separate.",
+      "evidence": ["arcbench-run-363336da9695-logs.json:flow records", "manifest.json:internal_acceptance"]
+    },
+    {
+      "finding": "Platform metering reports 84671590 tokens, while provider totals report 42796756 total tokens, 1275 requests and cost 36.824733 CNY. These are separate accounting scopes and are not added.",
+      "evidence": ["arcbench-run-363336da9695.json:token_count/token_cost", "arcbench-run-363336da9695-logs.json:provider totals", "manifest.json:metering"]
+    }
+  ],
+  "strong_candidates": [
+    {
+      "req_id": "REQ-7.1",
+      "finding": "A login redirect race is a strong candidate for the same-URL navigation failure: the test starts login, the app asynchronously assigns window.location.href='/', and the next helper immediately calls page.goto('/').",
+      "evidence": ["official-snapshot public-tests/REQ-7.1.spec.ts", "official-snapshot public-tests/helpers.ts:login/openHome", "363336da9695-template.zip::template/frontend/src/js/app.js", "playwright-report-363336da9695.json:REQ-7.1"],
+      "caveat": "The report has no browser trace or network timeline, so the exact ordering is not independently observable."
+    }
+  ],
+  "confirmed_contract_mismatches": [
+    {
+      "req_ids": ["REQ-4.3.1", "REQ-4.3.2"],
+      "finding": "Required fixture context shelves are absent from the final template seed database, so the official tests cannot enter the shelf creation flow for those scenarios.",
+      "boundary": "generated template seed data and official fixture contract"
+    },
+    {
+      "req_ids": ["REQ-6.1.2"],
+      "finding": "The official test enters New Page but the New Page form does not expose Save Draft; Save Draft exists only on a separate New Draft route.",
+      "boundary": "generated page-editor UI contract"
+    },
+    {
+      "req_ids": ["REQ-6.1.3"],
+      "finding": "The official test expects an Edit control after opening the draft, while the generated draft route directly renders the edit form and exposes no Edit control.",
+      "boundary": "generated draft navigation UI contract"
+    }
+  ],
+  "validation_conflicts": [
+    {
+      "field": "test_source_layers",
+      "finding": "The generation logs found no *.spec.ts under /workspace/tests, reported bundled-suite identity ambiguity between arc-bench-web--bookstack and arc-bench-lite--bookstack, and built internal checks from requirement text only. The final Playwright report separately contains 34 specs under /workspace/tests.",
+      "resolution": "Retain the layers separately; do not label the final generated suite as the Agent's bundled tests."
+    },
+    {
+      "field": "internal_implement_vs_final_tests",
+      "finding": "All 34 internal nodes are OK while the final platform result is 29/34.",
+      "resolution": "Use final Playwright for the platform score and internal flow only as a separate implementation signal."
+    },
+    {
+      "field": "token_accounting",
+      "finding": "run JSON token_count=84671590 differs from raw-log provider total_tokens=42796756.",
+      "resolution": "Retain both values without addition."
+    },
+    {
+      "field": "attachment_path_resolution",
+      "finding": "The artifacts were found in a BookStack-lite folder even though one routing note mentioned keep-lite; structured identity is arc-bench-lite--bookstack.",
+      "resolution": "Route by run/task identity and use the actual evidence paths."
+    },
+    {
+      "field": "submission_identity",
+      "finding": "The platform does not bind the supplied submission ZIP to this run by upload SHA, build ID, commit SHA or payload-tree SHA.",
+      "resolution": "Treat any local ZIP hash only as an unbound comparison."
+    }
+  ],
+  "excluded_or_unknown": [
+    "No runner-wide startup failure is supported: the application was reached, preflight passed and 29 tests passed.",
+    "No bundled fallback or plaintext API-key leakage was detected.",
+    "The exact final browser DOM, screenshots, traces, network timeline and platform-native error-context bodies are unavailable.",
+    "The run JSON does not independently identify the model; raw logs/manifest identify deepseek-v4-flash, while visual model is unavailable.",
+    "No task snapshot ID, platform build ID, commit SHA, payload-tree SHA, upload-package SHA or result_path is available."
+  ],
+  "stage5_recommendation": {
+    "recommend": true,
+    "triggered": false,
+    "boundary": "If Stage 5 is later approved, repair only the confirmed fixture/editor contract mismatches and separately harden the login navigation lifecycle. Preserve the 29 passing tests; do not modify official tests, globally increase timeouts or infer a backend rewrite.",
+    "priority": [
+      "Restore the required Shelf 4.3.1 and Shelf 4.3.2 fixture contexts or make the generated seed contract consistent with the official fixture set.",
+      "Expose Save Draft in the New Page flow used by REQ-6.1.2, while preserving the existing page-save behavior.",
+      "Align draft navigation with REQ-6.1.3 so the expected Edit step exists before Delete Draft.",
+      "Eliminate or serialize the post-login redirect before the next page.goto('/') operation."
+    ],
+    "validation_order": ["REQ-4.3.1 and REQ-4.3.2", "REQ-6.1.2", "REQ-6.1.3", "REQ-7.1", "unchanged neighboring tests"],
+    "not_executed": true
+  },
+  "impact_estimate": {
+    "current_completion": "29/34 (85.3%)",
+    "theoretical_ceiling_if_all_five_failures_are_fixed": "34/34 (100.0%), subject to a clean platform rerun",
+    "theoretical_absolute_score_increase": "14.7 percentage points",
+    "token_and_time": "This read-only diagnosis adds no platform usage. The 9059-second run duration is dominated by generation and acceptance; no reliable post-fix estimate is made."
+  },
+  "evidence_files": [
+    "evidence/arc-bench/runs/363336da9695/manifest.json",
+    "evidence/arc-bench/runs/363336da9695/phase4-handoff.json",
+    "evidence/arc-bench/runs/363336da9695/phase4-ack.json",
+    "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-run-363336da9695.json",
+    "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-run-363336da9695-logs.json",
+    "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\arcbench-363336da9695-failure-details.md",
+    "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\playwright-report-363336da9695.json",
+    "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite\\363336da9695-template.zip",
+    "workstreams/arc-bench/official-snapshots/20260917-150121Z/competitions/arc-bench-lite/tasks/arc-bench-lite--bookstack/public-tests/helpers.ts",
+    "workstreams/arc-bench/official-snapshots/20260917-150121Z/competitions/arc-bench-lite/tasks/arc-bench-lite--bookstack/public-tests/REQ-4.3.1.spec.ts",
+    "workstreams/arc-bench/official-snapshots/20260917-150121Z/competitions/arc-bench-lite/tasks/arc-bench-lite--bookstack/public-tests/REQ-4.3.2.spec.ts",
+    "workstreams/arc-bench/official-snapshots/20260917-150121Z/competitions/arc-bench-lite/tasks/arc-bench-lite--bookstack/public-tests/REQ-6.1.2.spec.ts",
+    "workstreams/arc-bench/official-snapshots/20260917-150121Z/competitions/arc-bench-lite/tasks/arc-bench-lite--bookstack/public-tests/REQ-6.1.3.spec.ts",
+    "workstreams/arc-bench/official-snapshots/20260917-150121Z/competitions/arc-bench-lite/tasks/arc-bench-lite--bookstack/public-tests/REQ-7.1.spec.ts"
+  ]
+}
