@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "PHASE4_RESULT": "complete",
+  "phase": 4,
+  "result_status": "complete",
+  "mode": "read_only_single_run_diagnosis",
+  "run_id": "c68bef1a6343",
+  "submission_id": "362bc0d7b112",
+  "task_key": "arc-bench-web--keep",
+  "handoff_id": "c68bef1a6343-6D7B1A92C4E0",
+  "thread_id": "01a0b7e7-1cff-7380-ac81-ef35dbe70633",
+  "manifest_sha256": "E4008585EE9406A004D71ED70D98D2312C257D71528233C90DEE3C6449C60463",
+  "read_only": true,
+  "manual_intervention": true,
+  "automatic_dispatch_error": "-32602 Invalid app tool request",
+  "prior_runs_merged": [],
+  "other_runs_analyzed": [],
+  "stage5_executed": false,
+  "stage5_decision_executed": false,
+  "platform_authoritative_outcome": {
+    "status": "FAILED",
+    "score": 65.6,
+    "passed_count": 21,
+    "failed_count": 11,
+    "total_count": 32,
+    "failure_stage": "final_playwright_execution",
+    "failed_tests": [
+      "REQ-2.3.1", "REQ-2.3.2", "REQ-2.3.3", "REQ-2.5.1", "REQ-2.5.4",
+      "REQ-2.6.1", "REQ-2.7.1", "REQ-2.7.2", "REQ-2.7.5", "REQ-4.2", "REQ-5.2"
+    ]
+  },
+  "confirmed": [
+    {
+      "id": "C-DB-STATE-01",
+      "req_ids": ["REQ-2.3.1", "REQ-2.3.3"],
+      "ruling": "confirmed",
+      "statement": "The submitted template ZIP contains a persisted backend/data/db.json from the generation run instead of a clean seed. Delete me 2.3.1 and Delete me 2.3.3 are already trashed, while the API excludes trashed notes from the default listing, so the official home-page locator cannot find them.",
+      "evidence": [
+        "template/backend/server.js:64-73 loads an existing db.json and only calls seedStore when the file is absent or corrupt",
+        "template/backend/data/db.json contains both target notes with trashed=true and deletedAt timestamps",
+        "template/backend/server.js:130-132 filters trashed notes from GET /api/notes",
+        "template/backend/server.js:32-34 defines both notes as clean in seedStore"
+      ],
+      "boundary": "This is a template-state contamination defect; it is distinct from the Octos timeout/proxy failures recorded by Phase 3."
+    },
+    {
+      "id": "C-VIEW-01",
+      "req_ids": ["REQ-5.2"],
+      "ruling": "confirmed",
+      "statement": "The initial grid-mode toggle exposes the action name Grid view, but the official default-grid contract searches for the available List view action.",
+      "evidence": [
+        "template/frontend/src/app.js:12 initializes viewMode to grid",
+        "template/frontend/src/index.html:26 gives #view-toggle aria-label=Grid view",
+        "template/frontend/src/app.js:720-724 changes the label to List view only after the first click",
+        "REQ-5.2 searches for /list view/i before clicking"
+      ],
+      "boundary": "The grid layout itself is the default; the confirmed defect is the initial accessible action label."
+    }
+  ],
+  "strong_candidate": [
+    {
+      "id": "SC-ASYNC-01",
+      "req_ids": ["REQ-2.5.4", "REQ-2.7.1", "REQ-2.7.2", "REQ-2.7.5"],
+      "ruling": "strong_candidate",
+      "statement": "Mutation handlers start loadNotes/loadLabels without awaiting them, while the official helpers immediately navigate, close dialogs, or read the filtered DOM. Concurrent renderNotes calls clear and rebuild #notes-area, which can detach a hovered card or leave stale label state visible.",
+      "evidence": [
+        "template/frontend/src/app.js:328-340 calls loadNotes after archive without returning or awaiting the promise",
+        "template/frontend/src/app.js:444-470 updates a label and starts loadNotes asynchronously",
+        "template/frontend/src/app.js:633-651 starts loadLabels and immediately renderLabelManager after rename",
+        "template/frontend/src/app.js:187-190 clears #notes-area before every render",
+        "REQ-2.5.4 reports the resolved card detached during hover and REQ-2.7.2 reports the removed note still present"
+      ],
+      "limitation": "The supplied report does not include a browser trace sufficient to prove the exact race on a clean seed."
+    },
+    {
+      "id": "SC-STATE-02",
+      "req_ids": ["REQ-2.5.1", "REQ-2.5.4"],
+      "ruling": "strong_candidate",
+      "statement": "Archive controls are rendered from each note, but the persisted ZIP state is not a clean archive fixture and the archive mutation is followed by an unawaited reload. This combines fixture contamination with a render-lifecycle risk for the archive/unarchive flow.",
+      "evidence": [
+        "template/frontend/src/app.js:290-300 renders Archive or Unarchive from n.archived",
+        "template/frontend/src/app.js:328-341 performs PATCH then invokes loadNotes without awaiting it",
+        "template/backend/data/db.json contains generated-run state rather than the seedStore fixture"
+      ],
+      "limitation": "Travel plans 2.5.4 is present and unarchived in the supplied db.json, so the final hover timeout cannot be attributed to fixture state alone."
+    },
+    {
+      "id": "SC-SETTINGS-01",
+      "req_ids": ["REQ-4.2"],
+      "ruling": "strong_candidate",
+      "statement": "The settings trigger and the nested Settings menu item share the same accessible name, while the official helper resolves a button before a menuitem. A second Settings click can close the menu instead of opening #settings-detail, leaving Save hidden.",
+      "evidence": [
+        "template/frontend/src/index.html:27 defines the visible #settings-btn with aria-label=Settings",
+        "template/frontend/src/index.html:28-29 defines a hidden role=menu menu containing a role=menuitem also named Settings",
+        "template/frontend/src/app.js:697-709 toggles the menu and removes hidden from #settings-detail only when the menu item handler runs",
+        "REQ-4.2 reports #settings-save resolved but hidden"
+      ],
+      "limitation": "No browser runtime was available for a bounded clean-seed replay in this recovery environment, so this remains a strong candidate rather than confirmed."
+    },
+    {
+      "id": "SC-DOM-01",
+      "req_ids": ["REQ-2.6.1"],
+      "ruling": "strong_candidate",
+      "statement": "The color mutation calls loadNotes and rebuilds the notes area asynchronously; the visual helper captures a text locator's bounding box immediately around that lifecycle. A zero or stale box can produce the reported empty screenshot clip.",
+      "evidence": [
+        "template/frontend/src/app.js:404-437 PATCHes the color and then calls loadNotes",
+        "template/frontend/src/app.js:187-190 clears and rebuilds the notes area",
+        "REQ-2.6.1 reports page.screenshot with an empty or outside clip after resolving the note"
+      ],
+      "limitation": "The screenshot helper and final browser trace are external to the template ZIP, so the exact box geometry is not proven."
+    }
+  ],
+  "unknown": [
+    "Whether the REQ-2.3.2 missing undo control was caused by the same persisted-state contamination, a toast timing race, or both.",
+    "Whether the REQ-2.5.1 Archived locator failure was caused by the concurrent render race or by the official helper observing the wrong accessible action.",
+    "The exact clean-seed browser DOM and bounding boxes for REQ-2.6.1 and REQ-4.2 could not be replayed because no Playwright runtime was available in this environment.",
+    "The upstream proxy_error for REQ-2.6.2 and Octos turn timeouts remain confirmed Phase 3 execution failures, but they are not product-template root causes for the other final tests."
+  ],
+  "stage3_intermediate_state_reconciliation": {
+    "accepted_and_confirmed": [
+      "The official web-keep suite identity was correct for this Run.",
+      "The final result is 21/32 with ten timeouts and one screenshot assertion failure.",
+      "Octos timeout/proxy events and the runner not_verified list are execution/process evidence, not a passing signal."
+    ],
+    "qualified": [
+      "Persisted generated-run data is a confirmed template-state defect; async DOM replacement, settings role ambiguity, and screenshot timing remain strong candidates.",
+      "No conclusion from another Keep or BookStack Run was merged."
+    ],
+    "not_a_cause": [
+      "No OOM or global time-budget exhaustion was evidenced.",
+      "No claim is made that Stage 5, a platform rerun, an upload, or an official-test change occurred."
+    ]
+  },
+  "bounded_recommendations": [
+    "Reset or omit backend/data/db.json at build/startup so every official run begins from seedStore, then verify fixture titles and label names through GET /api/notes and GET /api/labels.",
+    "Expose List view as the initial grid-mode toggle action name, and keep the label synchronized with the mode.",
+    "Serialize mutation refreshes or update local state in place before allowing navigation, hover, or filtered assertions to continue.",
+    "Give the settings trigger and menu item distinct accessible names or roles so the official resolver cannot toggle the wrong control.",
+    "Run each affected official spec with workers=1 on a clean seed before any broad repair pass."
+  ],
+  "scope": {
+    "read_inputs": [
+      "evidence/arc-bench/runs/c68bef1a6343/manifest.json",
+      "evidence/arc-bench/runs/c68bef1a6343/phase3-analysis.md",
+      "evidence/arc-bench/runs/c68bef1a6343/phase4-handoff.json",
+      "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-keep/arcbench-run-c68bef1a6343.json",
+      "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-keep/playwright-report-c68bef1a6343.json",
+      "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-keep/arcbench-c68bef1a6343-octos-events.jsonl",
+      "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-keep/arcbench-c68bef1a6343-runner-events.jsonl",
+      "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-keep/arcbench-c68bef1a6343-stdout.log",
+      "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-keep/c68bef1a6343-template.zip",
+      "arc/public-tests/arc-bench-web--keep/*.spec.ts and helpers.ts"
+    ],
+    "excluded_run_ids": ["4b792b72d7dd"],
+    "agent_modified": false,
+    "official_tests_modified": false,
+    "task_snapshots_modified": false,
+    "assets_modified": false,
+    "platform_rerun_or_upload": false,
+    "stage5_triggered": false
+  }
+}

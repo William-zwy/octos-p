@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "PHASE4_HANDOFF_ACK": "c68bef1a6343-6D7B1A92C4E0",
+  "handoff_id": "c68bef1a6343-6D7B1A92C4E0",
+  "run_id": "c68bef1a6343",
+  "submission_id": "362bc0d7b112",
+  "task_key": "arc-bench-web--keep",
+  "thread_id": "01a0b7e7-1cff-7380-ac81-ef35dbe70633",
+  "manifest_sha256": "E4008585EE9406A004D71ED70D98D2312C257D71528233C90DEE3C6449C60463",
+  "received_at": "2026-09-30T00:00:00+08:00",
+  "status": "received",
+  "read_only": true,
+  "scope": "single_run_phase4_read_only_diagnosis",
+  "dispatch_mode": "manual_intervention_filesystem_fallback",
+  "automatic_dispatch": "unavailable_-32602_invalid_app_tool_request",
+  "thread_identity": "reconciled_from_persisted_registry_and_local_thread_history",
+  "note": "The canonical registered thread was used as the identity anchor. The app route could not deliver a message, so the authorized human-intervention fallback performed the same read-only Phase 4 analysis without creating a duplicate thread or triggering Stage 5."
+}
