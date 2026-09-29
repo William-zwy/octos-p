@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "handoff_id": "fb59eaf67f65-B7ACB4351B8C",
+  "run_id": "fb59eaf67f65",
+  "submission_id": "eb01fc37f040",
+  "task_key": "arc-bench-lite-evolution--keep",
+  "thread_id": "01a0ec96-3f05-7541-ac77-18df00d83a1c",
+  "thread_title": "11 项目阶段4 + arc-bench-lite-evolution--keep",
+  "manifest": "evidence/arc-bench/runs/fb59eaf67f65/manifest.json",
+  "manifest_sha256": "B7ACB4351B8CBC06FA5A8C81AE17C1E137C24BB12452C6701ABAC652F4D43BAB",
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "execution_mode": "direct_current_conversation_due_app_routing_unavailable",
+  "source_precedence": [
+    "run JSON final status, lifecycle and IDs",
+    "Playwright report and failure details for test evidence",
+    "raw logs for execution path and configuration",
+    "snapshots and template ZIP for later diagnosis",
+    "summary markdown for navigation only"
+  ],
+  "card": {
+    "platform_final": {"status":"FAILED","score":33.3,"pass_total":"2/6","failures":["REQ-7.1","REQ-7.2","REQ-8.1","REQ-9.1"]},
+    "internal_acceptance": {"atomic_nodes":6,"unique_flow_status_counts":{"ok":5,"failed":1},"failed_node":"REQ-8.2 octos turn timed out after 900s"},
+    "metering": {"requests":512,"provider_total_tokens":23255835,"platform_token_count":48274316,"cost_cny":21.449766,"duration_seconds":4809},
+    "platform_validation": {"entrypoint":"main.py","tests_dir":"/workspace/tests","bundled_fallback_hits":0,"plaintext_api_key_hits":0,"test_workers":1,"test_timeout_ms":10000}
+  },
+  "required_ack": {"path":"evidence/arc-bench/runs/fb59eaf67f65/phase4-ack.json","must_match":["handoff_id","run_id","task_key","thread_id","manifest_sha256"]},
+  "required_result": {"json_path":"evidence/arc-bench/runs/fb59eaf67f65/phase4-result.json","markdown_path":"evidence/arc-bench/runs/fb59eaf67f65/phase4-result.md","must_match":["handoff_id","run_id","task_key","thread_id","manifest_sha256"],"required_marker":"PHASE4_RESULT: complete|incomplete"},
+  "instructions": [
+    "Analyze only Run fb59eaf67f65; ignore the other Run and prior task-key variants.",
+    "Do not create a platform Run, rerun tests, upload, modify Agent code, official tests, task snapshots, ZIPs, assets or runtime configuration.",
+    "Separate final tests[] from internal implement flow counts and classify confirmed, strong_candidate and unknown evidence levels.",
+    "Write phase4-result.json and phase4-result.md; do not trigger Stage 5."
+  ]
+}
