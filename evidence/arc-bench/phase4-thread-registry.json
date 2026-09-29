@@ -151,7 +151,7 @@
     "arc-bench-web--keep": {
       "thread_id": "01a0b7e7-1cff-7380-ac81-ef35dbe70633",
       "title": "07 项目阶段4 + arc-bench-web--keep",
-      "status": "quarantined",
+      "status": "verified",
       "last_run_id": "c68bef1a6343",
       "last_handoff_id": "c68bef1a6343-6D7B1A92C4E0",
       "previous_run_id": "4b792b72d7dd",
@@ -161,11 +161,20 @@
       "ack_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-ack.json",
       "result_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-result.json",
       "result_md_path": "evidence/arc-bench/runs/c68bef1a6343/phase4-result.md",
-      "result_status": "pending_thread_reconciliation",
-      "evidence_revision": "c68bef1a6343-stage3-intake",
+      "result_status": "complete",
+      "evidence_revision": "c68bef1a6343-phase4-manual-recovery",
       "dispatch_attempts": 0,
-      "dispatch_error": "The app list_threads call returned -32602 Invalid app tool request during reconciliation; no Stage 4 message was delivered and no ACK/result was produced.",
-      "reason": "The mapping remains quarantined because the user reported duplicate same-title conversations and the app did not return a verifiable candidate. Persist c68bef1a6343 as the latest Stage 3 handoff, but do not reuse, fork or trigger Stage 4 until the unique target Thread ID is reconciled."
+      "dispatch_error": "Automatic app routing returned -32602 Invalid app tool request before execution.",
+      "verification_method": "manual_intervention_filesystem_ack_result_identity_manifest_sha",
+      "verified_at": "2026-09-30T00:00:00+08:00",
+      "manual_intervention": {
+        "used": true,
+        "canonical_thread_identity": "01a0b7e7-1cff-7380-ac81-ef35dbe70633",
+        "duplicate_fork_used": false,
+        "platform_message_delivered": false,
+        "stage4_analysis_completed": true
+      },
+      "reason": "The app route was unavailable, so the user-authorized manual fallback reconciled the canonical persisted mapping and completed the read-only diagnosis. ACK/result identity fields and manifest SHA match; Stage 5 remains untriggered."
     },
     "arc-bench-web--bookstack": {
       "thread_id": "01a0b8a0-1851-7693-b8cf-1fbbfcbbbf7e",
