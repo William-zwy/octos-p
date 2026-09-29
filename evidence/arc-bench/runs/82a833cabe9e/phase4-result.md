@@ -4,6 +4,8 @@ PHASE4_RESULT: complete
 
 Run `82a833cabe9e`, submission `a9475f8e5f57`, task `arc-bench-lite-evolution--keep` ended `FAILED`, 2/6 (33.3%). No source, test, ZIP, or runtime configuration was changed. No new platform run was created and Stage 5 was not triggered.
 
+- manifest_sha256: `60C4597790E34F64C00EE329726E320AD748C70927564A43B8890B983607EDEB`
+
 ## Failure Review
 
 - **REQ-7.1 — confirmed.** Search suggestions use `data-type="lists|reminders"`, but the handler reads `data-label`; `activeLabel` becomes null. Isolated replay clicked Lists and Groceries remained visible (count 1), matching the report's expected 0 / received 1.

@@ -7,7 +7,7 @@
   "thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
   "thread_title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
   "manifest": "evidence/arc-bench/runs/a774fb34f1b6/manifest.json",
-  "manifest_sha256": "5C8C42D4648800CD74693170F471B196C68E8012FDCACD4B5C02475837A87DF3",
+  "manifest_sha256": "F224DEFC19FE03590A8768298ED3D1CDEBD882A642859879B6467211AEB3FDB4",
   "scope": "phase4_read_only_single_run_diagnosis",
   "source_precedence": [
     "run JSON for final status, lifecycle, tests and identifiers",

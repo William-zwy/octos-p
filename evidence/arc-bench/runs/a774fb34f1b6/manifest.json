@@ -2,7 +2,7 @@
   "schema_version": 1,
   "purpose": "ARC-Bench phase 3 normalized evidence intake for phase 4 handoff",
   "intake_label": "stage3-a774fb34f1b6",
-  "status": "normalized_intake_complete_phase4_ready",
+  "status": "normalized_intake_complete_phase4_complete",
   "run": {
     "run_id": "a774fb34f1b6",
     "submission_id": "a9475f8e5f57",
@@ -91,8 +91,17 @@
   "evidence_files": [
     {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6.json", "sha256": "CD8199523136B0184CD4FEDDD884E3FDF19131686106963036662B6C5436DA81"},
     {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6-logs.json", "sha256": "C0C34F6785FD239A49C84EB0252F95014BB775BAA4A717DB16C21168BF3C6CC6"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6-midrun.json", "sha256": "2945DE73D1588C522F7C20D980A93CC7E17434FCFBA94ECE5D8CBB0D346CEBB8"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6-midrun-logs.json", "sha256": "F509F2C4CFE3F6EFFAFB477336B1670BAECEF6978A5A0E7171D786821F053905"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6-midrun-traceability.json", "sha256": "58BA946999DE299B99BDDB89B0FD8AB7F4B7A10C95F284454C9D7B082DE2A9B6"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-run-a774fb34f1b6-summary.md", "sha256": "24B1F181B8B3F299364A39D1AAE69FC916F5500BEC96AD29C3EDDEA82A0AFD32"},
     {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\playwright-report-a774fb34f1b6.json", "sha256": "755865D0FFB9F9B67FCCD8AF23ED4EEEF0F1E4E28D15BB87D70C944B8C49757D"},
     {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-failure-details.md", "sha256": "D8C8FAE53E9EE568D282F867FC6E4FA12ECE147E774E2917D845322D238DD214"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-snapshots.json", "sha256": "AC42B229303069B1638BFAD009C02B47726B143E7CE60884EB3F88BEF14C1B4D"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-arc-extra.json", "sha256": "B137DE8704240A6ACDF0EF7C0C9ACF28DEEF12BB4FA9100FB37A3DD8743B9056"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-octos-events.jsonl", "sha256": "BA1B696D40F52FE9482E23D5753BED5B800F70DB9AE2FB4F24D831D6EC2E5FE6"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-runner-events.jsonl", "sha256": "2127C4199EC806CAA0B62FC36D3F028BE86C06301D061B8347F830370DABBA5B"},
+    {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\arcbench-a774fb34f1b6-stdout.log", "sha256": "F6450D71AD41B5800011C4EC4F710933C17AA1BAA774A94B4E6C55997F42DDF9"},
     {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\a774fb34f1b6-template.zip", "sha256": "D19F7683E11F47EB375CF34658BCD203320DDAC5659AAC8C275C2931977DCF60"},
     {"path": "C:\\Users\\dayuruozhi\\Downloads\\闻悦源代码-首轮测试-BookStack-lite-evolution\\submission-a9475f8e5f57-agent.zip", "sha256": "9F8EE636363A5BCA75EA9E15E4403C83401965443EB0BC0941BBE6E09ADD890E", "platform_bound": false}
   ]

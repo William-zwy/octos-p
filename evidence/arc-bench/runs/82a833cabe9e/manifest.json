@@ -2,7 +2,7 @@
   "schema_version": 1,
   "purpose": "ARC-Bench phase 3 normalized evidence intake",
   "intake_label": "stage3-82a833cabe9e",
-  "status": "normalized_intake_complete_phase4_running",
+  "status": "normalized_intake_complete_phase4_complete",
   "run": {
     "run_id": "82a833cabe9e",
     "submission_id": "a9475f8e5f57",
@@ -30,7 +30,7 @@
   "intake_routing": {
     "phase3_scope": "facts_manifest_and_routing_only",
     "phase4_auto_dispatch": "direct_current_conversation_fallback",
-    "next_stage": "phase4_read_only_single_run_diagnosis",
+    "next_stage": "phase5_decision_or_archive",
     "stage5_triggered": false,
     "prior_runs_merged": [],
     "registered_thread_id": "01a0ec96-3f05-7541-ac77-18df00d83a1c",

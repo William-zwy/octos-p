@@ -8,7 +8,7 @@
   "task_key": "arc-bench-lite-evolution--keep",
   "thread_id": "01a0ec96-3f05-7541-ac77-18df00d83a1c",
   "thread_title": "11 项目阶段4 + arc-bench-lite-evolution--keep",
-  "manifest_sha256": "CFC4FE4C8DA468453658200FA87F88D345486F59B45E676FCA2539ADF319F934",
+  "manifest_sha256": "60C4597790E34F64C00EE329726E320AD748C70927564A43B8890B983607EDEB",
   "received_at": "2026-09-30T00:33:00+08:00",
   "execution_mode": "direct_current_conversation_on_registered_verified_thread",
   "scope": "phase4_read_only_single_run_diagnosis",

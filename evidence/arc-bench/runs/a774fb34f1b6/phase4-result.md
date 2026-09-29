@@ -6,7 +6,7 @@ PHASE4_RESULT: complete
 - task_key: `arc-bench-lite-evolution--bookstack`
 - submission_id: `a9475f8e5f57`
 - handoff_id: `a774fb34f1b6-5C8C42D46488`
-- manifest_sha256: `5C8C42D4648800CD74693170F471B196C68E8012FDCACD4B5C02475837A87DF3`
+- manifest_sha256: `F224DEFC19FE03590A8768298ED3D1CDEBD882A642859879B6467211AEB3FDB4`
 
 ## Final platform result
 
