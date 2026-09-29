@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "purpose": "ARC-Bench phase 3 normalized evidence intake",
+  "intake_label": "stage3-d9608977de9c",
+  "status": "normalized_intake_complete_needs_reconciliation",
+  "run": {
+    "run_id": "d9608977de9c",
+    "submission_id": "eb01fc37f040",
+    "display_name": "luyun18029839909@163.com",
+    "original_filename": "octos-arc-bundle_urgent-bookstack-contract-fix-unverified.zip",
+    "catalog": "competition",
+    "competition_id": "arc-bench-lite-evolution",
+    "task_id": "bookstack",
+    "task_key": "arc-bench-lite-evolution--bookstack",
+    "task_snapshot_id": null,
+    "runtime": "python",
+    "agent_source": "upload",
+    "created_at": "2026-09-29T03:32:56.976397",
+    "started_at": "2026-09-29T03:32:58.779197",
+    "finished_at": "2026-09-29T04:19:21.940094",
+    "status": "FAILED",
+    "score": 50.0,
+    "test_pass_rate": 50.0,
+    "passed_count": 3,
+    "failed_count": 3,
+    "feature_implementation_rate": 50.0,
+    "run_duration_seconds": 2740,
+    "failure_reason": "Runner exited with test failures or runtime errors"
+  },
+  "intake_routing": {
+    "phase3_scope": "facts_manifest_and_routing_only",
+    "phase4_auto_dispatch": "blocked_by_prior_unverified_handoff",
+    "next_stage": "phase4_thread_reconciliation_required",
+    "stage5_triggered": false,
+    "prior_runs_merged": [],
+    "registered_thread_id": "01a0d8b1-76fb-7261-8d0e-a3fb69a57115",
+    "registered_thread_title": "10 项目阶段4 + arc-bench-lite-evolution--bookstack",
+    "registered_thread_status_at_intake": "handoff_pending_unverified",
+    "dispatch_attempted": false,
+    "dispatch_block_reason": "The existing task mapping has an earlier unverified handoff for f7073dc2de0e; workflow requires reconciliation before a new handoff and forbids a duplicate thread."
+  },
+  "platform_final": {
+    "status": "FAILED",
+    "score": 50.0,
+    "passed": 3,
+    "total": 6,
+    "failure_stage": "final_playwright_execution",
+    "failed_tests": [
+      {"name": "REQ-10.2: sort pages and chapters inside a book", "file": "REQ-10.2.spec.ts", "status": "failed", "duration_ms": 595, "observed_error": "locator.allTextContents: Execution context was destroyed, most likely because of a navigation"},
+      {"name": "REQ-11.1: add a comment to a readable page", "file": "REQ-11.1.spec.ts", "status": "timedOut", "duration_ms": 10016, "observed_locator": "getByRole('heading', { name: /This\\s+page\\s+needs\\s+review\\./i })"},
+      {"name": "REQ-12.1: search within the current book", "file": "REQ-12.1.spec.ts", "status": "timedOut", "duration_ms": 10015, "observed_locator": "getByRole('heading', { name: /Deployment\\s+Guide/i })"}
+    ],
+    "source_precedence": ["arcbench-run-d9608977de9c.json", "playwright-report-d9608977de9c.json", "arcbench-d9608977de9c-failure-details.md"]
+  },
+  "internal_acceptance": {
+    "available": true,
+    "source": "arcbench-run-d9608977de9c-logs.json flow records",
+    "atomic_nodes": 6,
+    "unique_flow_status_counts": {"ok": 6, "failed": 0},
+    "all_nodes": {"wrote": true, "verified": true},
+    "note": "The internal implement flow completed all six evolution nodes successfully; this is retained separately from the final platform result of 3/6. Raw stdout/stderr lines are deduplicated by req_id."
+  },
+  "metering": {
+    "platform_token_count": 24600272,
+    "provider_totals": {
+      "requests": 370,
+      "prompt_tokens": 13524761,
+      "completion_tokens": 189535,
+      "reasoning_tokens": 114893,
+      "prompt_cache_hit_tokens": 12676864,
+      "total_tokens": 13714296
+    },
+    "cost": {"amount": 10.673622, "currency": "CNY", "source": "run JSON token_cost_usd/token_cost_currency fields"},
+    "duration_seconds": 2740,
+    "note": "Run JSON token_count and raw-log provider totals are separate accounting scopes and must not be added."
+  },
+  "platform_configuration": {
+    "model": "deepseek-v4-flash",
+    "visual_model": null,
+    "reasoning": "low",
+    "time_budget_seconds": 9000,
+    "agent_acceptance_workers": null,
+    "test_workers": 1,
+    "playwright_version": "1.57.0",
+    "test_timeout_ms": 10000,
+    "runner_tests_candidate_observed": "/workspace/tests"
+  },
+  "platform_validation": {
+    "entrypoint": {"value": "main.py", "raw_log_verified": true},
+    "tests_directory": {"value": "/workspace/tests", "raw_log_verified": true},
+    "official_tests": {"value": "platform Playwright suite", "raw_log_verified": true},
+    "bundled_fallback_hits": 0,
+    "plaintext_api_key_hits": 0,
+    "preflight": "passed",
+    "generated_application_reached": true
+  },
+  "generation_identity": {
+    "build_id": null,
+    "commit_sha": null,
+    "payload_tree_sha256": null,
+    "platform_upload_sha256": null,
+    "task_snapshot_id": null,
+    "note": "The supplied run object does not bind the platform submission to a build, commit, payload, task snapshot, or uploaded ZIP SHA."
+  },
+  "artifacts": [
+    {"name": "arcbench-run-d9608977de9c.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/arcbench-run-d9608977de9c.json", "role": "raw_run_object", "bytes": 6305, "sha256": "C759825843FD48B2E2C09C4B8196B932C865B5C446380D0E4147D9D216C74D99", "stored_in_repository": false},
+    {"name": "arcbench-run-d9608977de9c-logs.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/arcbench-run-d9608977de9c-logs.json", "role": "raw_run_logs", "bytes": 57603, "sha256": "2EF3A65CABBC9794D0C8671FD9B12AB492ADC3B2D40DEF91429514FEF2315C85", "stored_in_repository": false},
+    {"name": "arcbench-run-d9608977de9c-summary.md", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/arcbench-run-d9608977de9c-summary.md", "role": "human_normalized_summary_navigation_only", "bytes": 4812, "sha256": "7BF49A72FE8E2FCF23B5B5FBA68CCA3035C4DCD2C94089B3E932B95E5354ECC0", "stored_in_repository": false},
+    {"name": "arcbench-d9608977de9c-failure-details.md", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/arcbench-d9608977de9c-failure-details.md", "role": "failure_details", "bytes": 1664, "sha256": "6E161A0FD08BDD368209FAC39B3B17F64918FF80FADEFAC82180C0B5199087FE", "stored_in_repository": false},
+    {"name": "playwright-report-d9608977de9c.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/playwright-report-d9608977de9c.json", "role": "raw_playwright_report", "bytes": 14613, "sha256": "C9288729E7B5452476D74972104ABAE00ABF63709AD1805DBE78F0C75BA150DA", "stored_in_repository": false},
+    {"name": "arcbench-d9608977de9c-snapshots.json", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/arcbench-d9608977de9c-snapshots.json", "role": "arc_design_and_codegen_snapshots", "bytes": 10959, "sha256": "374EAAEC38D90EF0FA0D8894B62C2A4BF7764992F62B22905C5C4E459BEA8030", "stored_in_repository": false},
+    {"name": "d9608977de9c-template.zip", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/d9608977de9c-template.zip", "role": "platform_generated_template_snapshot", "bytes": 13348439, "sha256": "C14CFAA2EA49F6237676ECDEB164F1123D1FACF0DCF9E9897EF848EFD1E5B772", "stored_in_repository": false},
+    {"name": "submission-eb01fc37f040-agent.zip", "source_path": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution/submission-eb01fc37f040-agent.zip", "role": "user_provided_candidate_submission_zip_not_platform_bound", "bytes": 333004, "sha256": "210F6DBCDFA1C32E053766E08DCDDB22578C53CAC9669CE22ED18403D65C6955", "stored_in_repository": false}
+  ],
+  "folder_scope": {
+    "source_folder": "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-BookStack-lite-evolution",
+    "excluded_other_run": "896e9a68c798",
+    "excluded_files": ["arcbench-896e9a68c798-failure-details.md", "arcbench-896e9a68c798-snapshots.json", "arcbench-run-896e9a68c798-logs.json", "arcbench-run-896e9a68c798-summary.md", "arcbench-run-896e9a68c798.json", "896e9a68c798-template.zip", "playwright-report-896e9a68c798.json", "submission-397789628722-agent.zip"],
+    "reason": "The folder contains a second Run; it is not part of d9608977de9c and was not merged into this manifest."
+  },
+  "conflicts": [
+    {"field": "internal_implement_vs_final_tests", "description": "All six internal implement nodes are marked ok, while the final platform result is 3/6 with three failures.", "resolution": "Keep internal_acceptance and platform_final separate; Stage 3 does not infer a business root cause."},
+    {"field": "token_accounting", "description": "run JSON token_count=24600272 differs from provider total_tokens=13714296.", "resolution": "Retain both accounting scopes; do not add them."},
+    {"field": "mixed_source_folder", "description": "The source folder also contains a complete-looking Run 896e9a68c798 package.", "resolution": "Exclude all 896e9a68c798 files and keep this manifest single-run only."}
+  ],
+  "missing": [
+    "task_snapshot_id",
+    "platform build ID, commit SHA, payload tree SHA and upload-package SHA binding",
+    "platform-native error-context.md bodies, screenshots and trace archive",
+    "platform result_path",
+    "visual model identifier",
+    "phase4 handoff, ACK and result files because dispatch is blocked pending reconciliation of f7073dc2de0e"
+  ],
+  "source_precedence": [
+    "run JSON for final status, score, tests, metrics and identifiers",
+    "raw logs JSON for entrypoint, test directory, provider totals and internal flow records",
+    "Playwright report for structured locator, navigation and timeout evidence",
+    "failure details for human-readable failure excerpts",
+    "summary markdown for navigation and conflict recording only",
+    "snapshots and template ZIP for later Stage 4 diagnosis"
+  ],
+  "security": {"plaintext_api_key_found": false, "log_scan_scope": "supplied run logs and artifacts", "masked_key_status_only": true}
+}
