@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "PHASE4_HANDOFF_ACK": "ca67b1d8ee97-EC05DCA490A7",
+  "handoff_id": "ca67b1d8ee97-EC05DCA490A7",
+  "run_id": "ca67b1d8ee97",
+  "submission_id": "362bc0d7b112",
+  "task_key": "arc-bench-web--stackoverflow",
+  "thread_id": "01a0ef22-e88a-7c42-a856-f9c084f42fd4",
+  "manifest_sha256": "EC05DCA490A71A61CBC7AE6E6EB17ECAB76FBCAEF1B7DD93056832E42DF5C512",
+  "received_at": "2026-09-30T06:00:00+08:00",
+  "status": "received",
+  "read_only": true,
+  "scope": "single_run_phase4_read_only_diagnosis",
+  "dispatch_mode": "manual_intervention_filesystem_fallback",
+  "automatic_dispatch": "unavailable_-32602_invalid_app_tool_request",
+  "thread_identity": "current_thread_identity_anchor",
+  "note": "The app route rejected the dispatch before delivery. The current conversation was used as the manual filesystem fallback; no duplicate thread, platform Run or Stage 5 action was created."
+}

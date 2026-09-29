@@ -260,6 +260,33 @@
       "previous_dispatch_error": "Codex app routing returned Invalid app tool request; the authorized current conversation fallback wrote and validated the ACK/result files.",
       "stage5_triggered": false,
       "reason": "Run 82a833cabe9e ACK and result identity fields match the handoff and manifest SHA. Stage 4 confirmed REQ-7.1 and REQ-8.2 UI contract gaps; REQ-7.2 and REQ-9.1 remain unreproduced after bounded derived-seed checks. Implementation approval and Stage 5 are deferred."
+    },
+    "arc-bench-web--stackoverflow": {
+      "thread_id": "01a0ef22-e88a-7c42-a856-f9c084f42fd4",
+      "title": "12 项目阶段4 + arc-bench-web--stackoverflow",
+      "status": "verified",
+      "last_run_id": "ca67b1d8ee97",
+      "last_handoff_id": "ca67b1d8ee97-EC05DCA490A7",
+      "manifest": "evidence/arc-bench/runs/ca67b1d8ee97/manifest.json",
+      "handoff_path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-handoff.json",
+      "ack_path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-ack.json",
+      "result_path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-result.json",
+      "result_md_path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-result.md",
+      "result_status": "complete",
+      "evidence_revision": "ca67b1d8ee97-phase4-manual-fallback",
+      "dispatch_attempts": 0,
+      "dispatch_error": "codex_app thread routing returned -32602 Invalid app tool request before delivery",
+      "verification_method": "manual_intervention_filesystem_ack_result_identity_manifest_sha",
+      "verified_at": "2026-09-30T06:00:00+08:00",
+      "manual_intervention": {
+        "used": true,
+        "canonical_thread_identity": "01a0ef22-e88a-7c42-a856-f9c084f42fd4",
+        "duplicate_fork_used": false,
+        "platform_message_delivered": false,
+        "stage4_analysis_completed": true
+      },
+      "stage5_triggered": false,
+      "reason": "The app route was unavailable. The current thread identity was used as the manual filesystem fallback; ACK and result identity fields match the handoff and manifest SHA. Stage 5 remains untriggered."
     }
   }
 }

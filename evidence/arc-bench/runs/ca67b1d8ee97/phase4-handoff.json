@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "handoff_id": "ca67b1d8ee97-EC05DCA490A7",
+  "run_id": "ca67b1d8ee97",
+  "submission_id": "362bc0d7b112",
+  "task_key": "arc-bench-web--stackoverflow",
+  "thread_id": "01a0ef22-e88a-7c42-a856-f9c084f42fd4",
+  "thread_title": "12 项目阶段4 + arc-bench-web--stackoverflow",
+  "manifest": "evidence/arc-bench/runs/ca67b1d8ee97/manifest.json",
+  "manifest_sha256": "EC05DCA490A71A61CBC7AE6E6EB17ECAB76FBCAEF1B7DD93056832E42DF5C512",
+  "analysis": null,
+  "scope": "phase4_read_only_single_run_diagnosis",
+  "execution_mode": "manual_intervention_filesystem_fallback",
+  "dispatch_status": "app_route_unavailable_-32602",
+  "card": {
+    "platform_final": {
+      "status": "FAILED",
+      "score": 90.9,
+      "pass_total": "60/66",
+      "failed_tests": ["REQ-2.7", "REQ-4.5.1", "REQ-4.6", "REQ-7.3", "REQ-8.2.1", "REQ-9.6"],
+      "failure_shape": "six final Playwright timedOut cases at approximately 10 seconds; no final failed assertion status"
+    },
+    "intermediate_traces": {
+      "octos": "35794 parsed lines; 96 turns started, 87 completed, 2 errors and 9 unclosed; 3027 tool starts/completions",
+      "runner": "2222 parsed lines; matching arc-bench-web--stackoverflow suite selected; lifecycle completed",
+      "stdout": "2886 provider requests; seven implementation turn caps, two proxy_error events, 16 request-budget guards and 465 postflight processes reaped"
+    },
+    "execution_chain": {
+      "implementation_timeout_nodes": ["REQ-1.4", "REQ-2.3", "REQ-2.5.1", "REQ-2.7", "REQ-3.1", "REQ-5.2.1", "REQ-7.3"],
+      "proxy_error_nodes": ["REQ-2.5.1", "REQ-2.5.2"],
+      "full_suite_repairs": 2,
+      "global_budget_exhausted": false,
+      "startup_crash": false,
+      "oom_or_cgroup_kill": false
+    },
+    "final_clusters": [
+      {"name": "profile_edit_contract_missing", "req_ids": ["REQ-2.7"]},
+      {"name": "answer_edit_and_delete_post_action", "req_ids": ["REQ-4.5.1", "REQ-4.6"]},
+      {"name": "custom_filter_contract_missing", "req_ids": ["REQ-7.3"]},
+      {"name": "profile_badge_visibility", "req_ids": ["REQ-8.2.1"]},
+      {"name": "activity_responses_visibility", "req_ids": ["REQ-9.6"]}
+    ]
+  },
+  "required_ack": {
+    "path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-ack.json",
+    "must_match": ["handoff_id", "run_id", "task_key", "thread_id", "manifest_sha256"]
+  },
+  "required_result": {
+    "json_path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-result.json",
+    "markdown_path": "evidence/arc-bench/runs/ca67b1d8ee97/phase4-result.md",
+    "must_match": ["handoff_id", "run_id", "task_key", "thread_id", "manifest_sha256"],
+    "required_marker": "PHASE4_RESULT: complete|incomplete"
+  },
+  "instructions": [
+    "Analyze only Run ca67b1d8ee97; do not merge other Stack Overflow, Keep or BookStack Run conclusions.",
+    "Use the persisted Stage 3 manifest, final failure report, matching public specs and the submitted template ZIP for read-only diagnosis.",
+    "Separate confirmed template contract defects from execution timeouts, proxy errors and unverified repair claims.",
+    "Do not create a platform Run, upload a ZIP, modify Agent code, modify official tests or trigger Stage 5."
+  ],
+  "read_first": [
+    "evidence/arc-bench/runs/ca67b1d8ee97/manifest.json",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-stackoverflow/arcbench-run-ca67b1d8ee97.json",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-stackoverflow/playwright-report-ca67b1d8ee97.json",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-stackoverflow/arcbench-ca67b1d8ee97-failure-details.md",
+    "C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-arc-bench-web-stackoverflow/ca67b1d8ee97-template.zip"
+  ],
+  "missing": [
+    "official failure traces, screenshots and HAR bodies",
+    "clean-seed browser replay in this recovery environment",
+    "platform generation identity binding and target-thread delivery ACK"
+  ]
+}
