@@ -53,7 +53,8 @@ def _payload_tree_sha(archive: Path) -> str:
         for info in handle.infolist():
             if info.is_dir() or info.filename == "agent-build.json":
                 continue
-            rows.append((info.filename.replace("\\", "/"), handle.read(info)))
+            with handle.open(info) as stream:
+                rows.append((info.filename.replace("\\", "/"), stream.read()))
         for name, payload in sorted(rows):
             encoded = name.encode("utf-8")
             digest.update(len(encoded).to_bytes(4, "big"))

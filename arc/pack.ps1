@@ -93,14 +93,22 @@ try {
         Copy-InputToStaging -RelativePath $input -StagingRoot $stagingRoot
     }
 
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        $stagingRoot,
-        $temporaryZip,
-        [System.IO.Compression.CompressionLevel]::Optimal,
-        $false
-    )
+    $pythonCommand = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if ([string]::IsNullOrWhiteSpace($pythonCommand)) {
+        $pythonCommand = (Get-Command python3 -ErrorAction SilentlyContinue).Source
+    }
+    if ([string]::IsNullOrWhiteSpace($pythonCommand)) {
+        throw "Package gate requires python or python3"
+    }
+    # Python writes portable ZIP local headers; .NET on Windows can retain
+    # backslashes in local headers and make Python ZIP readers reject entries.
+    $zipScript = "import pathlib,sys,zipfile; root=pathlib.Path(sys.argv[1]); out=pathlib.Path(sys.argv[2]); files=sorted(p for p in root.rglob('*') if p.is_file()); z=zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED); [z.write(p,p.relative_to(root).as_posix()) for p in files]; z.close()"
+    & $pythonCommand -c $zipScript $stagingRoot $temporaryZip
+    if ($LASTEXITCODE -ne 0) {
+        throw "Portable ZIP creation failed"
+    }
 
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [System.IO.Compression.ZipFile]::OpenRead($temporaryZip)
     try {
         $entryNames = @($archive.Entries | ForEach-Object { $_.FullName.Replace("\", "/") })
@@ -180,7 +188,7 @@ try {
         throw "Package shape/binding gate failed"
     }
 
-    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $OutputPath).Hash
+    $hash = (& $pythonCommand -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest().upper())" $OutputPath).Trim()
     $size = (Get-Item -LiteralPath $OutputPath).Length
     Write-Host "Packaging complete: $OutputPath"
     Write-Host ("Entries: {0}" -f $entryNames.Count)

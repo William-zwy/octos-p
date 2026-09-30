@@ -106,7 +106,8 @@ def _agent_archive_safety(archive: Path, entries: Iterable[str]) -> tuple[list[s
             if info.is_dir() or info.file_size > 8 * 1024 * 1024:
                 continue
             name = _normalise_entry(info.filename)
-            payload = handle.read(info)
+            with handle.open(info) as stream:
+                payload = stream.read()
             if any(pattern.search(payload) for pattern in AGENT_SECRET_PATTERNS):
                 secret_hits.add(name)
     return sorted(forbidden), sorted(secret_hits)

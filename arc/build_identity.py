@@ -70,7 +70,12 @@ def payload_tree_identity(archive: Path) -> tuple[str, int]:
             seen.add(name)
             if name == IDENTITY_FILENAME:
                 continue
-            records.append((name, handle.read(info)))
+            # Use the ZipInfo object directly: Windows System.IO.Compression
+            # can write a slash-normalized directory name but retain a
+            # backslash in the local header. Name-based lookup rejects that
+            # otherwise valid archive.
+            with handle.open(info) as stream:
+                records.append((name, stream.read()))
     for name, payload in sorted(records):
         encoded = name.encode("utf-8")
         digest.update(len(encoded).to_bytes(4, "big"))
