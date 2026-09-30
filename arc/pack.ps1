@@ -27,6 +27,9 @@ $Inputs = @(
     "guard.py",
     "llm_proxy.py",
     "codegen.py",
+    "run_controls.py",
+    "build_identity.py",
+    "package_shape.py",
     "hooks",
     "requirements.txt",
     "arcbench_agent_runtime",
@@ -129,10 +132,53 @@ try {
         }
     }
 
+    $pythonCommand = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if ([string]::IsNullOrWhiteSpace($pythonCommand)) {
+        $pythonCommand = (Get-Command python3 -ErrorAction SilentlyContinue).Source
+    }
+    if ([string]::IsNullOrWhiteSpace($pythonCommand)) {
+        throw "Package gate requires python or python3"
+    }
+    $sourceCommit = (& git -C $RepoRoot rev-parse HEAD).Trim()
+    if ($sourceCommit -notmatch "^[0-9a-fA-F]{40}$") {
+        throw "Package gate could not resolve a full source commit"
+    }
+    $taskKey = if (-not [string]::IsNullOrWhiteSpace($env:ARCBENCH_TASK_KEY)) {
+        $env:ARCBENCH_TASK_KEY
+    } else {
+        $env:ARCBENCH_TASK
+    }
+    $suiteKey = if (-not [string]::IsNullOrWhiteSpace($env:ARCBENCH_TEST_SUITE_KEY)) {
+        $env:ARCBENCH_TEST_SUITE_KEY
+    } else {
+        $env:ARCBENCH_SUITE_KEY
+    }
+    $requirementsSha = if (-not [string]::IsNullOrWhiteSpace($env:ARCBENCH_REQUIREMENTS_SHA256)) {
+        $env:ARCBENCH_REQUIREMENTS_SHA256
+    } else {
+        $env:ARCBENCH_REQUIREMENTS_HASH
+    }
+    if ([string]::IsNullOrWhiteSpace($taskKey) -or
+        [string]::IsNullOrWhiteSpace($suiteKey) -or
+        [string]::IsNullOrWhiteSpace($requirementsSha)) {
+        throw "Package gate requires ARCBENCH_TASK_KEY, ARCBENCH_TEST_SUITE_KEY and ARCBENCH_REQUIREMENTS_SHA256"
+    }
+    & $pythonCommand (Join-Path $ArcRoot "build_identity.py") embed --archive $temporaryZip --commit $sourceCommit | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Build identity gate failed"
+    }
+
     if (Test-Path -LiteralPath $OutputPath) {
         Remove-Item -LiteralPath $OutputPath -Force
     }
     Move-Item -LiteralPath $temporaryZip -Destination $OutputPath -Force
+
+    $shapePath = [System.IO.Path]::ChangeExtension($OutputPath, "shape.json")
+    $bindingPath = [System.IO.Path]::ChangeExtension($OutputPath, "binding.json")
+    & $pythonCommand (Join-Path $ArcRoot "package_gate.py") bind --archive $OutputPath --shape-output $shapePath --output $bindingPath --source-commit $sourceCommit --task-key $taskKey --suite-key $suiteKey --requirements-sha256 $requirementsSha
+    if ($LASTEXITCODE -ne 0) {
+        throw "Package shape/binding gate failed"
+    }
 
     $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $OutputPath).Hash
     $size = (Get-Item -LiteralPath $OutputPath).Length

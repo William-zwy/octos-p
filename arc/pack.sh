@@ -1,8 +1,63 @@
 #!/bin/sh
-# 把 arc/ 打成 ARC 平台要的提交包（main.py 必须在 zip 根目录）
-set -e
-cd "$(dirname "$0")"
-rm -f ../octos-arc-bundle.zip
-zip -qr ../octos-arc-bundle.zip main.py octos_stdio.py requirement_order.py acceptance.py guard.py llm_proxy.py codegen.py hooks requirements.txt arcbench_agent_runtime public-tests -x '*/__pycache__/*' '*.pyc'
-echo "打包完成：$(cd .. && pwd)/octos-arc-bundle.zip"
-shasum -a 256 ../octos-arc-bundle.zip
+# Build a commit-bound Agent ZIP and fail closed before upload.
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+repo_root=$(git -C "$script_dir" rev-parse --show-toplevel)
+cd "$script_dir"
+
+if ! git -C "$repo_root" diff --quiet || ! git -C "$repo_root" diff --cached --quiet; then
+  echo "error: refusing to package a dirty source tree; commit the release first" >&2
+  exit 2
+fi
+
+python_cmd="${PYTHON:-}"
+if [ -z "$python_cmd" ] && command -v python3 >/dev/null 2>&1; then python_cmd=python3; fi
+if [ -z "$python_cmd" ] && command -v python >/dev/null 2>&1; then python_cmd=python; fi
+if [ -z "$python_cmd" ]; then
+  echo "error: python3 or python is required for package gates" >&2
+  exit 3
+fi
+
+output="${1:-../octos-arc-bundle.zip}"
+case "$output" in
+  /*) ;;
+  *) output="$script_dir/$output" ;;
+esac
+shape_output="${output%.zip}.shape.json"
+binding_output="${output%.zip}.binding.json"
+checksum_output="${output}.sha256"
+temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/octos-arc-pack.XXXXXX")
+temp_archive="$temp_dir/agent.zip"
+cleanup() { rm -rf "$temp_dir"; }
+trap cleanup EXIT HUP INT TERM
+
+commit=$(git -C "$repo_root" rev-parse HEAD)
+git -c core.autocrlf=false -C "$repo_root" archive --format=zip --output="$temp_archive" HEAD:arc -- \
+  main.py octos_stdio.py requirement_order.py acceptance.py guard.py llm_proxy.py codegen.py \
+  run_controls.py build_identity.py package_shape.py hooks requirements.txt \
+  arcbench_agent_runtime public-tests
+
+identity_script="$script_dir/build_identity.py"
+gate_script="$script_dir/package_gate.py"
+"$python_cmd" "$identity_script" embed --archive "$temp_archive" --commit "$commit" >/dev/null
+
+task_key="${ARCBENCH_TASK_KEY:-${ARCBENCH_TASK:-}}"
+suite_key="${ARCBENCH_TEST_SUITE_KEY:-${ARCBENCH_SUITE_KEY:-}}"
+requirements_sha="${ARCBENCH_REQUIREMENTS_SHA256:-${ARCBENCH_REQUIREMENTS_HASH:-}}"
+if [ -z "$task_key" ] || [ -z "$suite_key" ] || [ -z "$requirements_sha" ]; then
+  echo "error: ARCBENCH_TASK_KEY, ARCBENCH_TEST_SUITE_KEY and ARCBENCH_REQUIREMENTS_SHA256 are required" >&2
+  exit 4
+fi
+
+mkdir -p "$(dirname "$output")"
+rm -f "$output" "$shape_output" "$binding_output" "$checksum_output"
+mv "$temp_archive" "$output"
+"$python_cmd" "$gate_script" bind --archive "$output" --shape-output "$shape_output" \
+  --output "$binding_output" --source-commit "$commit" --task-key "$task_key" \
+  --suite-key "$suite_key" --requirements-sha256 "$requirements_sha"
+sha256=$("$python_cmd" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$output")
+printf '%s  %s\n' "$sha256" "$(basename "$output")" > "$checksum_output"
+echo "Packaging complete: $output"
+echo "SHA256: $sha256"
+echo "Binding: $binding_output"
