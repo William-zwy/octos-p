@@ -40,7 +40,17 @@ git -c core.autocrlf=false -C "$repo_root" archive --format=zip --output="$temp_
 
 identity_script="$script_dir/build_identity.py"
 gate_script="$script_dir/package_gate.py"
-"$python_cmd" "$identity_script" embed --archive "$temp_archive" --commit "$commit" >/dev/null
+to_python_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    printf '%s\n' "$1"
+  fi
+}
+identity_script_native=$(to_python_path "$identity_script")
+gate_script_native=$(to_python_path "$gate_script")
+temp_archive_native=$(to_python_path "$temp_archive")
+"$python_cmd" "$identity_script_native" embed --archive "$temp_archive_native" --commit "$commit" >/dev/null
 
 task_key="${ARCBENCH_TASK_KEY:-${ARCBENCH_TASK:-}}"
 suite_key="${ARCBENCH_TEST_SUITE_KEY:-${ARCBENCH_SUITE_KEY:-}}"
@@ -53,10 +63,13 @@ fi
 mkdir -p "$(dirname "$output")"
 rm -f "$output" "$shape_output" "$binding_output" "$checksum_output"
 mv "$temp_archive" "$output"
-"$python_cmd" "$gate_script" bind --archive "$output" --shape-output "$shape_output" \
-  --output "$binding_output" --source-commit "$commit" --task-key "$task_key" \
+output_native=$(to_python_path "$output")
+shape_output_native=$(to_python_path "$shape_output")
+binding_output_native=$(to_python_path "$binding_output")
+"$python_cmd" "$gate_script_native" bind --archive "$output_native" --shape-output "$shape_output_native" \
+  --output "$binding_output_native" --source-commit "$commit" --task-key "$task_key" \
   --suite-key "$suite_key" --requirements-sha256 "$requirements_sha"
-sha256=$("$python_cmd" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$output")
+sha256=$("$python_cmd" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$output_native")
 printf '%s  %s\n' "$sha256" "$(basename "$output")" > "$checksum_output"
 echo "Packaging complete: $output"
 echo "SHA256: $sha256"
