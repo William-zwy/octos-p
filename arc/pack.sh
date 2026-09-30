@@ -11,11 +11,22 @@ if ! git -C "$repo_root" diff --quiet || ! git -C "$repo_root" diff --cached --q
   exit 2
 fi
 
-python_cmd="${PYTHON:-}"
-if [ -z "$python_cmd" ] && command -v python3 >/dev/null 2>&1; then python_cmd=python3; fi
-if [ -z "$python_cmd" ] && command -v python >/dev/null 2>&1; then python_cmd=python; fi
-if [ -z "$python_cmd" ]; then
-  echo "error: python3 or python is required for package gates" >&2
+select_python() {
+  # Windows Git Bash may expose a Store python3 shim without PyYAML while
+  # "python" resolves to the provisioned runtime. Probe the actual dependency
+  # before selecting a candidate; this stays domain-neutral and portable.
+  for candidate in "${PYTHON:-}" python3 python; do
+    [ -n "$candidate" ] || continue
+    command -v "$candidate" >/dev/null 2>&1 || continue
+    if "$candidate" -c 'import yaml' >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if ! python_cmd=$(select_python); then
+  echo "error: no usable Python interpreter with PyYAML (tried PYTHON, python3, python)" >&2
   exit 3
 fi
 
