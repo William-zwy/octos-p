@@ -191,12 +191,16 @@ class ControllerTests(unittest.TestCase):
             "verification_regime": {"mode": "requirement-text-only"},
             "evidence": [{"filename": "summary.md"}],
             "submission": {"runtime_reported_identity": {"suite_key": "runtime-suite"}},
+            "traceability": {"final_interface_records": 0},
+            "evidence_provenance": {"storage": "local_only"},
         }), encoding="utf-8")
         facts = mod.build_forensics(self.ctl.status, {"pages": [], "errors": {}}, [], {}, state, self.ctl.repo)
         self.assertEqual(facts["submission"]["build_id"], "build-fixture")
         self.assertEqual(facts["submission"]["archive_agent_commit"], "c" * 40)
         self.assertEqual(facts["suite"]["suite_key"], "runtime-suite")
         self.assertTrue(facts["local_manifest"]["present"])
+        self.assertEqual(facts["local_manifest"]["traceability"]["final_interface_records"], 0)
+        self.assertEqual(facts["local_manifest"]["evidence_provenance"]["storage"], "local_only")
 
     def test_log_forensics_does_not_count_zero_oom_counters(self):
         log_dir = self.ctl.store / "runs/run-fixture/log-pages/000000000000"
