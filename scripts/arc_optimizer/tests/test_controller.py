@@ -35,6 +35,7 @@ class FakeController(mod.Controller):
         self.state = {"phase": "ready", "round": 0, "rounds": [], "no_improvement": 0,
                       "spent_cny": 0, "last_run": None}
         self.secrets = ["fixture-secret"]
+        self.github_token = None
         self.calls = []
         self.remaining = 100
         self.status = {"id": "run-fixture", "status": "FAILED", "score": 50,
@@ -290,6 +291,22 @@ class ControllerTests(unittest.TestCase):
             self.assertIn('"roles": {"owner": "original"}', path.read_text())
             self.assertIn('"runs": ["one", "two"]', path.read_text())
             self.assertEqual(mod.read_json(path)["arc_optimizer_deployment"], {"count": count})
+
+    def test_private_github_api_uses_existing_manager_in_memory(self):
+        self.ctl.c.update(git="selected-git", github_repo="fixture/repo")
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def read(self): return b'{"commit":{"sha":"fixture"}}'
+        with patch.object(self.ctl, "command", return_value=(0, "password=fixture-token\n", "")) as command:
+            with patch.object(mod.urllib.request, "urlopen", return_value=Response()) as urlopen:
+                self.ctl.api("branches/fixture")
+                self.ctl.api("branches/fixture")
+                self.assertEqual(command.call_count, 1)
+                request = urlopen.call_args.args[0]
+                self.assertEqual(request.get_header("Authorization"), "Bearer fixture-token")
+                self.assertEqual(command.call_args.kwargs["env"]["GCM_INTERACTIVE"], "Never")
+                self.assertNotIn("fixture-token", self.ctl.safe("fixture-token"))
 
 
 if __name__ == "__main__":

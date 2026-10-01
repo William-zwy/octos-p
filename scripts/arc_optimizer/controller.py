@@ -143,6 +143,7 @@ class Controller:
             "rounds": [], "spent_cny": 0, "last_run": config.get("baseline_run")
         }
         self.secrets = []
+        self.github_token = None
         if self.env_file.exists():
             for line in self.env_file.read_text(encoding="utf-8-sig").splitlines():
                 key, _, value = line.partition("=")
@@ -182,8 +183,20 @@ class Controller:
 
     def api(self, suffix):
         url = "https://api.github.com/repos/" + self.c["github_repo"] + "/" + suffix
-        request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json",
-                                                       "User-Agent": "octos-arc-optimizer"})
+        if self.github_token is None:
+            # Use the existing approved credential manager only for GitHub REST.
+            # Git fetch/push keep their selected SSH URL/authentication unchanged.
+            env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="Never")
+            code, out, _ = self.command([self.c["git"], "credential", "fill"],
+                                        env=env, prompt="protocol=https\nhost=github.com\n\n", timeout=20)
+            values = dict(line.split("=", 1) for line in out.splitlines() if "=" in line)
+            self.github_token = values.get("password", "") if code == 0 else ""
+            if self.github_token:
+                self.secrets.append(self.github_token)
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "octos-arc-optimizer"}
+        if self.github_token:
+            headers["Authorization"] = "Bearer " + self.github_token
+        request = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(request, timeout=45) as response:
                 return json.load(response)
@@ -309,6 +322,9 @@ class Controller:
         report["paid_loop_enabled"] = bool(self.c.get("enabled"))
         report["pending"] = [key for key in ("budget_cny", "deadline", "suite_key", "suite_provenance")
                              if not self.c.get(key)]
+        report["status"] = "blocked" if ("git_error" in report or "arc_error" in report
+                                          or not report.get("arc_logged_in")
+                                          or any(report[label]["exit_code"] for label in ("python", "arcbench", "codex", "codex_auth"))) else "collection_ready"
         atomic_json_write(self.store / "doctor.json", report)
         return report
 
@@ -688,7 +704,7 @@ def main(argv=None):
                         time.sleep(max(5, ctl.c["poll_seconds"]))
                 output = {"phase": ctl.state["phase"], "round": ctl.state["round"]}
         print(json.dumps(output, ensure_ascii=False, indent=2))
-        return 0
+        return 2 if output.get("status") == "blocked" else 0
     except (GateError, OSError, ValueError, KeyError) as exc:
         print(json.dumps({"status": "blocked", "reason": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 2
