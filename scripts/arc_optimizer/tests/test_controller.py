@@ -144,6 +144,16 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("official pass from internal verified", " ".join(result["analysis"]["next_slice"]["must_not_claim"]))
         self.assertIn("forensics", result)
 
+    def test_worker_context_filters_raw_summary_to_actionable_evidence(self):
+        self.ctl.status["score"] = 0
+        result = self.ctl.collect("run-fixture")
+        context = mod.worker_context(result)
+        self.assertEqual(context["analysis"]["decision"], "modify")
+        self.assertIn("missing_platform_evidence", context["evidence"])
+        self.assertTrue(context["raw_evidence_is_external"])
+        self.assertNotIn("files", context)
+        self.assertNotIn("failed_tests", context)
+
     def test_analysis_marks_budget_and_comparison_without_causal_claim(self):
         facts = {
             "run": {"run_id": "new", "task_key": "fixture--task", "status": "FAILED",

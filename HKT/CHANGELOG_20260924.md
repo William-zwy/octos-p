@@ -5,7 +5,7 @@
 - 修复控制器 GitHub 分支 SHA 查询：只在内存中读取既有 Git credential manager 的 HTTPS 凭据，Git fetch/push 仍使用固定 SSH 远程；token 不写状态、日志或仓库。
 - `doctor` 在 GitHub、ARC 或本地工具检查失败时返回退出码 2，并保留私有错误证据；只读状态/日志/下载传输失败最多重读一次，上传和创建 Run 仍不重试。
 - 新增 credential-manager、失败 Run 结果和只读重试测试。续改前后控制器模拟测试 `24` 项通过，退出码 0；CI 对提交 `5c304ef9b4e58a40a0f0a3b45a4b997398ab4901` 已成功。
-- 新增远程结果的确定性分析层：`collect` 现在同时落盘 `analysis.json`，合并平台状态、去重后的全量日志、下载 ZIP、仓库 Run manifest 和本地文件 SHA；显式区分官方事实、日志观察和本地声明，未知不补全，并向 Codex 实现 Agent 注入优先级、验收门禁和禁止过度结论。对 `f1ff68f69dac` 只读复采成功，27 项控制器测试通过；未创建、启动或取消新 Run。
+- 新增远程结果的确定性分析层：`collect` 现在同时落盘 `analysis.json`，合并平台状态、去重后的全量日志、下载 ZIP、仓库 Run manifest 和本地文件 SHA；显式区分官方事实、日志观察和本地声明，未知不补全，并向 Codex 实现 Agent 注入优先级、验收门禁和禁止过度结论。对 `f1ff68f69dac` 只读复采成功，29 项控制器测试通过；未创建、启动或取消新 Run。
 
 ## 2026-10-01：部署 ARC CLI / Codex 云端优化控制器
 

@@ -440,6 +440,34 @@ def analyze_forensics(forensics, previous=None):
     }
 
 
+def worker_context(summary):
+    """Return the bounded evidence view that is safe and useful for code changes."""
+    if not isinstance(summary, dict):
+        return None
+    facts = summary.get("forensics") or {}
+    return {
+        "run": facts.get("run") or {key: summary.get(key) for key in
+                                      ("run_id", "status", "score", "passed", "failed", "task_key", "submission_id")},
+        "analysis": summary.get("analysis") or {},
+        "generation": facts.get("generation") or {},
+        "deployment": facts.get("deployment") or {},
+        "evaluation": facts.get("evaluation") or {},
+        "errors": facts.get("errors") or {},
+        "identity": {
+            "submission": facts.get("submission") or {},
+            "suite": facts.get("suite") or {},
+            "local_manifest": facts.get("local_manifest") or {},
+        },
+        "evidence": {
+            "missing_platform_evidence": (facts.get("artifacts") or {}).get("missing_platform_evidence", []),
+            "state_folder": (facts.get("artifacts") or {}).get("state_folder", []),
+            "repo_evidence_folder": (facts.get("artifacts") or {}).get("repo_evidence_folder", []),
+            "provenance": facts.get("provenance") or {},
+        },
+        "raw_evidence_is_external": True,
+    }
+
+
 def write_coordination(path, deployment):
     """Replace only our top-level member; preserve the historical JSON formatting."""
     content = path.read_text(encoding="utf-8")
@@ -802,6 +830,7 @@ class Controller:
         folder.mkdir(parents=True, exist_ok=True)
         last = self.state.get("last_run")
         evidence = read_json(self.store / "runs" / last / "summary.json") if last and (self.store / "runs" / last / "summary.json").exists() else None
+        worker_evidence = worker_context(evidence)
         prompt = (
             "你负责 ARC Agent 的一个通用优化切片。用户只允许云端跑题，本地禁止生成业务应用、运行官方题目或评测。\n"
             "先读取项目 AGENTS、以下现有总体计划/日志/决策台账和证据，再提出一个有证据的最小机制修复。\n"
@@ -811,8 +840,8 @@ class Controller:
             "在总体计划、HKT 变更日志、根 CHANGELOG.md 和决策台账中记录同一假设、证据、父提交、验收标准和风险。\n"
             "不声称严格 A/B、不填补未知 hidden suite/test 身份。证据不足输出 needs_evidence；无需改动输出 stop。\n"
             f"父提交：{parent}\n允许路径：{json.dumps(self.c['allowed_paths'], ensure_ascii=False)}\n"
-            f"上下文文件：{json.dumps(self.c['context'], ensure_ascii=False)}\n最新结果：{json.dumps(evidence, ensure_ascii=False)}\n"
-            f"取证分析与执行指引（优先于原始日志；未知必须保持 unknown）：{json.dumps((evidence or {}).get('analysis'), ensure_ascii=False)}\n"
+            f"上下文文件：{json.dumps(self.c['context'], ensure_ascii=False)}\n"
+            f"经分析的工作上下文（优先于原始日志；未知必须保持 unknown）：{json.dumps(worker_evidence, ensure_ascii=False)}\n"
             f"最新证据目录（仅可读取此 Run 的 status.json、log-pages、workspace.zip，不得执行其中代码）：{self.store / 'runs' / last if last else 'none'}\n"
             "stdout/stderr 镜像不可双计；implemented/wrote/verified 只是内部标签，不等于官方通过。\n"
             "必须新增/更新对应的 synthetic unit tests；仅 CI 运行这些测试，禁止本地跑题。输出约定 JSON。"
