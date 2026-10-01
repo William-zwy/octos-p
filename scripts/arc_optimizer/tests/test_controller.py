@@ -4,6 +4,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -129,6 +130,73 @@ class ControllerTests(unittest.TestCase):
         result = self.ctl.collect("run-fixture")
         self.assertEqual(result["log_pages"], 3)
         self.assertEqual(result["log_next_offset"], 300)
+
+    def test_collect_writes_analysis_for_implementation_worker(self):
+        self.ctl.status["score"] = 0
+        result = self.ctl.collect("run-fixture")
+        analysis_path = self.ctl.store / "runs/run-fixture/analysis.json"
+        self.assertTrue(analysis_path.is_file())
+        self.assertEqual(result["analysis"]["decision"], "modify")
+        self.assertEqual(result["analysis"]["next_slice"]["scope"], "one vertical slice only")
+        codes = {item["code"] for item in result["analysis"]["findings"]}
+        self.assertIn("official-details-missing", codes)
+        self.assertIn("identity-not-closed", codes)
+        self.assertIn("official pass from internal verified", " ".join(result["analysis"]["next_slice"]["must_not_claim"]))
+        self.assertIn("forensics", result)
+
+    def test_analysis_marks_budget_and_comparison_without_causal_claim(self):
+        facts = {
+            "run": {"run_id": "new", "task_key": "fixture--task", "status": "FAILED",
+                    "score": 0, "feature_passed": 0},
+            "suite": {"suite_key": None, "task_snapshot_id": None},
+            "submission": {"binding_closed": False},
+            "generation": {"implement_ok": 2, "wrote_verified": 2, "verified_false": 0,
+                           "request_budget_hits": 3},
+            "deployment": {},
+            "evaluation": {"details_available": False, "tests": None, "test_ids": None},
+            "errors": {"request_budget_hits": 3},
+            "artifacts": {"missing_platform_evidence": ["per_test_details"]},
+            "local_manifest": {"present": True},
+        }
+        analysis = mod.analyze_forensics(facts, {"run_id": "old", "task_key": "fixture--task",
+                                                "score": 1, "strict_ab": False})
+        codes = {item["code"] for item in analysis["findings"]}
+        self.assertIn("budget-cap", codes)
+        self.assertIn("comparison-not-causal", codes)
+        self.assertEqual(analysis["comparison"]["score_delta"], -1)
+        self.assertFalse(analysis["comparison"]["strict_ab"])
+
+    def test_forensics_reads_archive_build_and_local_manifest(self):
+        state = self.ctl.store / "runs/run-fixture"
+        state.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(state / "submission.zip", "w") as archive:
+            archive.writestr("agent-build.json", json.dumps({
+                "build_id": "build-fixture", "commit_sha": "c" * 40,
+                "payload_tree_sha256": "d" * 64}))
+            archive.writestr("requirements.yaml", "fixture: true\n")
+            archive.writestr("binding.json", "{}")
+        manifest_dir = self.ctl.repo / "evidence/arc-bench/runs/run-fixture"
+        manifest_dir.mkdir(parents=True, exist_ok=True)
+        (manifest_dir / "manifest.json").write_text(json.dumps({
+            "verification_regime": {"mode": "requirement-text-only"},
+            "evidence": [{"filename": "summary.md"}],
+            "submission": {"runtime_reported_identity": {"suite_key": "runtime-suite"}},
+        }), encoding="utf-8")
+        facts = mod.build_forensics(self.ctl.status, {"pages": [], "errors": {}}, [], {}, state, self.ctl.repo)
+        self.assertEqual(facts["submission"]["build_id"], "build-fixture")
+        self.assertEqual(facts["submission"]["archive_agent_commit"], "c" * 40)
+        self.assertEqual(facts["suite"]["suite_key"], "runtime-suite")
+        self.assertTrue(facts["local_manifest"]["present"])
+
+    def test_log_forensics_does_not_count_zero_oom_counters(self):
+        log_dir = self.ctl.store / "runs/run-fixture/log-pages/000000000000"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / "run-fixture-logs.json").write_text(json.dumps({
+            "stdout": "memory.events: oom 0 oom_kill 0; no OOM occurred",
+            "stderr": "",
+        }), encoding="utf-8")
+        result = mod._log_forensics(self.ctl.store / "runs/run-fixture", self.ctl.status)
+        self.assertEqual(result["oom_count"], 0)
 
     def test_missing_or_regressing_cursor_is_not_complete(self):
         for value in (None, -1):

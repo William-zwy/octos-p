@@ -14,6 +14,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import zipfile
+from collections import Counter
 import time
 import urllib.parse
 import urllib.request
@@ -69,6 +71,373 @@ def identifier(value):
 
 def numeric(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _sha256_bytes(payload):
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _local_files(root):
+    root = Path(root)
+    if not root.exists():
+        return []
+    return [{"path": path.relative_to(root).as_posix(), "bytes": path.stat().st_size,
+             "sha256": sha256(path)} for path in sorted(root.rglob("*")) if path.is_file()]
+
+
+def _read_optional_json(path):
+    path = Path(path)
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None
+
+
+def _zip_inventory(path):
+    path = Path(path)
+    result = {"present": path.is_file(), "path": str(path), "bytes": None,
+              "sha256": None, "entry_count": None, "agent_build": None,
+              "binding_present": False, "traceability_entries": [], "screenshot_entries": [],
+              "requirements_entries": []}
+    if not path.is_file():
+        return result
+    result.update(bytes=path.stat().st_size, sha256=sha256(path))
+    try:
+        with zipfile.ZipFile(path) as archive:
+            names = archive.namelist()
+            result["entry_count"] = len(names)
+            result["binding_present"] = any(name.endswith("binding.json") for name in names)
+            result["traceability_entries"] = [name for name in names if "trace" in name.lower()][:40]
+            result["screenshot_entries"] = [name for name in names if "screenshot" in name.lower()][:40]
+            result["requirements_entries"] = [name for name in names if "requirements" in name.lower()][:40]
+            for name in names:
+                if name.endswith("agent-build.json"):
+                    try:
+                        result["agent_build"] = json.loads(archive.read(name))
+                    except (UnicodeDecodeError, ValueError):
+                        result["agent_build_error"] = "invalid_json"
+                    break
+            for name in names:
+                if name.endswith("requirements.yaml"):
+                    result["local_requirements_yaml_sha256"] = _sha256_bytes(archive.read(name))
+                    break
+    except (OSError, zipfile.BadZipFile) as exc:
+        result["archive_error"] = type(exc).__name__
+    return result
+
+
+def _canonical_log_lines(root):
+    """Read full saved payloads once and de-duplicate stdout/stderr mirrors."""
+    lines = []
+    seen = set()
+    for path in sorted(Path(root).glob("log-pages/*/*-logs.json")):
+        payload = _read_optional_json(path) or {}
+        for key in ("stdout", "stderr", "console"):
+            value = payload.get(key, "")
+            if not isinstance(value, str):
+                value = json.dumps(value, ensure_ascii=False)
+            for line in value.splitlines():
+                canonical = re.sub(r"\[generation-agent\.(?:stdout|stderr)\]", "[generation-agent]", line)
+                canonical = re.sub(r"\[runner\.(?:stdout|stderr)\]", "[runner]", canonical)
+                if canonical not in seen:
+                    seen.add(canonical)
+                    lines.append(canonical)
+    return lines
+
+
+def _log_forensics(root, status):
+    lines = _canonical_log_lines(root)
+    text = "\n".join(lines)
+    implement = {}
+    pattern = re.compile(
+        r"\[flow\]\s+(REQ-[A-Za-z0-9._-]+)\s+implement ok in\s+(\d+)s.*?wrote=(True|False).*?verified=(True|False)", re.I
+    )
+    for match in pattern.finditer(text):
+        implement[match.group(1)] = {"seconds": int(match.group(2)),
+                                     "wrote": match.group(3).lower() == "true",
+                                     "verified": match.group(4).lower() == "true"}
+    node_matches = re.findall(r"\[flow\]\s+node\s+(\d+)/(\d+)\s+(REQ-[A-Za-z0-9._-]+)\s+starting", text, re.I)
+    node_states = Counter(str(value) for value in (status.get("node_states") or {}).values())
+    def count(pattern):
+        return len(re.findall(pattern, text, re.I))
+    test_ids = sorted(set(re.findall(r"\bREQ-[A-Za-z0-9._-]+\b", "\n".join(
+        line for line in lines if re.search(r"test|failed|timeout|timed.?out", line, re.I)))) )
+    return {
+        "canonical_log_line_count": len(lines),
+        "node_events": len(node_matches),
+        "node_total_observed": max((int(item[1]) for item in node_matches), default=None),
+        "implement_ok_events": len(implement),
+        "implement_wrote_true": sum(item["wrote"] for item in implement.values()),
+        "implement_verified_true": sum(item["verified"] for item in implement.values()),
+        "implement_verified_false": sum(not item["verified"] for item in implement.values()),
+        "implement_events": implement,
+        "node_state_counts": dict(node_states),
+        "request_budget_hits": count(r"request budget|budget cap|\bcap[_ ]\d+"),
+        "turn_timeout_count": count(r"turn\s+(?:timed.?out|timeout)"),
+        "broken_pipe_count": count(r"BrokenPipe"),
+        "connection_reset_count": count(r"ConnectionResetError"),
+        "http_402_count": count(r"(?:HTTP|status|code)\s*402|\b402\b"),
+        "http_429_count": count(r"(?:HTTP|status|code)\s*429|\b429\b"),
+        "http_500_count": count(r"(?:HTTP|status|code)\s*500|\b500\b"),
+        # Do not count statements such as "no OOM" or "OOM events: 0" as failures.
+        "oom_count": count(r"out of memory|oom[_ -]?(?:kill|killed|error|failure)(?!\s*0\b)|killed[^\n]{0,60}\boom\b"),
+        "rehearsal_mentions": count(r"rehearsal"),
+        "repair_mentions": count(r"repair"),
+        "backend_listening": bool(re.search(r"(?:listening|started).*?(?:localhost|127\.0\.0\.1|:3000)", text, re.I)),
+        "main_exit_codes": [int(value) for value in re.findall(r"(?:main\.py|main).*?exit(?:ed)?(?: with)?\s*(?:code\s*)?[:=]?\s*(\d+)", text, re.I)],
+        "official_acceptance_unavailable": bool(re.search(r"official acceptance suite unavailable", text, re.I)),
+        "playwright_mentions": count(r"playwright"),
+        "report_404_mentions": count(r"report[^\n]{0,40}\b404\b|\b404\b[^\n]{0,40}report"),
+        "failure_test_ids_observed": test_ids,
+        "test_details_from_platform": bool(status.get("tests")),
+    }
+
+
+def build_forensics(status, cursor, files, candidate, state_root, repo_root):
+    state_root = Path(state_root)
+    repo_root = Path(repo_root)
+    run_id = str(status.get("id"))
+    manifest_path = repo_root / "evidence" / "arc-bench" / "runs" / run_id / "manifest.json"
+    manifest = _read_optional_json(manifest_path)
+    archive = _zip_inventory(state_root / "submission.zip")
+    workspace = _zip_inventory(state_root / "workspace.zip")
+    source_identity = (archive.get("agent_build") or {}).get("commit_sha")
+    platform_source = status.get("agent_commit") or status.get("source_commit") or status.get("generation_identity")
+    runtime_identity = (manifest or {}).get("submission", {}).get("runtime_reported_identity", {}) if manifest else {}
+    suite = (manifest or {}).get("verification_regime", {}) if manifest else {}
+    metrics = (manifest or {}).get("metrics", {}) if manifest else {}
+    usage = (manifest or {}).get("usage", {}) if manifest else {}
+    log_data = _log_forensics(state_root, status)
+    declared = (manifest or {}).get("evidence", []) if manifest else []
+    error_counts = {key: log_data[key] for key in ("request_budget_hits", "turn_timeout_count", "broken_pipe_count",
+                                                    "connection_reset_count", "http_402_count", "http_429_count",
+                                                    "http_500_count", "oom_count")}
+    declared_errors = {
+        "turn_timeout_count": metrics.get("agent_turn_timeouts"),
+        "broken_pipe_count": metrics.get("local_proxy_broken_pipe_events"),
+        "oom_count": metrics.get("oom_events"),
+    }
+    for key, value in declared_errors.items():
+        if numeric(value):
+            error_counts[key] = value
+    return {
+        "run": {
+            "run_id": run_id, "url": f"https://arc-bench.com/runs/{run_id}",
+            "competition": status.get("competition_id"), "task_key": status.get("requirement_id"),
+            "status": str(status.get("status", "")).upper(), "score": status.get("score"),
+            "passed": status.get("passed_count"), "total": (status.get("passed_count", 0) or 0) + (status.get("failed_count", 0) or 0),
+            "feature_passed": status.get("feature_implemented_count"), "feature_total": status.get("feature_total_count"),
+            "created_at": status.get("created_at"), "started_at": status.get("started_at"),
+            "finished_at": status.get("finished_at"), "duration_seconds": status.get("run_duration_seconds"),
+            "failure_reason": status.get("failure_reason"), "model": status.get("model_name"),
+            "billing_mode": status.get("billing_mode"), "token_count": status.get("token_count"),
+            "cost": {"amount": status.get("token_cost_usd"), "currency": status.get("token_cost_currency")},
+        },
+        "suite": {
+            "suite_key": status.get("suite_key") or status.get("test_suite_key") or runtime_identity.get("suite_key"),
+            "bundled_specs": suite.get("bundled_acceptance_specs"),
+            "mode": suite.get("mode"), "platform_generated_scenarios": suite.get("platform_generated_scenarios"),
+            "task_snapshot_id": status.get("task_snapshot_id"),
+            "requirements_sha256_platform": status.get("requirements_sha256"),
+            "requirements_sha256_local": suite.get("requirements_yaml_sha256") or archive.get("local_requirements_yaml_sha256"),
+        },
+        "submission": {
+            "submission_id": status.get("submission_id"), "filename": status.get("original_filename"),
+            "platform_archive_sha256": status.get("submission_sha256"),
+            "downloaded_archive_sha256": archive.get("sha256"), "downloaded_archive_bytes": archive.get("bytes"),
+            "build_id": (archive.get("agent_build") or {}).get("build_id"),
+            "archive_agent_commit": source_identity, "platform_agent_commit": platform_source,
+            "payload_tree_sha256": (archive.get("agent_build") or {}).get("payload_tree_sha256"),
+            "binding_closed": bool(archive.get("binding_present") and platform_source and source_identity == platform_source),
+            "binding_sidecar_present": archive.get("binding_present"),
+            "runtime_reported_identity": runtime_identity or None,
+        },
+        "generation": {
+            "status": "completed" if any(step.get("key") == "start_agent" and step.get("status") == "completed" for step in (status.get("steps") or []))
+                      or log_data["node_events"] > 0 else "unknown",
+            "node_states": log_data["node_state_counts"], "node_events": log_data["node_events"],
+            "atomic_nodes": metrics.get("atomic_nodes") or log_data["node_total_observed"],
+            "implement_ok": metrics.get("implement_ok_labels", log_data["implement_ok_events"]),
+            "wrote_verified": metrics.get("node_wrote_verified", log_data["implement_wrote_true"]),
+            "wrote_unverified": metrics.get("node_wrote_unverified", None),
+            "verified_false": log_data["implement_verified_false"],
+            "request_budget_hits": log_data["request_budget_hits"],
+            "main_exit_codes": log_data["main_exit_codes"],
+        },
+        "deployment": {
+            "status": "completed" if any(step.get("key") == "deploy_agent" and step.get("status") == "completed" for step in (status.get("steps") or []))
+                      or log_data["backend_listening"] else "unknown",
+            "backend_listening": log_data["backend_listening"], "rehearsal_mentions": log_data["rehearsal_mentions"],
+            "repair_mentions": log_data["repair_mentions"], "repair": metrics.get("rehearsal"),
+        },
+        "evaluation": {
+            "status": "completed" if any(step.get("key") == "run_tests" and step.get("status") == "completed" for step in (status.get("steps") or []))
+                      or str(status.get("status", "")).upper() in TERMINAL else "unknown",
+            "tests": status.get("tests") or None,
+            "official_test_ids": [test.get("name") for test in (status.get("tests") or [])
+                                  if isinstance(test, dict) and test.get("name")] or None,
+            "log_observed_test_ids": log_data["failure_test_ids_observed"] or None,
+            "details_available": bool(status.get("tests")), "official_acceptance_unavailable": log_data["official_acceptance_unavailable"],
+            "playwright_mentions": log_data["playwright_mentions"], "report_404_mentions": log_data["report_404_mentions"],
+        },
+        "errors": error_counts,
+        "raw_log_error_counts": {key: log_data[key] for key in error_counts},
+        "usage": usage or None,
+        "artifacts": {"state_folder": _local_files(state_root), "declared_local_artifacts": declared,
+                      "repo_evidence_folder": _local_files(manifest_path.parent),
+                      "workspace_archive": workspace,
+                      "missing_platform_evidence": [name for name, present in (("per_test_details", bool(status.get("tests"))),
+                                                                                ("result_path", bool(status.get("result_path"))),
+                                                                                ("binding", archive.get("binding_present"))) if not present]},
+        "local_manifest": {"present": bool(manifest), "path": str(manifest_path),
+                           "sha256": sha256(manifest_path) if manifest_path.is_file() else None,
+                           "normalized_status": (manifest or {}).get("normalized_status"),
+                           "phase4": (manifest or {}).get("phase4"),
+                           "source_resolution": (manifest or {}).get("submission", {}).get("source_resolution") if manifest else None},
+        "log_analysis": log_data,
+        "provenance": {"platform_status": "arcbench_cli status --full", "platform_logs": "arcbench_cli logs --out (full payloads)",
+                        "archives": "arcbench_cli archive/download", "local_manifest": bool(manifest)},
+    }
+
+
+def _finding(code, severity, conclusion, evidence, action, confidence="high"):
+    """Create a stable, reviewable finding for the implementation worker."""
+    return {"code": code, "severity": severity, "conclusion": conclusion,
+            "evidence": evidence, "action": action, "confidence": confidence}
+
+
+def analyze_forensics(forensics, previous=None):
+    """Turn collected facts into conservative implementation guidance.
+
+    This layer is deliberately deterministic. It may recommend what to verify or
+    change, but it never upgrades an internal label into an official result and
+    never infers a hidden test outcome from a missing response.
+    """
+    run = forensics.get("run", {})
+    suite = forensics.get("suite", {})
+    submission = forensics.get("submission", {})
+    generation = forensics.get("generation", {})
+    deployment = forensics.get("deployment", {})
+    evaluation = forensics.get("evaluation", {})
+    errors = forensics.get("errors", {})
+    artifacts = forensics.get("artifacts", {})
+    findings = []
+    actions = []
+
+    if run.get("status") in TERMINAL and numeric(run.get("score")):
+        findings.append(_finding(
+            "official-result", "P0",
+            f"官方结果为 {run.get('score')} 分；只能以平台 score/pass 作为结果，不以内部 verified 标签替代。",
+            ["run.status", "run.score", "run.passed", "run.feature_passed"],
+            "先保留失败事实，再针对一个可验证的垂直切片修改代码。"))
+    feature_passed = run.get("feature_passed")
+    feature_total = run.get("feature_total")
+    labels_outpace_result = generation.get("implement_ok") and (
+        not numeric(feature_passed) or not numeric(feature_total) or feature_passed < feature_total
+    )
+    if labels_outpace_result:
+        findings.append(_finding(
+            "internal-labels-not-completion", "P0",
+            "内部 implement/wrote/verified 标签与产品结果没有闭合，不能据此声称节点完成。",
+            ["generation.implement_ok", "generation.wrote_verified", "generation.verified_false",
+             "run.feature_passed", "run.feature_total", "evaluation.details_available"],
+            "把源码变更、构建启动、行为 probe 和需求映射绑定后，才允许输出 completed/verified。"))
+    if errors.get("request_budget_hits", 0) or generation.get("request_budget_hits", 0):
+        hits = errors.get("request_budget_hits", 0) or generation.get("request_budget_hits", 0)
+        findings.append(_finding(
+            "budget-cap", "P0", f"日志观察到 {hits} 次预算上限事件；触顶后的 ok 不能视为自然完成。",
+            ["log_analysis.request_budget_hits"],
+            "将 inspect、write、verify 分槽；verify 额度不可被前两阶段占用，触顶时输出 inconclusive。"))
+    if not evaluation.get("details_available"):
+        findings.append(_finding(
+            "official-details-missing", "P0",
+            "平台未提供逐测试明细，失败测试 ID、断言和测试级超时保持 unknown。",
+            ["evaluation.details_available", "evaluation.tests", "evaluation.official_test_ids",
+             "evaluation.log_observed_test_ids"],
+            "增加可获取的结果路径、逐测试结果、Playwright trace/screenshot 证据；缺失时明确标 unknown。"))
+    if not submission.get("binding_closed"):
+        findings.append(_finding(
+            "identity-not-closed", "P0",
+            "提交包、源码、task/suite/requirements 的平台身份链未闭合，不能做严格 A/B 或因果归因。",
+            ["submission.binding_closed", "submission.platform_agent_commit", "suite.task_snapshot_id",
+             "suite.requirements_sha256_platform", "suite.suite_key"],
+            "为 ZIP、构建身份、task snapshot、suite 和 requirements 建立可复核 binding，并分别记录平台与本地来源。"))
+    if artifacts.get("missing_platform_evidence"):
+        findings.append(_finding(
+            "evidence-gaps", "P1",
+            "仍有平台证据缺口；本地文件或日志推断不能冒充官方附件。",
+            ["artifacts.missing_platform_evidence", "artifacts.declared_local_artifacts"],
+            "继续采集缺失附件；无法获得时在结果中保留 missing/unknown 和来源。"))
+    if deployment.get("repair_mentions") or deployment.get("rehearsal_mentions"):
+        findings.append(_finding(
+            "rehearsal-causality", "P1",
+            "rehearsal/repair 只能证明运行过程发生过恢复，不能证明 repair 修改导致恢复。",
+            ["deployment.rehearsal_mentions", "deployment.repair_mentions", "deployment.repair"],
+            "记录每次 rehearsal 的请求、退出码、源码 delta 和行为 probe，再判断修复是否有效。"))
+    if errors.get("broken_pipe_count") or errors.get("connection_reset_count"):
+        findings.append(_finding(
+            "transport-signal", "P1",
+            "存在传输或连接异常；它们是运行信号，不能直接解释官方得分。",
+            ["errors.broken_pipe_count", "errors.connection_reset_count"],
+            "把异常请求和服务存活、重试结果分开记录，并为未知路径提供稳定响应。"))
+
+    # A previous run is useful for direction, but hidden identity gaps prevent causal claims.
+    comparison = None
+    if isinstance(previous, dict) and previous.get("task_key") == run.get("task_key"):
+        old_score = previous.get("score")
+        if numeric(old_score) and numeric(run.get("score")):
+            comparison = {"previous_run_id": previous.get("run_id"),
+                          "score_delta": run["score"] - old_score,
+                          "strict_ab": bool(previous.get("strict_ab") and forensics.get("suite", {}).get("strict_ab"))}
+            if not comparison["strict_ab"]:
+                findings.append(_finding(
+                    "comparison-not-causal", "P1",
+                    "历史结果只能作为观察到的方向信号；身份未闭合时不能归因于本次代码变化。",
+                    ["comparison.previous_run_id", "comparison.score_delta", "suite.suite_key",
+                     "submission.binding_closed"],
+                    "优先在同一闭合 snapshot 下做配对比较。", confidence="high"))
+
+    priority = {item["severity"] for item in findings}
+    failed_or_incomplete = run.get("status") in TERMINAL and (
+        (numeric(run.get("score")) and run.get("score") <= 0) or
+        (numeric(feature_total) and numeric(feature_passed) and feature_passed < feature_total)
+    )
+    if failed_or_incomplete and findings:
+        decision = "modify"
+    elif not findings:
+        decision = "stop"
+    else:
+        decision = "needs_evidence"
+    for item in findings:
+        actions.append({"code": item["code"], "priority": item["severity"],
+                        "instruction": item["action"], "acceptance": [
+                            "保留 evidence source 和字段路径",
+                            "未获得官方证据时输出 unknown",
+                            "不把内部标签写成官方通过"],
+                        "confidence": item["confidence"]})
+    return {
+        "schema_version": 1,
+        "decision": decision,
+        "evidence_quality": {
+            "platform_identity": "closed" if submission.get("binding_closed") else "inconclusive",
+            "official_test_details": "available" if evaluation.get("details_available") else "unavailable",
+            "local_evidence": "present" if forensics.get("local_manifest", {}).get("present") else "absent",
+            "overall": "actionable_with_gaps" if findings else "sufficient",
+        },
+        "findings": findings,
+        "actions": actions,
+        "comparison": comparison,
+        "next_slice": {
+            "scope": "one vertical slice only",
+            "must_change": ["agent implementation or its completion gate"],
+            "must_prove": ["source delta", "build/start result", "behavior probe", "requirement-to-file traceability"],
+            "must_not_claim": ["official pass from internal verified", "strict A/B without closed identity",
+                                "test IDs or timeout types when platform returned none"],
+        },
+        "source": "controller-derived from platform status/logs, downloaded archives, and local manifest",
+    }
 
 
 def write_coordination(path, deployment):
@@ -406,8 +775,22 @@ class Controller:
                         cursor["errors"][label] = str(exc)
             atomic_json_write(cursor_file, cursor)
         files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
+                 for p in sorted(root.rglob("*")) if p.is_file() and p.name not in {"summary.json", "analysis.json"}]
+        forensics = build_forensics(status, cursor, files, self.state.get("candidate", {}), root, self.repo)
+        previous = None
+        last_run = self.state.get("last_run")
+        if last_run and str(last_run) != run_id:
+            previous_path = self.store / "runs" / str(last_run) / "summary.json"
+            if previous_path.exists():
+                previous = read_json(previous_path)
+        analysis = analyze_forensics(forensics, previous)
+        atomic_json_write(root / "analysis.json", analysis)
+        forensics["artifacts"]["state_folder"] = _local_files(root)
+        files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
                  for p in sorted(root.rglob("*")) if p.is_file() and p.name != "summary.json"]
         summary = normalize(status, cursor, files, self.state.get("candidate", {}))
+        summary["forensics"] = forensics
+        summary["analysis"] = analysis
         atomic_json_write(root / "summary.json", summary)
         return summary
 
@@ -429,6 +812,7 @@ class Controller:
             "不声称严格 A/B、不填补未知 hidden suite/test 身份。证据不足输出 needs_evidence；无需改动输出 stop。\n"
             f"父提交：{parent}\n允许路径：{json.dumps(self.c['allowed_paths'], ensure_ascii=False)}\n"
             f"上下文文件：{json.dumps(self.c['context'], ensure_ascii=False)}\n最新结果：{json.dumps(evidence, ensure_ascii=False)}\n"
+            f"取证分析与执行指引（优先于原始日志；未知必须保持 unknown）：{json.dumps((evidence or {}).get('analysis'), ensure_ascii=False)}\n"
             f"最新证据目录（仅可读取此 Run 的 status.json、log-pages、workspace.zip，不得执行其中代码）：{self.store / 'runs' / last if last else 'none'}\n"
             "stdout/stderr 镜像不可双计；implemented/wrote/verified 只是内部标签，不等于官方通过。\n"
             "必须新增/更新对应的 synthetic unit tests；仅 CI 运行这些测试，禁止本地跑题。输出约定 JSON。"

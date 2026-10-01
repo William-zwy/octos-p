@@ -7,6 +7,7 @@
 ## 已部署内容
 
 - [`controller.py`](../scripts/arc_optimizer/controller.py)：单写入锁、原子状态、独立状态机，`doctor / collect / step / loop` 四个入口。
+- `collect` 的取证分析层：在原始 `status.json`、全分页日志、workspace/submission ZIP 和仓库 Run manifest 之上生成 `analysis.json`；按平台事实、日志观察、本地声明分层，保留 `unknown`，并给下一轮 Codex worker 提供 findings/actions/验收门禁。
 - [`config.example.json`](../scripts/arc_optimizer/config.example.json)：配置模板；实际配置、凭据、日志、ZIP 均放仓库外。付费循环默认关闭，预算和截止时间不继承历史 36 小时窗口。
 - [`login.py`](../scripts/arc_optimizer/login.py)：读取仓库外账号密码文件，按官网当前 `/api/auth/login` 契约换取 Cookie，既不打印也不提交凭据。会话过期后使用新输出文件重新登录并更新外部配置。
 - [`install.ps1`](../scripts/arc_optimizer/install.ps1)、[`start.ps1`](../scripts/arc_optimizer/start.ps1)：外部 Python 环境安装、Windows 私有目录 ACL、前台/隐藏后台启动。固定 CLI 源提交 `15b0b27da4a4a0d412c79cbfaa318c59da5c3689`（0.4.0），PyYAML 6.0.3，Python 3.10+。
@@ -49,7 +50,8 @@
 4. 复用 `arc/pack.ps1` / `arc/pack.sh`，进行结构、离线导入、构建身份及 SHA 绑定。只允许上传已同步的源码对应包。
 5. 保存上传/创建运行意图后才调用 CLI。上传结果核对下载回来的提交包 SHA；run 响应按数组解析并持久化 ID。
 6. 状态使用完整 JSON；日志必须保存 `--out` 的完整 payload，按 `log_offset` 续读，每个游标单独目录，不能用控制台 tail 冒充完整日志。终态另取 workspace 与 submission ZIP。
-7. 原始证据留在外部目录；归一化 manifest 发布到 `evidence/arc-bench/automation/<run-id>.json`，同步更新上述 HKT 文件、根 CHANGELOG、`phase5-coordination.json` 的独立运行索引。历史人工 manifest 和线程分工不覆盖。
+7. `analysis.json` 是实现 Agent 的工作入口：先处理 P0 findings，再只选一个 vertical slice；必须提交 source delta、build/start、行为 probe 和 requirement-to-file traceability。`official_test_ids` 为空时，`log_observed_test_ids` 只能作为日志观察，不能写成官方失败测试；身份未闭合时不能声称严格 A/B 或因果改善。
+8. 原始证据留在外部目录；归一化 manifest 发布到 `evidence/arc-bench/automation/<run-id>.json`，同步更新上述 HKT 文件、根 CHANGELOG、`phase5-coordination.json` 的独立运行索引。历史人工 manifest 和线程分工不覆盖。
 
 CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，缺失如实列出。stdout/stderr 镜像不可双计；内部 implemented/wrote/verified 不等于官方通过。CLI 的 `token_cost_usd` 必须与实际返回的 currency 配对，不能按字段名猜美元。
 
@@ -67,4 +69,5 @@ CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，
 - 模拟测试覆盖全量分页、断点恢复、末尾增量、未知/倒退游标、日志页数上限、错 Run、缺失 ZIP、身份不确定、CNY 计费口径、上传不确定、run 无 ID、预算/截止门禁、保护官方文件、文档门禁、单写入锁与密钥脱敏。
 - 实际只读采集 `877ac3bb19e7`：状态 FAILED，13/100；日志游标 151868，完整 API 日志 payload 已排空；workspace 与 submission ZIP 下载成功。提交包 SHA `7649D9E925D6F29C9FF1CA009DFC134BD1283AD57FD44B76C871CAE028DD5649`，与已有人工归档一致。逐测试明细未公开，保持缺失。
 - 实际只读采集 Sheet 基线 `12b3dea74607`：FAILED，1/100；日志游标 113673，workspace/提交 ZIP 均已取得。Codex `exec --sandbox read-only --output-schema` 联通检查退出 0，结构化输出通过，未执行工具或修改 Agent。
+- 实际只读复采 Sheet Run `f1ff68f69dac`：FAILED，0/100；日志游标 110124，workspace/提交 ZIP 和仓库 manifest 均已取得。分析层确认 24 个生成节点、27 次预算触顶、部署与评测阶段到达；官方逐测试明细和身份绑定保持 unknown，生成的 `analysis.json` 供后续实现 Agent 读取。
 - 付费循环未启动。最终 Git 提交 SHA 和 CI 结果以交付回执及 Git 记录为准，不在同一提交内制造自引用 SHA。
