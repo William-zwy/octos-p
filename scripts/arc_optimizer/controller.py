@@ -85,6 +85,13 @@ def _local_files(root):
              "sha256": sha256(path)} for path in sorted(root.rglob("*")) if path.is_file()]
 
 
+def _run_file_records(root):
+    root = Path(root)
+    return [{"path": path.relative_to(root).as_posix(), "bytes": path.stat().st_size,
+             "sha256": sha256(path)} for path in sorted(root.rglob("*"))
+            if path.is_file() and path.name != "summary.json"]
+
+
 def _read_optional_json(path):
     path = Path(path)
     if not path.is_file():
@@ -291,6 +298,7 @@ def build_forensics(status, cursor, files, candidate, state_root, repo_root):
                       "missing_platform_evidence": [name for name, present in (("per_test_details", bool(status.get("tests"))),
                                                                                 ("result_path", bool(status.get("result_path"))),
                                                                                 ("binding", archive.get("binding_present"))) if not present]},
+        "external_evidence_index": _read_optional_json(state_root / "evidence-index.json"),
         "local_manifest": {"present": bool(manifest), "path": str(manifest_path),
                            "sha256": sha256(manifest_path) if manifest_path.is_file() else None,
                            "normalized_status": (manifest or {}).get("normalized_status"),
@@ -454,6 +462,7 @@ def worker_context(summary):
         "run": facts.get("run") or {key: summary.get(key) for key in
                                       ("run_id", "status", "score", "passed", "failed", "task_key", "submission_id")},
         "analysis": summary.get("analysis") or {},
+        "optimization_plan": summary.get("optimization_plan") or {},
         "generation": facts.get("generation") or {},
         "deployment": facts.get("deployment") or {},
         "evaluation": facts.get("evaluation") or {},
@@ -470,6 +479,90 @@ def worker_context(summary):
             "provenance": facts.get("provenance") or {},
         },
         "raw_evidence_is_external": True,
+    }
+
+
+def _file_kind(path):
+    suffix = Path(path).suffix.lower()
+    return {
+        ".json": "json", ".jsonl": "jsonl", ".md": "markdown", ".txt": "text",
+        ".zip": "archive", ".yaml": "yaml", ".yml": "yaml", ".png": "image",
+        ".jpg": "image", ".jpeg": "image", ".webp": "image", ".trace": "trace",
+    }.get(suffix, "file")
+
+
+def _external_evidence_files(source_dir):
+    source = Path(source_dir).resolve()
+    if not source.is_dir():
+        raise GateError("evidence source must be an existing directory")
+    if source == ROOT or ROOT in source.parents:
+        raise GateError("evidence source must stay outside the repository")
+    files, skipped = [], []
+    secret_words = ("password", "token", "cookie", "secret", "credential", ".env")
+    for path in sorted(source.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(source).as_posix()
+        if any(word in path.name.lower() for word in secret_words):
+            skipped.append({"path": relative, "reason": "secret_like_filename"})
+            continue
+        files.append({"path": relative, "bytes": path.stat().st_size,
+                      "sha256": sha256(path), "kind": _file_kind(path)})
+    return files, skipped
+
+
+def build_evidence_index(run_id, source_dir):
+    """Index external evidence without copying or parsing private payloads."""
+    files, skipped = _external_evidence_files(source_dir)
+    return {
+        "schema_version": 1, "run_id": identifier(run_id),
+        "source_dir": str(Path(source_dir).resolve()), "raw_not_copied": True,
+        "files": files, "skipped": skipped, "indexed_at": utcnow(),
+        "provenance": "external-local-files-metadata-only",
+    }
+
+
+def _safe_git_ref(value):
+    value = str(value)
+    if not re.fullmatch(r"[A-Za-z0-9._/-]{1,200}", value) or ".." in value or value.startswith("-"):
+        raise GateError("invalid context branch/ref")
+    return value
+
+
+def build_optimization_plan(run_id, analysis, forensics=None):
+    """Compile analysis findings into a plan; this never authorizes execution."""
+    analysis = analysis or {}
+    findings = list(analysis.get("findings") or [])
+    severity_rank = {"P0": 0, "P1": 1, "P2": 2}
+    findings.sort(key=lambda item: (severity_rank.get(item.get("severity"), 9), item.get("code", "")))
+    priorities = [{key: item.get(key) for key in ("code", "severity", "conclusion", "action", "confidence", "evidence")}
+                  for item in findings]
+    top = priorities[0] if priorities else None
+    objective = top["action"] if top else "没有新的高置信问题；保持只读并等待新的证据。"
+    run = (forensics or {}).get("run", {})
+    return {
+        "schema_version": 1, "run_id": identifier(run_id), "generated_at": utcnow(),
+        "mode": "plan_only", "authorization_required": True,
+        "decision": analysis.get("decision", "needs_evidence"), "objective": objective,
+        "priorities": priorities, "comparison": analysis.get("comparison"),
+        "capability_slice": analysis.get("next_slice") or {"scope": "one vertical slice only"},
+        "acceptance_contract": {
+            "must_prove": (analysis.get("next_slice") or {}).get("must_prove", []),
+            "must_not_claim": (analysis.get("next_slice") or {}).get("must_not_claim", []),
+            "evidence_levels": ["platform_fact", "local_artifact", "log_observation", "derived_hypothesis", "unknown"],
+        },
+        "budget_policy": {"base_requests": 22, "continuation_requests": 12,
+                          "max_requests_per_slice": 36, "explicit_override_max": 50,
+                          "final_reserve_fraction": 0.25},
+        "stop_conditions": [
+            "identity or required evidence remains unknown",
+            "seed or delivery artifact changes outside the disposable workspace",
+            "cap hit without an independent verification result",
+            "second continuation has no new product delta",
+        ],
+        "authorization": {"agent_edit": False, "harness_edit": False,
+                          "tests_edit": False, "package": False, "cloud_run": False},
+        "evidence_refs": {"run_url": run.get("url"), "source": analysis.get("source")},
     }
 
 
@@ -817,17 +910,103 @@ class Controller:
             if previous_path.exists():
                 previous = read_json(previous_path)
         analysis = analyze_forensics(forensics, previous)
+        optimization_plan = build_optimization_plan(run_id, analysis, forensics)
         atomic_json_write(root / "analysis.json", analysis)
+        atomic_json_write(root / "optimization-plan.json", optimization_plan)
         forensics["artifacts"]["state_folder"] = _local_files(root)
         files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
                  for p in sorted(root.rglob("*")) if p.is_file() and p.name != "summary.json"]
         summary = normalize(status, cursor, files, self.state.get("candidate", {}))
         summary["forensics"] = forensics
         summary["analysis"] = analysis
+        summary["optimization_plan"] = optimization_plan
         atomic_json_write(root / "summary.json", summary)
         return summary
 
+    def ingest(self, run_id, source_dir):
+        """Index an external evidence directory; raw files remain outside the repository."""
+        run_id = identifier(run_id)
+        root = self.store / "runs" / run_id
+        root.mkdir(parents=True, exist_ok=True)
+        index = build_evidence_index(run_id, source_dir)
+        atomic_json_write(root / "evidence-index.json", index)
+        return index
+
+    def analyze(self, run_id):
+        """Recompute analysis and plan from already-collected state without ARC calls."""
+        run_id = identifier(run_id)
+        root = self.store / "runs" / run_id
+        summary_path = root / "summary.json"
+        summary = read_json(summary_path) if summary_path.is_file() else {}
+        forensics = summary.get("forensics")
+        if not isinstance(forensics, dict):
+            status = _read_optional_json(root / "status.json")
+            cursor = _read_optional_json(root / "collection.json") or {"offset": 0, "pages": [], "errors": {}}
+            if not isinstance(status, dict) or status.get("id") != run_id:
+                raise GateError("collect this run before analyze")
+            files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
+                     for p in sorted(root.rglob("*")) if p.is_file() and p.name not in {"summary.json", "analysis.json", "optimization-plan.json"}]
+            forensics = build_forensics(status, cursor, files, self.state.get("candidate", {}), root, self.repo)
+            summary = normalize(status, cursor, files, self.state.get("candidate", {}))
+            summary["forensics"] = forensics
+        previous = None
+        last_run = self.state.get("last_run")
+        if last_run and str(last_run) != run_id:
+            previous_path = self.store / "runs" / str(last_run) / "summary.json"
+            if previous_path.exists():
+                previous = read_json(previous_path)
+        analysis = analyze_forensics(forensics, previous)
+        plan = build_optimization_plan(run_id, analysis, forensics)
+        atomic_json_write(root / "analysis.json", analysis)
+        atomic_json_write(root / "optimization-plan.json", plan)
+        summary["analysis"] = analysis
+        summary["optimization_plan"] = plan
+        summary["files"] = _run_file_records(root)
+        summary["collected_at"] = summary.get("collected_at", utcnow())
+        atomic_json_write(summary_path, summary)
+        return {"run_id": run_id, "analysis": analysis, "optimization_plan": plan}
+
+    def plan(self, run_id):
+        """Return the saved plan or compile one from an existing analysis artifact."""
+        run_id = identifier(run_id)
+        root = self.store / "runs" / run_id
+        summary = read_json(root / "summary.json") if (root / "summary.json").is_file() else {}
+        analysis = summary.get("analysis") or _read_optional_json(root / "analysis.json")
+        if not isinstance(analysis, dict):
+            raise GateError("analyze this run before plan")
+        forensics = summary.get("forensics") or {}
+        plan = build_optimization_plan(run_id, analysis, forensics)
+        atomic_json_write(root / "optimization-plan.json", plan)
+        if summary:
+            summary["optimization_plan"] = plan
+            atomic_json_write(root / "summary.json", summary)
+        return plan
+
+    def context_snapshot(self, branch):
+        """Record context-file identities from another branch without merging it."""
+        branch = _safe_git_ref(branch)
+        commit = self.git("rev-parse", branch + "^{commit}")
+        records = []
+        for relative in self.c.get("context", []):
+            code, output, _ = self.command([self.c["git"], "-C", self.repo, "ls-tree", "-r", commit, "--", relative])
+            if code:
+                raise GateError("unable to inspect context branch")
+            matches = [line for line in output.splitlines() if "\t" in line]
+            if not matches:
+                records.append({"path": relative, "present": False})
+                continue
+            mode, kind, blob, path = matches[0].split(None, 3)
+            records.append({"path": path, "present": True, "mode": mode, "kind": kind, "blob": blob})
+        snapshot = {"schema_version": 1, "branch": branch, "commit": commit,
+                    "files": records, "merged": False, "raw_not_copied": True,
+                    "created_at": utcnow()}
+        target = self.store / "contexts" / (commit + ".json")
+        atomic_json_write(target, snapshot)
+        return snapshot
+
     def worker(self):
+        if self.c.get("execution_policy", "plan_only") != "agent_edit":
+            raise GateError("execution policy is plan_only; run analyze/plan before authorizing Agent edits")
         self.guard()
         parent = self.preflight()
         round_id = self.state["round"] + 1
@@ -1092,8 +1271,18 @@ def main(argv=None):
     parser.add_argument("--config", required=True, help="external JSON config (never secrets in arguments)")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("doctor")
+    ingest = sub.add_parser("ingest", help="index external evidence without copying raw files")
+    ingest.add_argument("--run-id", required=True)
+    ingest.add_argument("--source-dir", required=True)
+    ingest.add_argument("--metadata-only", action="store_true", required=True)
     collect = sub.add_parser("collect")
     collect.add_argument("--run-id", required=True)
+    analyze = sub.add_parser("analyze", help="recompute analysis from collected state")
+    analyze.add_argument("--run-id", required=True)
+    plan = sub.add_parser("plan", help="compile a plan from analysis without executing it")
+    plan.add_argument("--run-id", required=True)
+    context = sub.add_parser("context", help="snapshot context identities from another branch")
+    context.add_argument("--branch", required=True)
     sub.add_parser("step")
     loop = sub.add_parser("loop")
     loop.add_argument("--max-steps", type=int, default=10000)
@@ -1107,8 +1296,16 @@ def main(argv=None):
         with writer_lock(common), writer_lock(ctl.store):
             if args.command == "doctor":
                 output = ctl.doctor()
+            elif args.command == "ingest":
+                output = ctl.ingest(args.run_id, args.source_dir)
             elif args.command == "collect":
                 output = ctl.collect(args.run_id)
+            elif args.command == "analyze":
+                output = ctl.analyze(args.run_id)
+            elif args.command == "plan":
+                output = ctl.plan(args.run_id)
+            elif args.command == "context":
+                output = ctl.context_snapshot(args.branch)
             elif args.command == "step":
                 output = ctl.step()
             else:

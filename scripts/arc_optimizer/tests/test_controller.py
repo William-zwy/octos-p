@@ -27,6 +27,7 @@ class FakeController(mod.Controller):
                   "max_no_improvement": 1, "deadline": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
                   "competition": "fixture", "official_evaluation": True, "suite_key": "platform-suite",
                   "suite_provenance": "platform response", "requirements_file": "input.zip",
+                  "execution_policy": "agent_edit",
                   "requirements_sha256": "", "worker_timeout_seconds": 60,
                   "allowed_paths": [mod.PLAN, mod.LOG, mod.REGISTER, mod.PROJECT_LOG, "arc/main.py"],
                   "context": [], "codex": "fake-codex", "model": "fixture", "task": "fixture--task"}
@@ -153,6 +154,53 @@ class ControllerTests(unittest.TestCase):
         self.assertTrue(context["raw_evidence_is_external"])
         self.assertNotIn("files", context)
         self.assertNotIn("failed_tests", context)
+
+    def test_evidence_index_is_metadata_only_and_skips_secret_like_names(self):
+        source = Path(self.temp.name) / "external-evidence"
+        source.mkdir()
+        (source / "summary.json").write_text("{}", encoding="utf-8")
+        (source / "session-token.txt").write_text("do-not-read", encoding="utf-8")
+        index = mod.build_evidence_index("run-fixture", source)
+        self.assertTrue(index["raw_not_copied"])
+        self.assertEqual(index["files"][0]["path"], "summary.json")
+        self.assertEqual(index["skipped"][0]["reason"], "secret_like_filename")
+
+    def test_optimization_plan_stays_plan_only(self):
+        facts = {"run": {"run_id": "run-fixture", "url": "https://arc-bench.com/runs/run-fixture"}}
+        plan = mod.build_optimization_plan("run-fixture", {
+            "decision": "modify",
+            "source": "fixture",
+            "findings": [{"code": "budget-cap", "severity": "P0", "conclusion": "cap",
+                          "action": "split budget", "confidence": "high", "evidence": ["x"]}],
+            "next_slice": {"scope": "one vertical slice", "must_prove": ["probe"],
+                           "must_not_claim": ["official pass"]},
+        }, facts)
+        self.assertEqual(plan["mode"], "plan_only")
+        self.assertTrue(plan["authorization_required"])
+        self.assertFalse(plan["authorization"]["agent_edit"])
+        self.assertEqual(plan["budget_policy"]["max_requests_per_slice"], 36)
+
+    def test_analyze_rebuilds_legacy_run_state_without_arc_call(self):
+        root = self.ctl.store / "runs/run-fixture"
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "status.json").write_text(json.dumps(self.ctl.status), encoding="utf-8")
+        (root / "collection.json").write_text(json.dumps({"offset": 0, "pages": [], "errors": {},
+                                                            "logs_drained": True}), encoding="utf-8")
+        result = self.ctl.analyze("run-fixture")
+        self.assertEqual(result["run_id"], "run-fixture")
+        self.assertEqual(result["optimization_plan"]["mode"], "plan_only")
+        self.assertTrue((root / "analysis.json").is_file())
+        self.assertTrue((root / "optimization-plan.json").is_file())
+
+    def test_context_snapshot_records_branch_identity_without_merge(self):
+        self.ctl.c["context"] = ["HKT/PLAN.md"]
+        self.ctl.c["git"] = "git"
+        with patch.object(self.ctl, "git", return_value="a" * 40):
+            with patch.object(self.ctl, "command", return_value=(0, "100644 blob " + "b" * 40 + "\tHKT/PLAN.md\n", "")):
+                snapshot = self.ctl.context_snapshot("codex/hkt-round345-integration")
+        self.assertEqual(snapshot["commit"], "a" * 40)
+        self.assertFalse(snapshot["merged"])
+        self.assertEqual(snapshot["files"][0]["blob"], "b" * 40)
 
     def test_analysis_marks_budget_and_comparison_without_causal_claim(self):
         facts = {

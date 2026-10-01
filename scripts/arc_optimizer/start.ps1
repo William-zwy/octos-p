@@ -1,8 +1,11 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Config,
-    [ValidateSet('doctor', 'collect', 'step', 'loop')][string]$Mode = 'doctor',
+    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'step', 'loop')][string]$Mode = 'doctor',
     [string]$RunId = '',
+    [string]$SourceDir = '',
+    [string]$Branch = '',
+    [switch]$MetadataOnly,
     [switch]$Background
 )
 Set-StrictMode -Version Latest
@@ -11,9 +14,19 @@ $Config = [System.IO.Path]::GetFullPath($Config)
 $settings = Get-Content -LiteralPath $Config -Raw | ConvertFrom-Json
 $controller = Join-Path $PSScriptRoot 'controller.py'
 $arguments = @($controller, '--config', $Config, $Mode)
-if ($Mode -eq 'collect') {
-    if (-not $RunId) { throw 'collect requires -RunId' }
+if ($Mode -in @('collect', 'analyze', 'plan')) {
+    if (-not $RunId) { throw "$Mode requires -RunId" }
     $arguments += @('--run-id', $RunId)
+}
+if ($Mode -eq 'ingest') {
+    if (-not $RunId) { throw 'ingest requires -RunId' }
+    if (-not $SourceDir) { throw 'ingest requires -SourceDir' }
+    if (-not $MetadataOnly) { throw 'ingest requires -MetadataOnly; raw files are never copied' }
+    $arguments += @('--run-id', $RunId, '--source-dir', ([System.IO.Path]::GetFullPath($SourceDir)), '--metadata-only')
+}
+if ($Mode -eq 'context') {
+    if (-not $Branch) { throw 'context requires -Branch' }
+    $arguments += @('--branch', $Branch)
 }
 if ($Background) {
     if ($Mode -ne 'loop') { throw 'Background is for loop only' }

@@ -5,6 +5,7 @@ All notable changes to octos will be documented in this file.
 
 - Deploy a serialized ARC cloud optimization controller using pinned arcbench-cli and Codex exec: durable mutation intents, full paginated evidence, Git/CI/package identity gates, and updates to the existing HKT records. Paid runs stay disabled until the current budget, deadline and suite binding are supplied.
 - Add a deterministic post-collection analysis layer that writes `analysis.json`, separates platform facts from log observations and local manifests, preserves unknown evidence, and feeds bounded implementation guidance to the next Codex worker. Existing Run collection remains read-only.
+- Extend the ARC controller with metadata-only evidence ingest, branch context snapshots, legacy-run forensic reconstruction, and `optimization-plan.json`; default execution policy remains `plan_only` until Agent edits, packaging, and cloud runs are explicitly enabled.
 
 ### ARC-Bench Agent
 

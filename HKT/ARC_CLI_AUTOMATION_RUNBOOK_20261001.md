@@ -6,8 +6,10 @@
 
 ## 已部署内容
 
-- [`controller.py`](../scripts/arc_optimizer/controller.py)：单写入锁、原子状态、独立状态机，`doctor / collect / step / loop` 四个入口。
+- [`controller.py`](../scripts/arc_optimizer/controller.py)：单写入锁、原子状态、独立状态机，`doctor / ingest / collect / analyze / plan / context / step / loop` 入口。
 - `collect` 的取证分析层：在原始 `status.json`、全分页日志、workspace/submission ZIP 和仓库 Run manifest 之上生成 `analysis.json`；按平台事实、日志观察、本地声明分层，保留 `unknown`，并给下一轮 Codex worker 提供 findings/actions/验收门禁。
+- `ingest` 只建立外部证据目录的文件名、大小、SHA-256 和类型索引；不复制原始日志、ZIP、截图或凭据。`context` 通过 `git show`/`ls-tree` 记录另一分支的计划与 manifest blob 身份，不合并分支。
+- `analyze` 可从新格式 `summary.json` 运行，也可从旧版 `status.json`、`collection.json`、日志页和 ZIP 断点重建取证；`plan` 输出 `optimization-plan.json`，默认 `plan_only`，不会修改 Agent。
 - [`config.example.json`](../scripts/arc_optimizer/config.example.json)：配置模板；实际配置、凭据、日志、ZIP 均放仓库外。付费循环默认关闭，预算和截止时间不继承历史 36 小时窗口。
 - [`login.py`](../scripts/arc_optimizer/login.py)：读取仓库外账号密码文件，按官网当前 `/api/auth/login` 契约换取 Cookie，既不打印也不提交凭据。会话过期后使用新输出文件重新登录并更新外部配置。
 - [`install.ps1`](../scripts/arc_optimizer/install.ps1)、[`start.ps1`](../scripts/arc_optimizer/start.ps1)：外部 Python 环境安装、Windows 私有目录 ACL、前台/隐藏后台启动。固定 CLI 源提交 `15b0b27da4a4a0d412c79cbfaa318c59da5c3689`（0.4.0），PyYAML 6.0.3，Python 3.10+。
@@ -26,6 +28,20 @@
 
 # 采集已有 Run；不创建新的平台运行。
 ./scripts/arc_optimizer/start.ps1 -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' -Mode collect -RunId 877ac3bb19e7
+
+# 索引仓库外的本地证据；只写 metadata，不复制原始文件。
+python scripts/arc_optimizer/controller.py --config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' `
+  ingest --run-id a7964e4411af `
+  --source-dir 'C:/Users/dayuruozhi/Downloads/闻悦源代码-首轮测试-hackathon-sheet' `
+  --metadata-only
+
+# 读取已有采集结果，生成 analysis.json 和 optimization-plan.json；无 ARC 调用。
+./scripts/arc_optimizer/start.ps1 -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' -Mode analyze -RunId a7964e4411af
+./scripts/arc_optimizer/start.ps1 -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' -Mode plan -RunId a7964e4411af
+
+# 记录 integration 分支上下文身份，不合并它。
+python scripts/arc_optimizer/controller.py --config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' `
+  context --branch codex/hkt-round345-integration
 
 # 条件齐全后，每次推进一个状态，或启动有限轮数循环。
 ./scripts/arc_optimizer/start.ps1 -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' -Mode step
@@ -53,6 +69,14 @@
 7. `analysis.json` 是实现 Agent 的工作入口：先处理 P0 findings，再只选一个 vertical slice；必须提交 source delta、build/start、行为 probe 和 requirement-to-file traceability。`official_test_ids` 为空时，`log_observed_test_ids` 只能作为日志观察，不能写成官方失败测试；身份未闭合时不能声称严格 A/B 或因果改善。
 8. 原始证据留在外部目录；归一化 manifest 发布到 `evidence/arc-bench/automation/<run-id>.json`，同步更新上述 HKT 文件、根 CHANGELOG、`phase5-coordination.json` 的独立运行索引。历史人工 manifest 和线程分工不覆盖。
 
+### 自动化阶段与执行闸门
+
+```text
+ingest/context -> collect -> analyze -> plan -> [explicit agent_edit] -> CI/package -> [explicit cloud_run]
+```
+
+默认执行策略为 `plan_only`。`optimization-plan.json` 会记录 objective、P0/P1 findings、capability slice、验收合同、预算策略、停止条件和授权状态。未显式授权前，Agent 修改、Harness/测试修改、打包和云端 Run 都保持 `false`；已有 Run 的采集和分析可以继续执行。
+
 CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，缺失如实列出。stdout/stderr 镜像不可双计；内部 implemented/wrote/verified 不等于官方通过。CLI 的 `token_cost_usd` 必须与实际返回的 currency 配对，不能按字段名猜美元。
 
 ## 中断恢复
@@ -70,4 +94,5 @@ CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，
 - 实际只读采集 `877ac3bb19e7`：状态 FAILED，13/100；日志游标 151868，完整 API 日志 payload 已排空；workspace 与 submission ZIP 下载成功。提交包 SHA `7649D9E925D6F29C9FF1CA009DFC134BD1283AD57FD44B76C871CAE028DD5649`，与已有人工归档一致。逐测试明细未公开，保持缺失。
 - 实际只读采集 Sheet 基线 `12b3dea74607`：FAILED，1/100；日志游标 113673，workspace/提交 ZIP 均已取得。Codex `exec --sandbox read-only --output-schema` 联通检查退出 0，结构化输出通过，未执行工具或修改 Agent。
 - 实际只读复采 Sheet Run `f1ff68f69dac`：FAILED，0/100；日志游标 110124，workspace/提交 ZIP 和仓库 manifest 均已取得。分析层确认 24 个生成节点、27 次预算触顶、部署与评测阶段到达；官方逐测试明细和身份绑定保持 unknown，生成的 `analysis.json` 供后续实现 Agent 读取。
+- CLI 流程演练：`a7964e4411af` 外部目录索引 59 个文件、原始文件未复制；从旧格式 summary 断点重建取证并生成 `optimization-plan.json`，默认授权状态为 `agent_edit=false/package=false/cloud_run=false`。
 - 付费循环未启动。最终 Git 提交 SHA 和 CI 结果以交付回执及 Git 记录为准，不在同一提交内制造自引用 SHA。

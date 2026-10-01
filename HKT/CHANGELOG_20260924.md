@@ -6,6 +6,7 @@
 - `doctor` 在 GitHub、ARC 或本地工具检查失败时返回退出码 2，并保留私有错误证据；只读状态/日志/下载传输失败最多重读一次，上传和创建 Run 仍不重试。
 - 新增 credential-manager、失败 Run 结果和只读重试测试。续改前后控制器模拟测试 `24` 项通过，退出码 0；CI 对提交 `5c304ef9b4e58a40a0f0a3b45a4b997398ab4901` 已成功。
 - 新增远程结果的确定性分析层：`collect` 现在同时落盘 `analysis.json`，合并平台状态、去重后的全量日志、下载 ZIP、仓库 Run manifest 和本地文件 SHA；显式区分官方事实、日志观察和本地声明，未知不补全，并向 Codex 实现 Agent 注入优先级、验收门禁和禁止过度结论。对 `f1ff68f69dac` 只读复采成功，29 项控制器测试通过；未创建、启动或取消新 Run。
+- CLI 扩展为 `ingest → collect → analyze → plan → context` 工作流：外部证据仅写 metadata 索引，旧格式 Run 可断点重建取证，`optimization-plan.json` 默认停在 `plan_only`，不会自动修改 Agent、打包或启动 Run。`a7964e4411af` 演练已完成，原始文件未复制。
 
 ## 2026-10-01：部署 ARC CLI / Codex 云端优化控制器
 
