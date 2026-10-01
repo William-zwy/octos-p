@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision", "hypothesis", "evidence", "changed_files", "risks"],
+  "properties": {
+    "decision": {"type": "string", "enum": ["candidate", "stop", "needs_evidence"]},
+    "hypothesis": {"type": "string"},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "changed_files": {"type": "array", "items": {"type": "string"}},
+    "risks": {"type": "array", "items": {"type": "string"}}
+  }
+}

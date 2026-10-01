@@ -200,3 +200,6 @@ tsconfig.tsbuildinfo
 
 .venv
 
+# CLI optimizer transient bytecode; credentials/state live outside the repo.
+/scripts/arc_optimizer/**/__pycache__/
+

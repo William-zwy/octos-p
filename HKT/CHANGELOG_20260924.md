@@ -1,5 +1,14 @@
 # HKT 目录文档更新日志
 
+## 2026-10-01：部署 ARC CLI / Codex 云端优化控制器
+
+- 授权来源：用户“请开始部署”，范围为 CLI 取证与云端优化控制器；父/基线 SHA `8f2af28713a336e90a61996dff21661ea3f30c70`，分支 `codex/hkt-cli-automation`，独立工作区 `235e` 单写入。
+- 新增 `scripts/arc_optimizer/`、专用 CI 和[操作手册](ARC_CLI_AUTOMATION_RUNBOOK_20261001.md)，复用现有打包/构建身份，保护官方测试、需求包、Rust 和历史证据。
+- 更新总体计划、根 CHANGELOG、阶段 5 决策台账及协同索引的独立部署条目；不开放历史多会话自动派发。
+- ARC 登录与 Codex 结构化 exec 联通验证通过；已有 GitHub `877ac3bb19e7`、Sheet `12b3dea74607` 终态、完整分页日志、workspace 和提交 ZIP 采集成功，逐测试明细保持 unknown。原始证据与凭据存仓库外。
+- 验证：`python -m unittest discover -s scripts/arc_optimizer/tests -q`，23 项通过、退出 0；`python -m compileall -q scripts/arc_optimizer` 和 `git diff --check` 退出 0。Agent helper checks 由云端 CI 执行，不在本地跑题。
+- 未修改 Agent、未上传或创建新 Run。付费循环等待当前预算/绝对截止时间/平台 suite 绑定；原 aeb0 工作区尚待停止及交接后集成。最终提交 SHA/CI 结果记录在交付回执与 Git 历史中。
+
 > 最后更新：2026-09-24
 
 ---

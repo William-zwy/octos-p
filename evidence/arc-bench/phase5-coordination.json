@@ -1329,5 +1329,23 @@
       },
       "next_gate": "Receive structured Stage 4 diagnosis and additional independent Runs; do not dispatch implementation from this Run alone."
     }
-  ]
+  ],
+  "arc_optimizer_deployment": {
+    "handoff_id": "arc-cli-controller-deploy-20261001",
+    "authorization": "user_requested_deployment_2026-10-01",
+    "baseline_sha": "8f2af28713a336e90a61996dff21661ea3f30c70",
+    "branch": "codex/hkt-cli-automation",
+    "owner_checkout": "235e",
+    "scope": "controller_deployment_and_read_only_collection",
+    "paid_loop_enabled": false,
+    "existing_thread_dispatch_unchanged": true,
+    "runbook": "HKT/ARC_CLI_AUTOMATION_RUNBOOK_20261001.md",
+    "pending": [
+      "current_budget",
+      "absolute_deadline",
+      "platform_suite_binding",
+      "aeb0_integrator_handoff"
+    ],
+    "runs": {}
+  }
 }

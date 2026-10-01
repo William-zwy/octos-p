@@ -1,0 +1,34 @@
+name: ARC optimizer checks
+on:
+  push:
+    branches: ['codex/hkt-cli-automation', 'codex/hkt-round345-integration']
+  pull_request:
+    paths:
+      - 'arc/**'
+      - 'scripts/arc_optimizer/**'
+      - '.github/workflows/arc-optimizer-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: arc-optimizer-check-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install PyYAML==6.0.3
+      - name: Controller safety and evidence tests (synthetic, no cloud calls)
+        run: python -m unittest discover -s scripts/arc_optimizer/tests -v
+      - name: Agent helper tests (no benchmark tasks)
+        working-directory: arc
+        run: python -m unittest tests.test_main_helpers tests.test_llm_proxy tests.test_run_controls tests.test_pack_script tests.test_package_gate
+      - name: Python syntax and whitespace
+        run: |
+          python -m compileall -q arc scripts/arc_optimizer
+          git diff --check

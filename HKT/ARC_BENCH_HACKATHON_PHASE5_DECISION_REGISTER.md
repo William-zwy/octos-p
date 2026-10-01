@@ -1,5 +1,13 @@
 # ARC-Bench 阶段 5 跨 Run 问题与优化决策台账
 
+## 2026-10-01 独立控制器部署补充
+
+用户授权部署 CLI 取证和 Codex 云端优化闭环；handoff `arc-cli-controller-deploy-20261001`，基线/父提交 `8f2af28713a336e90a61996dff21661ea3f30c70`，分支 `codex/hkt-cli-automation`，单写入工作区 `235e`。这项授权仅部署控制器，不变更原阶段 5 各线程的职责或自动派发权限。原 aeb0 Integrator 尚待停止交接。
+
+问题：原上传/状态/证据收集依赖多次手工操作，缺少可恢复的单写入事务及源码→ZIP→submission→Run 身份链。验收：完整 CLI 分页采集、原子 journal、防重复创建、真实 Git 三方 SHA、源码对应 CI、既有包门禁和 HKT 原位回写；不在本地生成/评测题目。已实现的控制器与入口见[操作手册](ARC_CLI_AUTOMATION_RUNBOOK_20261001.md)。
+
+本次未修改 Agent。23 项模拟测试通过，Codex read-only 结构化 exec 联通通过，ARC 登录/官方登记/目录读取通过；`877ac3bb19e7` 和 `12b3dea74607` 的完整 API 日志及 ZIP 已实际取回。缺失 hidden suite、逐测试细节继续 unknown，不能据此创建严格 A/B。预算和绝对截止时间未知，付费循环关闭；平台 suite 绑定仍为门禁。未知上传/run 结果必须核对既有平台记录，不自动重试写请求。所有原始证据和凭据保存在仓库外，交付提交与 CI 结果以 Git/回执核验。
+
 > 版本：v1.29；建立日期：2026-09-19；状态：V3 已冻结；用户明确确认 BookStack `cca008377368` 与 Keep `bf5e742c15a4` 是冻结 V3 返回的 Run ID。该版本归属作为用户 provenance 登记；两份 manifest 同时把原始上传文件名记为 `octos-arc-bundle-13173bb50e55.zip`，与台账中冻结 V3 的 `d2fe4dbc…` / `FC83EA…` 本地身份存在未闭合冲突，平台又缺少 ZIP→build/code 与 task snapshot 绑定，因此不能升级为源码级身份、业务验收、平台收益或严格 A/B。`cca008377368` 仍只确认 `P5-012` 的 401→exit 2 运行事实；`bf5e742c15a4` 仍因阶段 4 结果身份不完整而隔离。V4.1 精确包在 `c48754c25fcf` 正确启动但因 HTTP 401 停止；用户随后确认 API 问题已修复。BookStack Lite `1b0eaf914e94` 已用匹配 V4.1 runtime identity 完成生成与全部 34 项平台测试，最终 `33/34`，仅登录后身份读回 `REQ-2.2` 失败；`P5-014` 已受控复现并形成新的本地 Agent 候选，尚未通过新 Agent 非 mock 生成、平台复验或严格 A/B。Keep `88c08161c4d3` 尚待阶段四身份核对。两条新 Run 均不反向证明历史 401 的具体服务端原因，也不因缺上传 ZIP SHA/task snapshot 而获得严格 A/B 身份。
 >
 > 范围：阶段 3 归一化证据、阶段 4 单 Run 诊断进入阶段 5 后的跨 Run 归并、方案选择、实现盘点与 A/B 决策。本文件不是原始日志、阶段 3 manifest 或阶段 4 分析的替代品。

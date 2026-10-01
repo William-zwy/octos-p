@@ -2,6 +2,8 @@
 
 日期：2026-09-30
 状态：`READY_FOR_PLATFORM_IDENTITY`（Agent 与本协作文档改动已完成） 仅修改 Agent 与本协作文档；官方测试、需求 ZIP 和平台 Run 未修改。
+
+2026-10-01 部署补充：用户授权实现 [CLI 云端优化闭环](ARC_CLI_AUTOMATION_RUNBOOK_20261001.md)。部署分支 `codex/hkt-cli-automation` 从本计划最新基线 `8f2af28713a336e90a61996dff21661ea3f30c70` 创建，独立工作区单写入。控制器读取本计划、日志、决策台账与既有 Run；优化候选经 Git 三方 SHA/CI/既有打包门禁后上传，云端执行，完整分页取证后回写这些文档。默认关闭付费循环，等待本轮预算、绝对截止时间和平台 suite 绑定；历史预算/36h 窗口不重新起算。本次未修改 Agent、官方测试或需求包，未上传/创建新 Run。原 aeb0 Integrator 工作区仍须交接后才能集成。
 目标分支：`codex/hkt-round345-integration`
 基线：`codex/urgent-bookstack-contract-fix-r2` @ `f10bd9f42429c09672c9a68b79f486c44cc41e9f`
 

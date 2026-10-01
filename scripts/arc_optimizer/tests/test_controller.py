@@ -1,0 +1,296 @@
+"""Synthetic safety tests; no ARC calls, Codex calls, or benchmark execution."""
+import copy
+import importlib.util
+import json
+import tempfile
+import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from unittest.mock import patch
+
+MODULE = Path(__file__).resolve().parents[1] / "controller.py"
+spec = importlib.util.spec_from_file_location("arc_optimizer_controller", MODULE)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+
+class FakeController(mod.Controller):
+    def __init__(self, root):
+        self.repo = root / "repo"
+        self.repo.mkdir()
+        self.store = root / "private"
+        self.store.mkdir()
+        self.journal = self.store / "controller.json"
+        self.c = {"max_log_pages": 20, "enabled": True, "budget_cny": 100,
+                  "estimated_run_cny": 20, "reserve_fraction": .25, "max_rounds": 2,
+                  "max_no_improvement": 1, "deadline": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+                  "competition": "fixture", "official_evaluation": True, "suite_key": "platform-suite",
+                  "suite_provenance": "platform response", "requirements_file": "input.zip",
+                  "requirements_sha256": "", "worker_timeout_seconds": 60,
+                  "allowed_paths": [mod.PLAN, mod.LOG, mod.REGISTER, mod.PROJECT_LOG, "arc/main.py"],
+                  "context": [], "codex": "fake-codex", "model": "fixture", "task": "fixture--task"}
+        requirements = self.repo / "input.zip"
+        requirements.write_bytes(b"synthetic requirements")
+        self.c["requirements_sha256"] = mod.sha256(requirements)
+        self.state = {"phase": "ready", "round": 0, "rounds": [], "no_improvement": 0,
+                      "spent_cny": 0, "last_run": None}
+        self.secrets = ["fixture-secret"]
+        self.calls = []
+        self.remaining = 100
+        self.status = {"id": "run-fixture", "status": "FAILED", "score": 50,
+                       "token_cost_usd": 7, "token_cost_currency": "CNY",
+                       "submission_id": "submission-fixture", "requirement_id": "fixture--task"}
+        self.pages = {0: {"console": "\n".join(f"line {n}" for n in range(100)), "log_offset": 100},
+                      100: {"stderr": "all second page", "log_offset": 200},
+                      200: {"console": "", "log_offset": 200}}
+        self.fail_offset = None
+        self.fail_mutation = False
+        self.paths = set()
+        self.head = "a" * 40
+
+    def arc(self, *args, **kwargs):
+        self.calls.append(args)
+        if args[0] == "registration":
+            return {"registered": True, "remaining_budget_cny": self.remaining}
+        if args[0] == "status":
+            self.assert_status_allowed = kwargs.get("allowed_codes")
+            return copy.deepcopy(self.status)
+        if args[0] == "logs":
+            offset = int(args[args.index("--offset") + 1])
+            folder = Path(args[args.index("--out") + 1])
+            mod.atomic_json_write(folder / "run-fixture-logs.json", self.pages[offset])
+            if offset == self.fail_offset:
+                raise mod.GateError("simulated crash after durable payload before cursor")
+            return {"console": "truncated tail", "next_offset": self.pages[offset]["log_offset"]}
+        if args[0] in ("download", "archive"):
+            Path(args[args.index("--output") + 1]).write_bytes(b"synthetic zip")
+            return {"saved": True}
+        if args[0] in ("upload", "run"):
+            if self.fail_mutation:
+                raise mod.GateError("simulated transport uncertainty")
+            return [{}]
+        raise AssertionError(args)
+
+    def preflight(self, **kwargs):
+        return self.head
+
+    def verify_sync(self, expected):
+        return {"local": expected, "tracking": expected, "github": expected}
+
+    def changed_paths(self):
+        return self.paths
+
+    def git(self, *args):
+        if args == ("rev-parse", "HEAD"):
+            return self.head
+        raise AssertionError(args)
+
+    def command(self, argv, **kwargs):
+        output = Path(self.state["worker_dir"]) / "decision.json"
+        mod.atomic_json_write(output, {"decision": "candidate", "changed_files": sorted(self.paths),
+                                      "hypothesis": "fixture", "evidence": [], "risks": []})
+        return 0, "fixture events", ""
+
+
+class ControllerTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="arc-controller-tests-")
+        self.addCleanup(self.temp.cleanup)
+        self.ctl = FakeController(Path(self.temp.name))
+
+    def test_full_log_payload_not_tail_and_no_overwrite(self):
+        result = self.ctl.collect("run-fixture")
+        self.assertEqual(result["log_pages"], 2)
+        self.assertEqual(result["log_next_offset"], 200)
+        self.assertTrue(result["logs_drained"])
+        root = self.ctl.store / "runs/run-fixture"
+        full = mod.read_json(root / "log-pages/000000000000/run-fixture-logs.json")
+        self.assertEqual(len(full["console"].splitlines()), 100)
+        self.assertEqual(self.ctl.assert_status_allowed, (0, 1))
+        self.assertEqual(result["cost"], {"amount": 7, "currency": "CNY"})
+
+    def test_resume_after_payload_written_before_cursor(self):
+        self.ctl.fail_offset = 100
+        with self.assertRaises(mod.GateError):
+            self.ctl.collect("run-fixture")
+        self.ctl.fail_offset = None
+        self.ctl.calls.clear()
+        result = self.ctl.collect("run-fixture")
+        self.assertTrue(result["logs_drained"])
+        self.assertFalse(any(call[0] == "logs" and call[3] == "100" for call in self.ctl.calls))
+        self.assertEqual(result["log_pages"], 2)
+
+    def test_collect_again_refreshes_end_cursor_for_new_logs(self):
+        self.ctl.status["status"] = "RUNNING"
+        self.ctl.collect("run-fixture")
+        self.ctl.pages[200] = {"console": "late logs", "log_offset": 300}
+        self.ctl.pages[300] = {"log_offset": 300}
+        result = self.ctl.collect("run-fixture")
+        self.assertEqual(result["log_pages"], 3)
+        self.assertEqual(result["log_next_offset"], 300)
+
+    def test_missing_or_regressing_cursor_is_not_complete(self):
+        for value in (None, -1):
+            self.ctl.pages[0] = {"console": "fixture", "log_offset": value}
+            path = self.ctl.store / "runs/run-fixture/log-pages/000000000000/run-fixture-logs.json"
+            if path.exists():
+                path.unlink()
+            with self.assertRaises(mod.GateError):
+                self.ctl.collect("run-fixture")
+
+    def test_page_limit_marks_incomplete(self):
+        self.ctl.c["max_log_pages"] = 1
+        result = self.ctl.collect("run-fixture")
+        self.assertFalse(result["logs_drained"])
+        self.assertIn("complete_log_pagination", result["missing_evidence"])
+
+    def test_wrong_run_response_rejected(self):
+        self.ctl.status["id"] = "another-run"
+        with self.assertRaises(mod.GateError):
+            self.ctl.collect("run-fixture")
+
+    def test_unknown_identities_stay_unknown(self):
+        result = self.ctl.collect("run-fixture")
+        self.assertIsNone(result["source_commit"])
+        self.assertIsNone(result["hidden_suite_identity"])
+        self.assertFalse(result["candidate_identity_closed"])
+        self.assertFalse(result["strict_ab"])
+        self.assertIn("per_test_details", result["missing_evidence"])
+
+    def test_downloaded_submission_hash_closes_only_candidate(self):
+        self.ctl.state["candidate"] = {"package_sha256": __import__('hashlib').sha256(b"synthetic zip").hexdigest(),
+                                       "source_commit": "a" * 40}
+        result = self.ctl.collect("run-fixture")
+        self.assertTrue(result["candidate_identity_closed"])
+        self.assertEqual(result["platform_identity"], "platform_identity_inconclusive")
+
+    def test_download_failure_is_explicit(self):
+        actual = self.ctl.arc
+        def unavailable(*args, **kwargs):
+            if args[0] == "download":
+                raise mod.GateError("download unavailable")
+            return actual(*args, **kwargs)
+        self.ctl.arc = unavailable
+        result = self.ctl.collect("run-fixture")
+        self.assertIn("workspace.zip", result["missing_evidence"])
+        self.assertIn("workspace", result["collection_errors"])
+
+    def test_mutation_timeout_is_journaled_and_never_repeated(self):
+        self.ctl.state["worker_dir"] = str(self.ctl.store)
+        self.ctl.fail_mutation = True
+        with self.assertRaises(mod.GateError):
+            self.ctl.mutate_once("upload", ["upload", "fixture.zip"])
+        self.assertEqual(mod.read_json(self.ctl.journal)["phase"], "upload_pending")
+        before = len(self.ctl.calls)
+        with self.assertRaises(mod.GateError):
+            self.ctl.step()
+        self.assertEqual(len(self.ctl.calls), before)
+
+    def test_only_read_transport_failures_get_one_retry(self):
+        self.ctl.env_file = self.ctl.store / "arc.env"
+        self.ctl.c["python"] = "synthetic-python"
+        failure = (1, "", json.dumps({"transport_failure": True, "http_status": None}))
+        success = (0, json.dumps({"logged_in": True}), "")
+        with patch.object(self.ctl, "command", side_effect=[failure, success]) as command:
+            self.assertTrue(mod.Controller.arc(self.ctl, "whoami")["logged_in"])
+            self.assertEqual(command.call_count, 2)
+        with patch.object(self.ctl, "command", return_value=failure) as command:
+            with self.assertRaises(mod.GateError):
+                mod.Controller.arc(self.ctl, "logs", "run-fixture")
+            self.assertEqual(command.call_count, 2)
+        with patch.object(self.ctl, "command", return_value=failure) as command:
+            with self.assertRaises(mod.GateError):
+                mod.Controller.arc(self.ctl, "upload", "fixture.zip")
+            self.assertEqual(command.call_count, 1)
+
+    def test_failed_run_exit_one_is_result_not_retry(self):
+        self.ctl.env_file = self.ctl.store / "arc.env"
+        self.ctl.c["python"] = "synthetic-python"
+        failed_run = (1, json.dumps(self.ctl.status), "")
+        with patch.object(self.ctl, "command", return_value=failed_run) as command:
+            result = mod.Controller.arc(self.ctl, "status", "run-fixture", allowed_codes=(0, 1))
+            self.assertEqual(result["status"], "FAILED")
+            self.assertEqual(command.call_count, 1)
+
+    def test_run_response_without_id_blocks_recreation(self):
+        self.ctl.state.update(phase="uploaded", candidate={"submission_id": "submission-fixture"},
+                              worker_dir=str(self.ctl.store))
+        with self.assertRaises(mod.GateError):
+            self.ctl.step()
+        self.assertEqual(self.ctl.state["phase"], "run_pending")
+        self.ctl.calls.clear()
+        with self.assertRaises(mod.GateError):
+            self.ctl.step()
+        self.assertEqual(self.ctl.calls, [])
+
+    def test_paid_gates_fail_before_worker(self):
+        for key, value in (("enabled", False), ("budget_cny", None), ("deadline", None),
+                           ("reserve_fraction", .1), ("suite_key", None), ("suite_provenance", None)):
+            original = self.ctl.c[key]
+            self.ctl.c[key] = value
+            with self.assertRaises(mod.GateError, msg=key):
+                self.ctl.step()
+            self.assertEqual(self.ctl.state["phase"], "ready")
+            self.ctl.c[key] = original
+
+    def test_limits_do_not_block_existing_run_collection(self):
+        self.ctl.c["enabled"] = False
+        self.ctl.state.update(phase="running", candidate={"run_id": "run-fixture"})
+        self.ctl.status["status"] = "RUNNING"
+        self.ctl.step()
+        self.assertEqual(self.ctl.state["phase"], "running")
+        self.assertTrue(any(call[0] == "status" for call in self.ctl.calls))
+
+    def test_reserve_protected_from_account_or_local_spend(self):
+        self.ctl.remaining = 40  # 25 reserve + 20 estimate needed.
+        with self.assertRaises(mod.GateError):
+            self.ctl.guard()
+        self.ctl.remaining = 100
+        self.ctl.state["spent_cny"] = 56
+        with self.assertRaises(mod.GateError):
+            self.ctl.guard()
+
+    def test_worker_unexpected_path_rejected(self):
+        self.ctl.paths = {mod.PLAN, mod.LOG, mod.REGISTER, "arc/main.py", "arc/public-tests/official.spec.ts"}
+        with self.assertRaises(mod.GateError):
+            self.ctl.worker()
+        self.assertEqual(self.ctl.state["phase"], "worker_pending")
+
+    def test_worker_missing_progress_records_rejected(self):
+        self.ctl.paths = {"arc/main.py"}
+        with self.assertRaises(mod.GateError):
+            self.ctl.worker()
+
+    def test_secrets_redacted(self):
+        self.assertNotIn("fixture-secret", self.ctl.safe({"data": "fixture-secret"}))
+
+    def test_run_path_injection_rejected(self):
+        with self.assertRaises(mod.GateError):
+            self.ctl.collect("../secrets")
+
+    def test_lock_rejects_second_writer_and_releases(self):
+        directory = self.ctl.store / "locks"
+        with mod.writer_lock(directory):
+            with self.assertRaises(mod.GateError):
+                with mod.writer_lock(directory):
+                    pass
+        with mod.writer_lock(directory):
+            pass
+
+    def test_deadline_requires_timezone(self):
+        with self.assertRaises(mod.GateError):
+            mod.parse_date("2026-10-01T12:00:00")
+
+    def test_coordination_preserves_historical_formatting(self):
+        path = self.ctl.store / "coordination.json"
+        historical = '{\n  "roles": {"owner": "original"},\n  "runs": ["one", "two"]\n}\n'
+        path.write_text(historical, encoding="utf-8")
+        for count in (1, 2):
+            mod.write_coordination(path, {"count": count})
+            self.assertIn('"roles": {"owner": "original"}', path.read_text())
+            self.assertIn('"runs": ["one", "two"]', path.read_text())
+            self.assertEqual(mod.read_json(path)["arc_optimizer_deployment"], {"count": count})
+
+
+if __name__ == "__main__":
+    unittest.main()

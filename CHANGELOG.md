@@ -3,6 +3,8 @@
 All notable changes to octos will be documented in this file.
 ## [Unreleased]
 
+- Deploy a serialized ARC cloud optimization controller using pinned arcbench-cli and Codex exec: durable mutation intents, full paginated evidence, Git/CI/package identity gates, and updates to the existing HKT records. Paid runs stay disabled until the current budget, deadline and suite binding are supplied.
+
 ### ARC-Bench Agent
 
 - Share a named-entity create/save result contract across UI, design, codegen and repair prompts: show the persisted name as one visible heading, preserve its navigation link and avoid duplicate success text. Add prompt regression tests; generated-app and platform validation remain pending.
