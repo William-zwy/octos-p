@@ -1228,6 +1228,25 @@ class Controller:
         plan_sha = _hash_json_file(plan_path)
         authorization = self._codegen_authorization(parent, plan_sha, analysis_sha)
         reconciliation = reconcile_monitor_inputs(self.store, last)
+        override = self.c.get("monitor_reconciliation_override") or {}
+        override_marker = self.store / "monitor-overrides" / (str(last) + ".json")
+        if reconciliation["decision"] != "GO" and override.get("enabled") is True and \
+                str(override.get("run_id")) == str(last) and not override_marker.exists():
+            expires_at = override.get("expires_at")
+            if expires_at and datetime.now(timezone.utc) >= parse_date(expires_at):
+                raise GateError("monitor reconciliation override is expired")
+            reason = str(override.get("reason", "")).strip()
+            if not reason:
+                raise GateError("monitor reconciliation override requires a reason")
+            original = reconciliation["decision"]
+            reconciliation.update({"decision": "GO", "original_decision": original,
+                                   "override_applied": True, "override_reason": reason,
+                                   "override_source": "explicit external authorization",
+                                   "override_run_id": str(last), "override_expires_at": expires_at,
+                                   "override_marker": str(override_marker)})
+            atomic_json_write(override_marker, {"schema_version": 1, "run_id": str(last),
+                                                "original_decision": original, "reason": reason,
+                                                "applied_at": utcnow(), "expires_at": expires_at})
         atomic_json_write(folder / "reconciled-plan.json", reconciliation)
         if reconciliation["decision"] != "GO":
             raise GateError("monitor reconciliation is " + reconciliation["decision"] + "; codegen stopped")

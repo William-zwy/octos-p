@@ -6,6 +6,12 @@
   "codex": "ABSOLUTE_CODEX_EXECUTABLE",
   "codex_auth_mode": "login",
   "codex_env_allowlist": [],
+  "monitor_reconciliation_override": {
+    "enabled": false,
+    "run_id": null,
+    "reason": null,
+    "expires_at": null
+  },
   "env_file": "ABSOLUTE_EXTERNAL_ARC_ENV_FILE",
   "state_dir": "ABSOLUTE_EXTERNAL_STATE_DIRECTORY",
   "remote": "octos-p",

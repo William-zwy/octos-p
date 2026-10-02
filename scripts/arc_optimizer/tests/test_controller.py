@@ -416,6 +416,26 @@ class ControllerTests(unittest.TestCase):
         with self.assertRaises(mod.GateError):
             mod.codex_auth_mode({"codex_auth_mode": "invalid"})
 
+    def test_worker_monitor_override_is_run_bound_and_one_time(self):
+        root = self.ctl.store / "runs" / "run-fixture"
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "analysis.json").write_text(json.dumps({"decision": "modify"}), encoding="utf-8")
+        (root / "optimization-plan.json").write_text(json.dumps({"mode": "plan_only"}), encoding="utf-8")
+        self.ctl.state["last_run"] = "run-fixture"
+        self.ctl.c.update(execution_policy="agent_edit", allow_agent_edit=True,
+                          codegen_authorization={"enabled": False},
+                          monitor_reconciliation_override={"enabled": True, "run_id": "run-fixture",
+                                                          "reason": "fixture authorization", "expires_at": None})
+        with patch.object(self.ctl, "preflight", return_value=self.ctl.head):
+            with patch.object(self.ctl, "_codegen_authorization", return_value={"allowed_paths": ["arc/main.py"], "expires_at": "x"}):
+                with patch.object(self.ctl, "_create_codegen_worktree", side_effect=mod.GateError("stop after override")):
+                    with self.assertRaises(mod.GateError):
+                        self.ctl.worker()
+        marker = self.ctl.store / "monitor-overrides" / "run-fixture.json"
+        self.assertTrue(marker.is_file())
+        with self.assertRaises(mod.GateError):
+            self.ctl.worker()
+
     def test_run_path_injection_rejected(self):
         with self.assertRaises(mod.GateError):
             self.ctl.collect("../secrets")
