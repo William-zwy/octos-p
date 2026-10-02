@@ -88,6 +88,10 @@ ingest/context -> collect -> analyze -> plan -> [explicit agent_edit] -> CI/pack
 
 候选只落盘到外部 state 的 `rounds/<n>/request.json`、`result.json`、`candidate.patch` 和 `reconciled-plan.json`，状态停在 `candidate_review`，等待 Integrator 审查。Integrator 明确确认后执行 `approve`；控制器会再次核对父 SHA、patch SHA、allowlist、干净工作树和应用后 diff，随后进入 `candidate_sync`。该阶段不会自动打包、上传或创建 ARC Run。执行 `reconcile --run-id <id>` 可在已有两份监控报告时生成保守汇总。
 
+2026-10-02 修正：worker 可以只读加载全局必需的 `reliable-git-sync`，不因加载安全指令被拒绝；提交/拉取/推送及其他 Skill 动作仍不授权，worker 的 HEAD 必须保持原父提交。`candidate` 仅代表可审查的本地源码切片，不代表官方测试通过。schema 内所有对象均为 strict 对象，测试/构建记录使用显式字段。
+
+无论成功、拒绝还是超时，worker 工作树都保留供 Integrator 审查；校验前先生成 `worker.patch` 和 `worker-snapshot.json`，异常另存 `failure.json` 并把 journal 停为 `stopped`。未跟踪文件仍在原工作树中，snapshot 不授权删除它们。needs-evidence 留下的改动不能自动合入。原先“校验失败仍强制删除工作树”的路径已移除；后续清理必须先核对证据与文件归属，只允许普通 Git worktree remove。`allow_package=true` 才能进入打包，`allow_cloud_run=true` 才能记录 upload/run mutation intent 并发出请求；缺失、false 或字符串都不会被当作授权。
+
 CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，缺失如实列出。stdout/stderr 镜像不可双计；内部 implemented/wrote/verified 不等于官方通过。CLI 的 `token_cost_usd` 必须与实际返回的 currency 配对，不能按字段名猜美元。
 
 ## 中断恢复

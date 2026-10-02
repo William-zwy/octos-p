@@ -163,6 +163,17 @@ def _forbidden_codegen_path(path):
     )
 
 
+def validate_codegen_skills(records):
+    """Permit the required Git safety instructions, without granting actions."""
+    if not isinstance(records, list):
+        raise GateError("worker skill_invocations must be a list")
+    for record in records:
+        if not isinstance(record, dict) or record.get("status") not in {"used", "not_used"}:
+            raise GateError("invalid worker Skill record")
+        if record["status"] == "used" and record.get("skill") != "reliable-git-sync":
+            raise GateError("worker invoked an unauthorized Skill")
+
+
 def _monitor_file_candidates(state_root, run_id):
     root = Path(state_root) / "runs" / str(run_id)
     return root / "monitor-doc.json", root / "monitor-runtime.json"
@@ -1202,10 +1213,30 @@ class Controller:
         path = Path(path)
         if not path.exists():
             return
-        code, _, _ = self.command([self.c["git"], "-C", self.repo, "worktree", "remove", "--force", path],
+        if self.git("status", "--porcelain=v1", "--untracked-files=all", cwd=path):
+            raise GateError("codegen worktree has changes; preserve it for inspection")
+        code, _, _ = self.command([self.c["git"], "-C", self.repo, "worktree", "remove", path],
                                    timeout=180)
         if code:
             raise GateError("unable to remove disposable codegen worktree; preserve it for inspection")
+
+    def snapshot_codegen_worktree(self, path, folder, parent):
+        """Archive the diff before validation; untracked files remain in place."""
+        paths = self.changed_paths(path, parent)
+        code, diff_text, _ = self.command([self.c["git"], "-C", path, "diff", "--binary", parent],
+                                         cwd=path)
+        if code:
+            raise GateError("unable to snapshot codegen diff; preserve worktree")
+        payload = diff_text.encode("utf-8")
+        target = folder / "worker.patch"
+        target.write_bytes(payload)
+        snapshot = {"parent_sha": parent, "changed_files": sorted(paths),
+                    "patch": str(target), "diff_sha256": _sha256_bytes(payload),
+                    "worktree": str(path), "created_at": utcnow()}
+        atomic_json_write(folder / "worker-snapshot.json", snapshot)
+        self.state.update(worker_snapshot=str(folder / "worker-snapshot.json"),
+                          worktree_preserved=True)
+        return snapshot
 
     def worker(self):
         parent = self.preflight()
@@ -1266,6 +1297,8 @@ class Controller:
             "你在 disposable worktree 中工作；不要提交、拉取、推送、调用 ARC、获取凭据、发送消息或创建子任务。\n"
             "只能编辑 request.json 中的 allowed_paths，禁止 harness、任何官方/public tests、需求包、打包器和云端动作。\n"
             "以 analysis/plan 和监控汇总为唯一修改依据；未知保持 unknown，证据不足输出 needs_evidence。\n"
+            "candidate 表示本地源码候选，不表示官方通过；历史官方明细缺失本身不阻止通用源码切片。\n"
+            "可按全局要求只读加载 reliable-git-sync；这不授权 Git 提交/同步或其他 Skill 动作。\n"
             "输出必须严格符合 worker.schema.json，parent/plan/analysis hash 必须原样回填；tests/build 必须记录实际验证。\n"
             f"代码生成请求：{json.dumps(request, ensure_ascii=False)}\n"
             f"上下文文件：{json.dumps(self.c['context'], ensure_ascii=False)}\n"
@@ -1276,7 +1309,8 @@ class Controller:
         worktree = folder / "worktree"
         decision_path = folder / "decision.json"
         self.state.update(phase="worker_pending", parent=parent, worker_dir=str(folder),
-                          worktree=str(worktree), request=str(folder / "request.json"))
+                          worktree=str(worktree), request=str(folder / "request.json"),
+                          worker_snapshot=None, snapshot_error=None)
         self.save()
         created = False
         try:
@@ -1290,6 +1324,7 @@ class Controller:
                 timeout=self.c["worker_timeout_seconds"], cwd=worktree)
             (folder / "events.jsonl").write_text(self.safe(out), encoding="utf-8")
             (folder / "stderr.txt").write_text(self.safe(err), encoding="utf-8")
+            self.snapshot_codegen_worktree(worktree, folder, parent)
             if code:
                 raise GateError("Codex worker failed; inspect and preserve changes, no automatic repeat")
             decision = read_json(decision_path)
@@ -1302,8 +1337,9 @@ class Controller:
             if str(decision.get("plan_sha256", "")).lower() != plan_sha.lower() or \
                     str(decision.get("analysis_sha256", "")).lower() != analysis_sha.lower():
                 raise GateError("worker result analysis/plan binding mismatch")
-            if decision.get("skill_invocations"):
-                raise GateError("Skill invocation is forbidden in this codegen stage")
+            validate_codegen_skills(decision.get("skill_invocations"))
+            if self.git("rev-parse", "HEAD", cwd=worktree) != parent:
+                raise GateError("worker changed its parent commit; preserve for inspection")
             if not isinstance(decision.get("tests"), list) or not isinstance(decision.get("build"), dict):
                 raise GateError("worker result must include tests[] and build{}")
             if decision.get("decision") in {"stop", "needs_evidence"} and not decision.get("stop_reason"):
@@ -1339,8 +1375,6 @@ class Controller:
             decision["diff_sha256"] = diff_sha
             atomic_json_write(folder / "result.json", decision)
             if decision.get("decision") != "candidate":
-                if paths:
-                    raise GateError("non-candidate worker left changes")
                 self.state.update(phase="stopped", reason=decision.get("stop_reason") or decision.get("decision"),
                                   candidate_result=str(folder / "result.json"))
             else:
@@ -1348,9 +1382,26 @@ class Controller:
                                   candidate_result=str(folder / "result.json"), diff_sha256=diff_sha,
                                   patch=str(folder / "candidate.patch"))
             self.save()
+        except (GateError, OSError, ValueError, KeyError) as exc:
+            self.state.update(phase="stopped", reason=self.safe(str(exc)),
+                              worktree_preserved=bool(created and worktree.exists()))
+            if created and worktree.exists() and not self.state.get("worker_snapshot"):
+                try:
+                    self.snapshot_codegen_worktree(worktree, folder, parent)
+                except (GateError, OSError, ValueError, KeyError) as snapshot_error:
+                    self.state["snapshot_error"] = self.safe(str(snapshot_error))
+            atomic_json_write(folder / "failure.json", {
+                "parent_sha": parent, "plan_sha256": plan_sha, "analysis_sha256": analysis_sha,
+                "reason": self.state["reason"], "worktree": str(worktree),
+                "worktree_preserved": self.state["worktree_preserved"], "created_at": utcnow()})
+            self.save()
+            raise
         finally:
-            if created:
-                self._remove_codegen_worktree(worktree)
+            # Keep the workspace even after a rejected result or timeout. A
+            # snapshot is evidence, not permission to discard unknown files.
+            if created and worktree.exists():
+                self.state["worktree_preserved"] = True
+                self.save()
 
     def approve_candidate(self):
         """Apply a reviewed external patch and resume the serialized commit gate."""
@@ -1407,6 +1458,8 @@ class Controller:
         return True
 
     def package(self):
+        if self.c.get("allow_package") is not True:
+            raise GateError("allow_package must be explicitly true; no package created")
         self.guard()
         source = self.state["candidate"]["source_commit"]
         self.verify_sync(source)
@@ -1432,6 +1485,8 @@ class Controller:
         self.save()
 
     def mutate_once(self, operation, args):
+        if operation in {"upload", "run"} and self.c.get("allow_cloud_run") is not True:
+            raise GateError("allow_cloud_run must be explicitly true; no cloud mutation")
         # Journal BEFORE request. Unknown outcomes require explicit reconciliation.
         self.state["phase"] = operation + "_pending"
         self.save()

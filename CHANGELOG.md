@@ -3,10 +3,11 @@
 All notable changes to octos will be documented in this file.
 ## [Unreleased]
 
+- Fix ARC codegen strict output schemas, permit read-only loading of the required Git safety skill, preserve source worktrees and diffs on rejection or timeout, and require explicit package/cloud permissions before side effects. Archive the rejected first CLI codegen attempt as metadata only; the Agent draft was not integrated. Controller regressions: 53 passed.
 - Deploy a serialized ARC cloud optimization controller using pinned arcbench-cli and Codex exec: durable mutation intents, full paginated evidence, Git/CI/package identity gates, and updates to the existing HKT records. Paid runs stay disabled until the current budget, deadline and suite binding are supplied.
 - Add a deterministic post-collection analysis layer that writes `analysis.json`, separates platform facts from log observations and local manifests, preserves unknown evidence, and feeds bounded implementation guidance to the next Codex worker. Existing Run collection remains read-only.
 - Extend the ARC controller with metadata-only evidence ingest, branch context snapshots, legacy-run forensic reconstruction, and `optimization-plan.json`; default execution policy remains `plan_only` until Agent edits, packaging, and cloud runs are explicitly enabled.
-- Add an explicitly authorized, isolated codegen stage: the worker runs in a disposable worktree bound to the exact parent/plan/analysis hashes, emits a schema-v2 result and patch into external state, and stops at `candidate_review` for Integrator review. Missing or conflicting external monitor reports remain `NEEDS-EVIDENCE`; harness/tests/package/cloud actions and Skill invocations are rejected in this stage.
+- Add an explicitly authorized, isolated codegen stage: the worker runs in a disposable worktree bound to the exact parent/plan/analysis hashes, emits a schema-v2 result and patch into external state, and stops at `candidate_review` for Integrator review. Missing or conflicting external monitor reports remain `NEEDS-EVIDENCE`; harness/tests/package/cloud actions and other Skill invocations are rejected in this stage. The mandatory Git safety instructions may be loaded without authorizing worker Git mutations.
 - Add an explicit Integrator `approve` gate that applies a reviewed candidate patch only after parent, patch, path, and post-apply diff verification; expose `reconcile` and `approve` through the PowerShell launcher.
 
 ### ARC-Bench Agent

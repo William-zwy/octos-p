@@ -7,7 +7,17 @@
 目标分支：`codex/hkt-round345-integration`
 基线：`codex/urgent-bookstack-contract-fix-r2` @ `f10bd9f42429c09672c9a68b79f486c44cc41e9f`
 
-## 1. 最新决策
+## 2026-10-02：CLI 首轮代码生成审查与停止记录
+
+本轮在 `codex/hkt-cli-automation` / `235e` 独立推进，不合并 `aeb0` 分支。诊断输入为历史 Sheet Run `12b3dea74607`；代码生成父提交为 `6964fc817d96d2a62230e6d2ee2d5ea7acdc39c4`。当前预算为 `100 CNY`，截止 `2026-10-03 23:59` 北京时间，覆盖本轮原有预算/36h 表述；`hackathon--sheet` suite 仅是用户授权假设，平台身份仍未验证。
+
+Codex provider 实际完成了一次隔离代码生成，但返回 `needs_evidence`；Integrator 裁决 `NO-GO`。观测草稿仍可能将最终检查触顶后的 `None` 升级成通过，并改变 `0=off` 的限额行为，且没有证明跨阶段消费账本。因此 Agent 草稿未合入，未进入候选打包或平台执行；旧 Run 的 `1/100` 不能归因于本轮草稿。官方测试细节、平台 suite/task snapshot 身份继续 unknown。
+
+本轮已修正 CLI strict schema；进一步修正必需 Git 安全技能的只读加载、拒绝/超时结果的源码保全，以及打包/云端动作的显式授权检查。新回归测试 `53/53` 通过。原控制器错误清理了失败工作树；从事件日志取回的观测 diff 与 worker 声称的最终 hash 不同，不能冒充完整最终候选。完整文件大小、SHA、授权和审查边界见 [代码生成审查元数据](../evidence/arc-bench/automation/codegen-12b3dea74607-20261002.json)。原始日志/diff/输出留在仓库外。
+
+控制器现为 `stopped`，短期代码生成授权已关闭；一次性双监控例外已消费，保留原 `NEEDS-EVIDENCE`，不能继承给下一 Run。下一步须先针对零额度、连续预算账本及 `None` 不得判通过形成新切片，完成双监控复核后绑定新的 parent/plan/analysis SHA，重新生成并审查；不直接重置 journal 或重放旧授权。`allow_harness_edit/allow_tests_edit/allow_package/allow_cloud_run` 仍为 false。
+
+## 1. 历史决策（2026-09-30）
 
 用户已接受新分支名，并要求在方案形成后直接开始 Agent 修改。新的硬约束是：
 

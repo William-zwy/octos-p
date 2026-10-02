@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "run_id": "12b3dea74607",
+  "run_role": "historical diagnostic input, not candidate evaluation",
+  "branch": "codex/hkt-cli-automation",
+  "worker_parent_sha": "6964fc817d96d2a62230e6d2ee2d5ea7acdc39c4",
+  "plan_sha256": "51f2730d8cbd4cd3dfb9934d88c88d4c9e0eca0f8f6c204517cfa1526fadd33e",
+  "analysis_sha256": "d59efd7fa7bd1854b8418f13e8e22757dd6d6adb8dc4f04d362b153d34b75b50",
+  "worker_decision": "needs_evidence",
+  "integrator_decision": "NO-GO",
+  "controller_phase": "stopped",
+  "agent_changes_integrated": false,
+  "original_gate_failure": "blanket Skill prohibition conflicted with mandatory reliable-git-sync instructions",
+  "original_cleanup": "previous controller removed dirty worktree before saving candidate patch",
+  "observed_diff": {
+    "source": "events.jsonl item aggregated_output, observed Git diff",
+    "sha256": "d23f32dcf3bbdeefdf319ec9d2c464178028b7e6cf8d03ff2bda2b23a0183a1f",
+    "bytes": 15326,
+    "worker_reported_final_diff_sha256": "37f0d519dff7486c71e18d4e6fc699a6331d5570ad3f46be65d2e4283299f9f4",
+    "final_diff_identity_verified": false
+  },
+  "review_blockers": [
+    "observed final-check path can convert inconclusive None into test_passed after successful rehearsal",
+    "observed phase cap changes unlimited zero into cap one",
+    "observed budget allocator is recreated per turn; no continuous reservation ledger is proven"
+  ],
+  "authorization": {
+    "budget_cny": 100,
+    "deadline": "2026-10-03T23:59:00+08:00",
+    "suite_key": "hackathon--sheet",
+    "suite_provenance": "user-authorized hypothesis; platform identity unverified",
+    "allowed_agent_paths": ["arc/main.py", "arc/run_controls.py"],
+    "harness_edit": false,
+    "agent_tests_edit": false,
+    "package": false,
+    "cloud_run": false,
+    "short_lived_codegen_authorization_enabled_after_failure": false
+  },
+  "monitor_override": {
+    "run_id": "12b3dea74607",
+    "original_decision": "NEEDS-EVIDENCE",
+    "reason": "user authorized skipping missing monitor reports for this historical Run only",
+    "expires_at": "2026-10-03T23:59:00+08:00",
+    "consumed": true,
+    "applies_to_next_run": false
+  },
+  "worker_reported_checks": {
+    "main_helpers": "48 passed",
+    "run_controls": "2 passed",
+    "full_discovery": "119 passed, 3 failures, 1 skipped",
+    "baseline_failures_independently_verified": false
+  },
+  "cli_fix_validation": {
+    "controller_tests": {"passed": 53, "exit_code": 0},
+    "cloud_mutations_performed": false,
+    "official_task_execution_performed": false
+  },
+  "raw_not_copied": true,
+  "external_artifact_namespace": "arc-optimizer/private/state/rounds/001",
+  "external_artifacts": [
+    {"name": "request.json", "bytes": 1668, "sha256": "298d98759a34716d17217b954f8f693217d1c7d4faf6673bdf882dbd98e2f23a"},
+    {"name": "decision.json", "bytes": 2709, "sha256": "8ce6bde83aab55bd09083eacecdc494f5e72b7109328c9421c875eb7b0b92646"},
+    {"name": "events.jsonl", "bytes": 756494, "sha256": "4d7b174ea09e9eeb978f3d810cab46f677fbd79343344f1f0bd573c0d87f5dea"},
+    {"name": "stderr.txt", "bytes": 1316, "sha256": "196c57aef33c36e58dc5be90ed5095a7e8313d306a537ce25e22153aacef8d47"},
+    {"name": "reconciled-plan.json", "bytes": 823, "sha256": "b78ef75fe34777dc1600379b3ed0123ea9f9d7be162b9a4990dddfa316ea9359"},
+    {"name": "worker-diff-observed.patch", "bytes": 15326, "sha256": "d23f32dcf3bbdeefdf319ec9d2c464178028b7e6cf8d03ff2bda2b23a0183a1f"}
+  ]
+}

@@ -1,5 +1,13 @@
 # ARC-Bench 阶段 5 跨 Run 问题与优化决策台账
 
+## 2026-10-02 独立 CLI 代码生成裁决
+
+当前 CLI 分支为 `codex/hkt-cli-automation`，保留与 `aeb0` 各自维护的边界。本轮代码生成以父提交 `6964fc817d96d2a62230e6d2ee2d5ea7acdc39c4`、历史诊断 Run `12b3dea74607` 和绑定的分析/计划哈希执行；预算 `100 CNY`、截止 `2026-10-03T23:59:00+08:00`，suite 为用户授权假设，不是平台已验证身份。
+
+裁决：`NO-GO / AGENT_NOT_INTEGRATED`。worker 返回 `needs_evidence`；观测草稿存在最终检查触顶仍可转成通过、零额度语义变化和阶段账本未闭合的阻断项。旧控制器因必需安全技能被误禁而拒绝结果，并错误清理工作树；从日志恢复的观测 diff 与最终声明 SHA 不一致，只是观测证据，不能作为集成候选。不得把旧 `1/100` 归因于新草稿，官方失败明细和平台身份继续 unknown。
+
+本轮仅提交 CLI 修复、模拟安全测试和分析元数据：strict schema、只读必需技能、保全失败工作树及 diff、拒绝修改 worker 父提交、package/cloud 显式权限门禁。控制器测试 `53/53`、exit 0；原始输出在仓库外，索引见 [首轮代码生成记录](../evidence/arc-bench/automation/codegen-12b3dea74607-20261002.json)。当前 `stopped`、短期代码生成授权关闭；一次性监控例外已消费并保留原 `NEEDS-EVIDENCE`，下一 Run 不继承。重新生成前需修订切片验收、两份监控报告和新的 hash/TTL 授权；未修改正式 Agent、官方测试或需求包，未打包候选、上传或创建平台 Run。
+
 ## 2026-10-01 独立控制器部署补充
 
 用户授权部署 CLI 取证和 Codex 云端优化闭环；handoff `arc-cli-controller-deploy-20261001`，基线/父提交 `8f2af28713a336e90a61996dff21661ea3f30c70`，分支 `codex/hkt-cli-automation`，单写入工作区 `235e`。这项授权仅部署控制器，不变更原阶段 5 各线程的职责或自动派发权限。原 aeb0 Integrator 尚待停止交接。

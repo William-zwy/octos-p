@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 import zipfile
+from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -28,6 +29,7 @@ class FakeController(mod.Controller):
                   "competition": "fixture", "official_evaluation": True, "suite_key": "platform-suite",
                   "suite_provenance": "platform response", "requirements_file": "input.zip",
                   "execution_policy": "agent_edit",
+                  "allow_package": True, "allow_cloud_run": True,
                   "requirements_sha256": "", "worker_timeout_seconds": 60,
                   "allowed_paths": [mod.PLAN, mod.LOG, mod.REGISTER, mod.PROJECT_LOG, "arc/main.py"],
                   "context": [], "codex": "fake-codex", "model": "fixture", "task": "fixture--task"}
@@ -522,6 +524,147 @@ class ControllerTests(unittest.TestCase):
     def test_approve_requires_candidate_review(self):
         with self.assertRaises(mod.GateError):
             self.ctl.approve_candidate()
+
+    def test_schema_is_accepted_by_strict_object_contract(self):
+        schema = mod.read_json(MODULE.parent / "worker.schema.json")
+        def check(value):
+            if isinstance(value, dict):
+                if value.get("type") == "object":
+                    self.assertIs(value.get("additionalProperties"), False)
+                    self.assertEqual(set(value.get("required", [])), set(value.get("properties", {})))
+                for child in value.values():
+                    check(child)
+            elif isinstance(value, list):
+                for child in value:
+                    check(child)
+        check(schema)
+
+    def test_required_git_skill_does_not_authorize_other_skills(self):
+        mod.validate_codegen_skills([{"skill": "reliable-git-sync", "status": "used"}])
+        for records in (None, ["invalid"], [{"skill": "publish", "status": "used"}]):
+            with self.assertRaises(mod.GateError):
+                mod.validate_codegen_skills(records)
+
+    def test_package_requires_explicit_capability_before_any_work(self):
+        for value in (False, None, 1, "true"):
+            self.ctl.c["allow_package"] = value
+            with patch.object(self.ctl, "guard") as guard:
+                with self.assertRaises(mod.GateError):
+                    self.ctl.package()
+                guard.assert_not_called()
+        self.assertEqual(self.ctl.calls, [])
+
+    def test_cloud_capability_stops_before_journal_or_request(self):
+        self.ctl.c["allow_cloud_run"] = False
+        for operation in ("upload", "run"):
+            with self.assertRaises(mod.GateError):
+                self.ctl.mutate_once(operation, [operation, "fixture"])
+            self.assertEqual(self.ctl.state["phase"], "ready")
+            self.assertFalse(self.ctl.journal.exists())
+        self.assertEqual(self.ctl.calls, [])
+
+    def test_validated_step_cannot_package_when_disabled(self):
+        self.ctl.c["allow_package"] = False
+        self.ctl.state["phase"] = "validated"
+        with self.assertRaises(mod.GateError):
+            self.ctl.step()
+        self.assertEqual(self.ctl.state["phase"], "validated")
+        self.assertEqual(self.ctl.calls, [])
+
+    def _codegen_lifecycle_fixture(self, decision="candidate", unauthorized_skill=False, failed=False):
+        root = self.ctl.store / "runs/run-fixture"
+        root.mkdir(parents=True)
+        mod.atomic_json_write(root / "analysis.json", {"decision": "modify"})
+        mod.atomic_json_write(root / "optimization-plan.json", {"mode": "plan_only"})
+        self.ctl.state["last_run"] = "run-fixture"
+        self.ctl.c["git"] = "fixture-git"
+        diff = "diff --git a/arc/main.py b/arc/main.py\nfixture source delta\n"
+        def create(path, parent):
+            (path / "arc").mkdir(parents=True)
+            (path / "arc/main.py").write_text("worker changes\n")
+            (path / "unreported-scratch.txt").write_text("preserve even on rejection\n")
+        def command(argv, **kwargs):
+            if argv[0] == "fake-codex":
+                if failed == "timeout":
+                    raise mod.GateError("process unavailable or timed out: TimeoutExpired")
+                folder = Path(self.ctl.state["worker_dir"])
+                mod.atomic_json_write(folder / "decision.json", {
+                    "schema_version": 2, "decision": decision, "parent_sha": self.ctl.head,
+                    "plan_sha256": mod.sha256(root / "optimization-plan.json"),
+                    "analysis_sha256": mod.sha256(root / "analysis.json"),
+                    "diff_sha256": mod._sha256_bytes(diff.encode()),
+                    "changed_files": ["arc/main.py"], "tests": [], "build": {},
+                    "skill_invocations": [{"skill": "unauthorized" if unauthorized_skill else "reliable-git-sync",
+                                           "status": "used"}],
+                    "stop_reason": "insufficient evidence" if decision != "candidate" else None})
+                return (1 if failed else 0), "fixture events", "fixture stderr"
+            return 0, diff, ""
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(self.ctl, "_codegen_authorization", return_value={
+                "allowed_paths": ["arc/main.py"], "expires_at": "fixture"}))
+            stack.enter_context(patch.object(mod, "reconcile_monitor_inputs", return_value={"decision": "GO"}))
+            stack.enter_context(patch.object(self.ctl, "_create_codegen_worktree", side_effect=create))
+            stack.enter_context(patch.object(self.ctl, "changed_paths", return_value={"arc/main.py"}))
+            stack.enter_context(patch.object(self.ctl, "git", return_value=self.ctl.head))
+            stack.enter_context(patch.object(self.ctl, "command", side_effect=command))
+            cleanup = stack.enter_context(patch.object(self.ctl, "_remove_codegen_worktree"))
+            try:
+                self.ctl.worker()
+            finally:
+                cleanup.assert_not_called()
+
+    def test_rejected_worker_keeps_source_patch_and_stop_reason(self):
+        with self.assertRaisesRegex(mod.GateError, "unauthorized Skill"):
+            self._codegen_lifecycle_fixture(unauthorized_skill=True)
+        folder = Path(self.ctl.state["worker_dir"])
+        self.assertEqual(self.ctl.state["phase"], "stopped")
+        self.assertTrue((folder / "worker.patch").is_file())
+        self.assertTrue((folder / "failure.json").is_file())
+        self.assertEqual((folder / "worktree/arc/main.py").read_text(), "worker changes\n")
+        self.assertTrue((folder / "worktree/unreported-scratch.txt").is_file())
+        self.assertFalse((folder / "candidate.patch").exists())
+
+    def test_failed_worker_preserves_workspace_and_logs(self):
+        with self.assertRaisesRegex(mod.GateError, "Codex worker failed"):
+            self._codegen_lifecycle_fixture(failed=True)
+        folder = Path(self.ctl.state["worker_dir"])
+        self.assertEqual(self.ctl.state["phase"], "stopped")
+        self.assertEqual((folder / "events.jsonl").read_text(), "fixture events")
+        self.assertTrue((folder / "worktree/arc/main.py").is_file())
+
+    def test_timed_out_worker_preserves_partial_changes(self):
+        with self.assertRaisesRegex(mod.GateError, "TimeoutExpired"):
+            self._codegen_lifecycle_fixture(failed="timeout")
+        folder = Path(self.ctl.state["worker_dir"])
+        self.assertEqual(self.ctl.state["phase"], "stopped")
+        self.assertTrue((folder / "worker.patch").is_file())
+        self.assertTrue((folder / "worktree/unreported-scratch.txt").is_file())
+
+    def test_cleanup_refuses_dirty_worktree_without_discarding_files(self):
+        workspace = self.ctl.store / "dirty-workspace"
+        workspace.mkdir()
+        source = workspace / "unknown.txt"
+        source.write_text("preserve")
+        with patch.object(self.ctl, "git", return_value="?? unknown.txt"):
+            with patch.object(self.ctl, "command") as command:
+                with self.assertRaisesRegex(mod.GateError, "has changes"):
+                    self.ctl._remove_codegen_worktree(workspace)
+                command.assert_not_called()
+        self.assertEqual(source.read_text(), "preserve")
+
+    def test_needs_evidence_preserves_changes_without_accepting_candidate(self):
+        self._codegen_lifecycle_fixture(decision="needs_evidence")
+        folder = Path(self.ctl.state["worker_dir"])
+        self.assertEqual(self.ctl.state["phase"], "stopped")
+        self.assertTrue((folder / "result.json").is_file())
+        self.assertTrue((folder / "worktree/arc/main.py").is_file())
+
+    def test_candidate_with_required_skill_waits_for_integrator_and_keeps_workspace(self):
+        self._codegen_lifecycle_fixture()
+        self.assertEqual(self.ctl.state["phase"], "candidate_review")
+        self.assertTrue(self.ctl.state["worktree_preserved"])
+        self.assertTrue(Path(self.ctl.state["patch"]).is_file())
+        self.assertEqual(self.ctl.calls, [])
 
 
 if __name__ == "__main__":

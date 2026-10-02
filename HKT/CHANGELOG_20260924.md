@@ -354,3 +354,8 @@
 
 - CLI 自动化：为代码生成 worker 增加外部配置 `codex_auth_mode`、`codex_env_allowlist` 与一次性 `monitor_reconciliation_override`。provider 模式不再把 OAuth 登录状态误判为阻断；默认继续清理所有 API key，只有显式列出的中转 provider key（如 `RELAY_API_KEY`）会传入 `codex exec`，平台 ARC、Cookie、Token、Password、Secret 变量被拒绝，缺失凭据在启动前停止。监控例外精确绑定一个 Run、带 TTL、写入外部 marker，下一轮恢复双监控门禁。新增安全回归测试和运行手册说明。
 - 新增 `run-with-provider.ps1`，在同一父进程中注入并清理 `RELAY_API_KEY`，确保前台 worker 和后台 loop 继承同一凭据来源；Key 文件必须位于仓库外。
+
+- 完成首轮 Codex provider 隔离代码生成（诊断 Run `12b3dea74607`、父 SHA `6964fc817d96d2a62230e6d2ee2d5ea7acdc39c4`）；worker 返回 `needs_evidence`，Integrator 为 `NO-GO`，Agent 草稿未合入。记录观测到的预算触顶假通过、零额度语义和连续账本缺口，不把 worker 自报测试通过视为机制已验收。
+- 修复 CLI 输出 schema 的 strict object 契约；修复全局必需 `reliable-git-sync` 与 blanket Skill 禁令冲突，仅允许只读加载该技能，不授权 worker 提交/同步。拒绝、超时或 needs-evidence 后保留源码、未知文件、diff 和停止原因，移除强制清理路径；源码父 SHA 不允许被 worker 改变。
+- 为 package/upload/run 补显式布尔权限门禁；关闭权限时在打包或 mutation journal/API 请求前停止。53 项模拟控制器测试通过（exit 0），涵盖 strict schema、Skill 范围、拒绝/超时保全、干净清理与权限阶段。
+- 归档 [代码生成审查元数据](../evidence/arc-bench/automation/codegen-12b3dea74607-20261002.json)，只提交文件大小、SHA 和分析。旧清理已移除该次工作树；日志取回的观测 diff 未匹配 worker 声称的最终 SHA，保持未验证，不使用它集成。控制器停为 `stopped`，短期授权关闭，一次性监控例外已消费；未创建候选包、上传或新平台 Run。
