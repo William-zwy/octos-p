@@ -385,7 +385,7 @@ class ControllerTests(unittest.TestCase):
         self.ctl.paths = {mod.PLAN, mod.LOG, mod.REGISTER, "arc/main.py", "arc/public-tests/official.spec.ts"}
         with self.assertRaises(mod.GateError):
             self.ctl.worker()
-        self.assertEqual(self.ctl.state["phase"], "worker_pending")
+        self.assertEqual(self.ctl.state["phase"], "ready")
 
     def test_worker_missing_progress_records_rejected(self):
         self.ctl.paths = {"arc/main.py"}
@@ -433,10 +433,50 @@ class ControllerTests(unittest.TestCase):
                 self.ctl.api("branches/fixture")
                 self.ctl.api("branches/fixture")
                 self.assertEqual(command.call_count, 1)
-                request = urlopen.call_args.args[0]
+                # Tuple indexing is stable on Python 3.12's unittest.mock _Call.
+                request = urlopen.call_args[0][0]
                 self.assertEqual(request.get_header("Authorization"), "Bearer fixture-token")
-                self.assertEqual(command.call_args.kwargs["env"]["GCM_INTERACTIVE"], "Never")
+                self.assertEqual(command.call_args[1]["env"]["GCM_INTERACTIVE"], "Never")
                 self.assertNotIn("fixture-token", self.ctl.safe("fixture-token"))
+
+    def test_monitor_conflict_stays_needs_evidence(self):
+        root = self.ctl.store / "runs" / "run-fixture"
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "monitor-doc.json").write_text(json.dumps({"decision": "GO"}), encoding="utf-8")
+        (root / "monitor-runtime.json").write_text(json.dumps({"decision": "NO-GO"}), encoding="utf-8")
+        result = mod.reconcile_monitor_inputs(self.ctl.store, "run-fixture")
+        self.assertEqual(result["decision"], "NEEDS-EVIDENCE")
+        self.assertTrue(result["conflict"])
+
+    def test_monitor_missing_report_stays_needs_evidence(self):
+        root = self.ctl.store / "runs" / "run-fixture"
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "monitor-doc.json").write_text(json.dumps({"decision": "GO"}), encoding="utf-8")
+        result = mod.reconcile_monitor_inputs(self.ctl.store, "run-fixture")
+        self.assertEqual(result["decision"], "NEEDS-EVIDENCE")
+        self.assertIn("monitor-runtime.json", result["missing"])
+
+    def test_codegen_authorization_binds_hashes_and_ttl(self):
+        issued = datetime.now(timezone.utc)
+        self.ctl.c.update(
+            execution_policy="agent_edit", allow_agent_edit=True,
+            allow_harness_edit=False, allow_tests_edit=False,
+            allow_package=False, allow_cloud_run=False,
+            codegen_authorization={
+                "enabled": True, "parent_sha": self.ctl.head,
+                "plan_sha256": "a" * 64, "analysis_sha256": "b" * 64,
+                "issued_at": issued.isoformat(),
+                "expires_at": (issued + timedelta(minutes=30)).isoformat(),
+                "allowed_paths": ["arc/main.py"]},
+            authorization_ttl_seconds=3600)
+        result = self.ctl._codegen_authorization(self.ctl.head, "a" * 64, "b" * 64)
+        self.assertEqual(result["parent_sha"], self.ctl.head)
+        self.assertEqual(result["allowed_paths"], ["arc/main.py"])
+
+    def test_codegen_forbids_tests_and_harness_paths(self):
+        self.assertTrue(mod._forbidden_codegen_path("arc/tests/test_main.py"))
+        self.assertTrue(mod._forbidden_codegen_path("harness/runner.py"))
+        self.assertFalse(mod._forbidden_codegen_path("arc/main.py"))
 
 
 if __name__ == "__main__":

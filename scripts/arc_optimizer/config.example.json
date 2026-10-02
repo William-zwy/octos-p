@@ -24,6 +24,19 @@
   "allow_tests_edit": false,
   "allow_package": false,
   "allow_cloud_run": false,
+  "authorization_ttl_seconds": 3600,
+  "codegen_authorization": {
+    "enabled": false,
+    "issued_at": null,
+    "expires_at": null,
+    "parent_sha": null,
+    "plan_sha256": null,
+    "analysis_sha256": null,
+    "allowed_paths": []
+  },
+  "forbidden_paths": [
+    "harness", "official-tests", "public-tests", "requirements", "arc/tests"
+  ],
   "enabled": false,
   "budget_cny": null,
   "deadline": null,

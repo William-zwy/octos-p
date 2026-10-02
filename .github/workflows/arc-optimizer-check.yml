@@ -32,3 +32,16 @@ jobs:
         run: |
           python -m compileall -q arc scripts/arc_optimizer
           git diff --check
+      - name: Codegen result schema gate
+        run: |
+          python -c "import json; p=json.load(open('scripts/arc_optimizer/worker.schema.json', encoding='utf-8')); assert p['properties']['schema_version']['const'] == 2; assert set(['parent_sha','plan_sha256','analysis_sha256','diff_sha256','changed_files','tests','build','skill_invocations','stop_reason']).issubset(p['required'])"
+      - name: Agent package shape and offline import gate
+        env:
+          ARCBENCH_TASK_KEY: ci--package-smoke
+          ARCBENCH_TEST_SUITE_KEY: ci--offline-suite
+          ARCBENCH_REQUIREMENTS_SHA256: 0000000000000000000000000000000000000000000000000000000000000000
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/arc-agent-smoke.zip"
+          ./arc/pack.sh "$out"
+          python arc/package_gate.py validate --archive "$out"

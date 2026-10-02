@@ -2,6 +2,10 @@
 
 ## 2026-10-02：控制器续改与 CI 认证核验
 
+- 增加受显式授权保护的 CLI 代码生成编排：Codex worker 仅在 disposable Git worktree 中运行，父提交、plan/analysis SHA、TTL 和 `execution_policy=agent_edit` 绑定；真实 diff、结果 `changed_files`、diff SHA、测试/构建记录均由控制器复核。候选结果只写仓库外 state 并停在 `candidate_review`，不自动应用、打包或启动 Run。
+- 增加外部 `monitor-doc.json` / `monitor-runtime.json` 的保守 reconcile 输入；缺失、冲突或未知统一为 `NEEDS-EVIDENCE`。worker schema 升级为 v2，记录 parent/plan/analysis/diff identity、tests、build、Skill 调用和停止原因；本轮禁止 Skill 调用。
+- 控制器测试覆盖监控冲突、授权 hash/TTL、禁止路径和 Python 3.12 `unittest.mock` API 兼容性。
+
 - 修复控制器 GitHub 分支 SHA 查询：只在内存中读取既有 Git credential manager 的 HTTPS 凭据，Git fetch/push 仍使用固定 SSH 远程；token 不写状态、日志或仓库。
 - `doctor` 在 GitHub、ARC 或本地工具检查失败时返回退出码 2，并保留私有错误证据；只读状态/日志/下载传输失败最多重读一次，上传和创建 Run 仍不重试。
 - 新增 credential-manager、失败 Run 结果和只读重试测试。续改前后控制器模拟测试 `24` 项通过，退出码 0；CI 对提交 `5c304ef9b4e58a40a0f0a3b45a4b997398ab4901` 已成功。

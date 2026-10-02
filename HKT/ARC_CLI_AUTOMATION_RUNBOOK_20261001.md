@@ -77,6 +77,14 @@ ingest/context -> collect -> analyze -> plan -> [explicit agent_edit] -> CI/pack
 
 默认执行策略为 `plan_only`。`optimization-plan.json` 会记录 objective、P0/P1 findings、capability slice、验收合同、预算策略、停止条件和授权状态。未显式授权前，Agent 修改、Harness/测试修改、打包和云端 Run 都保持 `false`；已有 Run 的采集和分析可以继续执行。
 
+### 代码生成编排闸门
+
+代码生成阶段由控制器在仓库外创建 disposable Git worktree，并以集成工作区的精确父 SHA checkout。Codex 只接收 `request.json`、分析结果和监控汇总，集成工作区不会被 worker 写入。worker 的 `result.json` 必须绑定 `parent_sha`、`plan_sha256`、`analysis_sha256` 和真实 `diff_sha256`，并列出 `changed_files`、`tests`、`build`、`skill_invocations` 与 `stop_reason`；控制器会重新计算 worktree diff 并拒绝未声明或被禁止的路径。
+
+代码生成必须同时满足外部配置中的 `execution_policy=agent_edit`、`allow_agent_edit=true`、`codegen_authorization.enabled=true`，且授权绑定当前父提交、plan/analysis 文件 SHA 和带时区 TTL。`allow_harness_edit`、`allow_tests_edit`、`allow_package`、`allow_cloud_run` 在此阶段必须为 `false`。缺少或冲突的 `monitor-doc.json`、`monitor-runtime.json` 会被汇总为 `NEEDS-EVIDENCE`；控制器不启动监控子进程，也不会在该状态下生成代码。
+
+候选只落盘到外部 state 的 `rounds/<n>/request.json`、`result.json`、`candidate.patch` 和 `reconciled-plan.json`，状态停在 `candidate_review`，等待 Integrator 审查和最终提交。该阶段不会自动应用 patch、打包、上传或创建 ARC Run。执行 `reconcile --run-id <id>` 可在已有两份监控报告时生成保守汇总。
+
 CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，缺失如实列出。stdout/stderr 镜像不可双计；内部 implemented/wrote/verified 不等于官方通过。CLI 的 `token_cost_usd` 必须与实际返回的 currency 配对，不能按字段名猜美元。
 
 ## 中断恢复
