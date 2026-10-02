@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Config,
-    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'step', 'loop')][string]$Mode = 'doctor',
+    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'step', 'loop')][string]$Mode = 'doctor',
     [string]$RunId = '',
     [string]$SourceDir = '',
     [string]$Branch = '',
@@ -27,6 +27,10 @@ if ($Mode -eq 'ingest') {
 if ($Mode -eq 'context') {
     if (-not $Branch) { throw 'context requires -Branch' }
     $arguments += @('--branch', $Branch)
+}
+if ($Mode -eq 'reconcile') {
+    if (-not $RunId) { throw 'reconcile requires -RunId' }
+    $arguments += @('--run-id', $RunId)
 }
 if ($Background) {
     if ($Mode -ne 'loop') { throw 'Background is for loop only' }

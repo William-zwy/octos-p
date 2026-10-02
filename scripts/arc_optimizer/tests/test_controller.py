@@ -478,6 +478,10 @@ class ControllerTests(unittest.TestCase):
         self.assertTrue(mod._forbidden_codegen_path("harness/runner.py"))
         self.assertFalse(mod._forbidden_codegen_path("arc/main.py"))
 
+    def test_approve_requires_candidate_review(self):
+        with self.assertRaises(mod.GateError):
+            self.ctl.approve_candidate()
+
 
 if __name__ == "__main__":
     unittest.main()

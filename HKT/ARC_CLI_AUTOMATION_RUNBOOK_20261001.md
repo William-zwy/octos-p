@@ -83,7 +83,7 @@ ingest/context -> collect -> analyze -> plan -> [explicit agent_edit] -> CI/pack
 
 代码生成必须同时满足外部配置中的 `execution_policy=agent_edit`、`allow_agent_edit=true`、`codegen_authorization.enabled=true`，且授权绑定当前父提交、plan/analysis 文件 SHA 和带时区 TTL。`allow_harness_edit`、`allow_tests_edit`、`allow_package`、`allow_cloud_run` 在此阶段必须为 `false`。缺少或冲突的 `monitor-doc.json`、`monitor-runtime.json` 会被汇总为 `NEEDS-EVIDENCE`；控制器不启动监控子进程，也不会在该状态下生成代码。
 
-候选只落盘到外部 state 的 `rounds/<n>/request.json`、`result.json`、`candidate.patch` 和 `reconciled-plan.json`，状态停在 `candidate_review`，等待 Integrator 审查和最终提交。该阶段不会自动应用 patch、打包、上传或创建 ARC Run。执行 `reconcile --run-id <id>` 可在已有两份监控报告时生成保守汇总。
+候选只落盘到外部 state 的 `rounds/<n>/request.json`、`result.json`、`candidate.patch` 和 `reconciled-plan.json`，状态停在 `candidate_review`，等待 Integrator 审查。Integrator 明确确认后执行 `approve`；控制器会再次核对父 SHA、patch SHA、allowlist、干净工作树和应用后 diff，随后进入 `candidate_sync`。该阶段不会自动打包、上传或创建 ARC Run。执行 `reconcile --run-id <id>` 可在已有两份监控报告时生成保守汇总。
 
 CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，缺失如实列出。stdout/stderr 镜像不可双计；内部 implemented/wrote/verified 不等于官方通过。CLI 的 `token_cost_usd` 必须与实际返回的 currency 配对，不能按字段名猜美元。
 

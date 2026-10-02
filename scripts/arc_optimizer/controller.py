@@ -1275,6 +1275,46 @@ class Controller:
             if created:
                 self._remove_codegen_worktree(worktree)
 
+    def approve_candidate(self):
+        """Apply a reviewed external patch and resume the serialized commit gate."""
+        if self.state.get("phase") != "candidate_review":
+            raise GateError("no candidate is awaiting Integrator approval")
+        parent = self.state.get("parent")
+        if not parent or self.git("rev-parse", "HEAD") != parent:
+            raise GateError("candidate parent SHA no longer matches integration HEAD")
+        self.preflight()
+        if self.changed_paths():
+            raise GateError("integration worktree is not clean; preserve and reconcile manually")
+        patch_path = Path(self.state.get("patch", ""))
+        if not patch_path.is_file():
+            raise GateError("candidate patch is missing")
+        patch_bytes = patch_path.read_bytes()
+        expected = str(self.state.get("diff_sha256", "")).lower()
+        if not expected or _sha256_bytes(patch_bytes).lower() != expected:
+            raise GateError("candidate patch SHA does not match the reviewed result")
+        try:
+            patch_text = patch_bytes.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise GateError("candidate patch is not UTF-8 text") from exc
+        check = [self.c["git"], "-C", self.repo, "apply", "--check", "--whitespace=error", "-"]
+        code, _, _ = self.command(check, prompt=patch_text, timeout=120)
+        if code:
+            raise GateError("candidate patch no longer applies cleanly")
+        apply = [self.c["git"], "-C", self.repo, "apply", "--whitespace=error", "-"]
+        code, _, _ = self.command(apply, prompt=patch_text, timeout=120)
+        if code:
+            raise GateError("candidate patch application failed")
+        actual = self.changed_paths()
+        expected_paths = set(self.state.get("changed_files") or [])
+        if actual != expected_paths:
+            raise GateError("applied candidate paths differ from reviewed result")
+        code, diff_text, _ = self.command([self.c["git"], "-C", self.repo, "diff", "--binary", parent], timeout=120)
+        if code or _sha256_bytes(diff_text.encode("utf-8")).lower() != expected:
+            raise GateError("applied candidate diff SHA does not match reviewed result")
+        self.state.update(phase="candidate_sync", approved_at=utcnow())
+        self.save()
+        return self.state
+
     def validate_ci(self, source):
         data = self.api("actions/workflows/arc-optimizer-check.yml/runs?head_sha=" + source + "&per_page=20")
         runs = [item for item in data.get("workflow_runs", [])
@@ -1502,6 +1542,7 @@ def main(argv=None):
     context.add_argument("--branch", required=True)
     reconcile = sub.add_parser("reconcile", help="reconcile external monitor reports without starting monitors")
     reconcile.add_argument("--run-id", required=True)
+    sub.add_parser("approve", help="apply a reviewed codegen patch and resume commit gates")
     sub.add_parser("step")
     loop = sub.add_parser("loop")
     loop.add_argument("--max-steps", type=int, default=10000)
@@ -1527,6 +1568,8 @@ def main(argv=None):
                 output = ctl.context_snapshot(args.branch)
             elif args.command == "reconcile":
                 output = ctl.reconcile(args.run_id)
+            elif args.command == "approve":
+                output = ctl.approve_candidate()
             elif args.command == "step":
                 output = ctl.step()
             else:
