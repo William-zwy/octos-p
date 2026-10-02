@@ -2,6 +2,8 @@
 
 ## 2026-10-02 独立 CLI 代码生成裁决
 
+第二次尝试 `001-attempt-002`：连续性/身份 GO，源码合入 NO-GO。父提交 `e4a84c8ba01cf54f0c4342a5c3ff1cbf90104a09` 的 CI 成功；显式 resume 保存旧 journal 原始字节/哈希并保留费用与 round，双新监控绑定实时计划/分析，旧六件证据不变；完整候选 diff 已绑定 `6982e8224be185444da0ab300d4391419d9b5a3536b5580d2853f0972a473e2a`。已有 helper50项通过，但独立完整性5项出现4次失败，预算4项出现2项失败：遗漏节点假通过、codegen写后旧True残留、终结开销侵占verify及零额度语义缺口均阻断。下一切片须统一完整验收、真实source delta失效、明确scope/phase和预留开销；保持两文件 allowlist，不修改测试或 Harness，不开启打包/云端。按用户异常先停要求已 stopped、授权关闭，保留工作树；[详见元数据和修复清单](../evidence/arc-bench/automation/codegen-12b3dea74607-attempt002-20261002.json)。worker自报检查与独立验收分开；正式Agent未改，历史分数不归因于本候选。
+
 续接决策：用户已要求继续并保留步骤连续性；批准先完成显式 resume-codegen 和 attempt 隔离，再绑定新 parent/plan/analysis/TTL、双监控 GO 后生成新局部候选。续接归档旧 journal 原始字节/哈希，不重置 round/累计成本，不复用旧授权或 override；worker 读取与授权哈希一致的实时文件。59 项控制器合成测试、语法/diff 检查通过；前一修复的 CI 36971414191 成功。新 Agent 候选仍待生成/独立验证，不开启打包或云端动作。
 
 当前 CLI 分支为 `codex/hkt-cli-automation`，保留与 `aeb0` 各自维护的边界。本轮代码生成以父提交 `6964fc817d96d2a62230e6d2ee2d5ea7acdc39c4`、历史诊断 Run `12b3dea74607` 和绑定的分析/计划哈希执行；预算 `100 CNY`、截止 `2026-10-03T23:59:00+08:00`，suite 为用户授权假设，不是平台已验证身份。

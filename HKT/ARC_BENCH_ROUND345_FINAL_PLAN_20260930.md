@@ -9,6 +9,16 @@
 
 ## 2026-10-02：CLI 首轮代码生成审查与停止记录
 
+### 第二次尝试：证据连续性 GO，候选 NO-GO
+
+CLI 续接修复提交 `e4a84c8ba01cf54f0c4342a5c3ff1cbf90104a09` 三方 SHA 一致，[CI 36972752143](https://github.com/William-zwy/octos-p/actions/runs/36972752143) 全部成功。`resume-000001` 保留旧 stopped journal 原始字节/SHA及 round/费用；旧 `rounds/001` 六件证据再次核验不变。新双监控绑定 plan `e4edc1fcb563de27804c54acca343e8ec0a7eebd168940fba3b66ae6129b19f2`、analysis `d59efd7fa7bd1854b8418f13e8e22757dd6d6adb8dc4f04d362b153d34b75b50`，旧 override 关闭；CLI 实际使用中转 provider 在独立 `001-attempt-002` 生成两个允许文件的候选，未复用旧补丁。
+
+补丁 `17069` 字节，实际与声明 SHA 一致：`6982e8224be185444da0ab300d4391419d9b5a3536b5580d2853f0972a473e2a`。证据监控裁决连续性 GO，源码审查 NO-GO：full-suite 非空但遗漏节点仍被判 True；codegen 在 turn 后写文件未使旧 True 失效；终结请求侵占 verify 预留；部分显式 0 被变为有限额度；默认 skeleton28 被缩为21。另需纠正写事件代替实际源码 delta、隐式 scope/phase 和 cap 历史传播。
+
+Integrator 实测：已有非业务 helper `50/50`、exit0；仓库外完整性用例5项，4次失败（含遗漏节点原 None/False 两个 subtest）；预算用例4项，2项失败，均 exit1。两组测试未执行真实模型、业务构建、题目或官方测试。worker 的语法/导入/helper断言通过只作为其报告保留，不替代上述独立验收。CLI token usage 已记录，provider 未提供 CNY 费用，不能以已记录平台成本0代表总费用。
+
+按用户此前“出现意外情况，反馈并停下寻求帮助”要求，流程已停止并关闭短期授权。候选源码、补丁、request/result、事件、恢复记录及下一版修复清单留在仓库外；仓库只同步[分析与元数据](../evidence/arc-bench/automation/codegen-12b3dea74607-attempt002-20261002.json)。正式 Agent 未合入，未打包候选、上传或启动 Run；当前官方身份/失败明细仍 unknown。下一次须明确恢复，使用新 parent/plan/analysis/TTL、双 GO 和独立 attempt，先使冻结负向验收用例通过，再决定合入。
+
 ### 连续性修复与新切片准备
 
 用户再次授权继续 Agent 修改，并要求步骤连续。先修复 CLI 续接：`resume-codegen` 验证新的父提交、plan/analysis SHA、TTL 和两份同身份 GO，保留旧 journal 原始字节及 SHA、停止原因、round/成本；每次代码生成使用独立 attempt，不覆盖 `rounds/001`。以已哈希的 plan/analysis 文件作为 worker 输入，避免 summary 缓存与新授权错配。59 项合成控制器测试通过、Python/PowerShell 语法和 diff 检查 exit 0；前一 CI 修复提交 `001323193af245b3b338f67ecfb366583e24dd32` 的 [CI 36971414191](https://github.com/William-zwy/octos-p/actions/runs/36971414191) 全部成功。

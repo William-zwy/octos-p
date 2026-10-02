@@ -3,6 +3,7 @@
 All notable changes to octos will be documented in this file.
 ## [Unreleased]
 
+- Archive the second isolated ARC codegen attempt without integrating its Agent draft. Evidence continuity and 50 existing helper tests pass, but independent completeness and budget checks reject the candidate; preserve its worktree and disable further generation pending the user's requested exception handoff.
 - Add an explicit ARC codegen resume gate with a preserved journal, fresh monitor/hash/TTL bindings, separate retry attempts, and authoritative plan inputs; retain costs and failed evidence across retries. Synthetic controller checks: 59 passed. Agent generation and cloud actions remain separate stages.
 - Fix ARC codegen strict output schemas, permit read-only loading of the required Git safety skill, preserve source worktrees and diffs on rejection or timeout, and require explicit package/cloud permissions before side effects. Archive the rejected first CLI codegen attempt as metadata only; the Agent draft was not integrated. Controller regressions: 53 passed.
 - Quote the ARC optimizer CI smoke requirements digest so YAML preserves its 64 hexadecimal characters instead of converting it to numeric zero; keep the package identity gate enforced.
