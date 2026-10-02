@@ -77,6 +77,15 @@ class CampaignTests(unittest.TestCase):
             self.assertEqual(sheet["status"], "completed")
             self.assertEqual(sheet["state_dir"], str(task_dir))
 
+    def test_task_config_switches_task_identity_without_mutating_base(self):
+        base = {"task": "hackathon--sheet", "task_requirements_sha256": "old",
+                "estimated_run_cny": 25, "suite_key": None}
+        task = mod.task_map(self.campaign)["hackathon--github-stage-1"]
+        projected = mod.task_config(base, task)
+        self.assertEqual(projected["task"], "hackathon--github-stage-1")
+        self.assertEqual(projected["task_requirements_sha256"], task["requirements_sha256"])
+        self.assertEqual(base["task"], "hackathon--sheet")
+
     def test_failed_probe_is_retryable_but_does_not_open_next_stage(self):
         task = mod.task_map(self.campaign)["hackathon--sheet"]
         retry = mod.evaluate_probe(task, {"status": "FAILED", "score": 0}, attempt=1)

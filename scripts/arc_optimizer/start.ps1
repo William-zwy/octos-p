@@ -1,12 +1,13 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Config,
-    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'resume-codegen', 'campaign-validate', 'campaign-status', 'step', 'loop')][string]$Mode = 'doctor',
+    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'resume-codegen', 'campaign-validate', 'campaign-status', 'campaign-loop', 'step', 'loop')][string]$Mode = 'doctor',
     [string]$RunId = '',
     [string]$SourceDir = '',
     [string]$Branch = '',
     [switch]$MetadataOnly,
-    [switch]$Background
+    [switch]$Background,
+    [int]$MaxSteps = 10000
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -24,6 +25,9 @@ if ($Mode -eq 'ingest') {
     if (-not $MetadataOnly) { throw 'ingest requires -MetadataOnly; raw files are never copied' }
     $arguments += @('--run-id', $RunId, '--source-dir', ([System.IO.Path]::GetFullPath($SourceDir)), '--metadata-only')
 }
+if ($Mode -eq 'campaign-loop') {
+    $arguments += @('--max-steps', $MaxSteps)
+}
 if ($Mode -eq 'campaign-status') {
     $arguments += @('--campaign-file', ([System.IO.Path]::GetFullPath($settings.campaign_file)), '--state-dir', ([System.IO.Path]::GetFullPath($settings.state_dir)))
 }
@@ -36,7 +40,7 @@ if ($Mode -eq 'reconcile') {
     $arguments += @('--run-id', $RunId)
 }
 if ($Background) {
-    if ($Mode -ne 'loop') { throw 'Background is for loop only' }
+    if ($Mode -notin @('loop', 'campaign-loop')) { throw 'Background is for loop or campaign-loop only' }
     if (-not $settings.enabled) { throw 'Loop is disabled; fill budget, deadline, suite identity first' }
     # Quote each path for Start-Process on Windows; no secret values in arguments.
     $quoted = $arguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }

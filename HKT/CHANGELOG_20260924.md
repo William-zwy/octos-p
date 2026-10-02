@@ -5,6 +5,7 @@
 - 每轮 `collect/analyze` 会比较上一版优化执行计划，生成带 `plan_version`、父计划 SHA 和 `plan_comparison` 的新计划，并在 Run 私有目录保存历史版本。worker request 绑定当前计划版本；计划决策不是 `modify` 时拒绝代码修改。
 - Campaign 任务增加短探针门禁：失败会保留证据并返回同一阶段重试，只有达到状态、分数和尝试次数条件后才开放下一阶段；达到上限后进入 blocked。
 - Campaign 状态命令现在能区分 `completed`、`probe_failed`、`retryable` 和 `blocked`，阶段依赖不会因一次失败提前放行。
+- 新增 `campaign-loop` 串行调度入口：从 `eligible_stages` 选择当前任务，失败短探针回到同一 task，阶段通过后才选择下一个 task；调度器共享单写入锁，不会绕过 Controller 的付费和授权门禁。
 
 ## 2026-10-02：补齐多任务预算与阶段状态门禁
 

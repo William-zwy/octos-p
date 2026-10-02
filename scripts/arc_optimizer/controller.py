@@ -28,12 +28,12 @@ SCRIPT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_ROOT))
 try:
     from campaign import (CampaignError, budget_decision, campaign_status as read_campaign_status,
-                      evaluate_probe, load_campaign, task_map, task_state_dir,
+                      evaluate_probe, load_campaign, task_config, task_map, task_state_dir,
                       validate_task_requirements_binding)
 except ImportError:  # pragma: no cover - package import fallback
     from scripts.arc_optimizer.campaign import (CampaignError, budget_decision,
                       campaign_status as read_campaign_status, evaluate_probe, load_campaign,
-                      task_map, task_state_dir, validate_task_requirements_binding)
+                      task_config, task_map, task_state_dir, validate_task_requirements_binding)
 
 sys.path.insert(0, str(ROOT / "arc"))
 from run_controls import atomic_json_write
@@ -147,6 +147,14 @@ def _hash_json_file(path):
     if not path.is_file():
         raise GateError("required JSON artifact is missing: " + path.name)
     return sha256(path)
+
+
+def _path_is_within(path, root):
+    try:
+        Path(path).resolve().relative_to(Path(root).resolve())
+        return True
+    except ValueError:
+        return False
 
 
 def _safe_relative_paths(paths):
@@ -839,7 +847,7 @@ class Controller:
             except CampaignError as exc:
                 raise GateError(str(exc)) from exc
         self.env_file = Path(config["env_file"]).resolve()
-        if self.global_store.is_relative_to(self.repo) or self.env_file.is_relative_to(self.repo):
+        if _path_is_within(self.global_store, self.repo) or _path_is_within(self.env_file, self.repo):
             raise GateError("credentials and state must be outside the repository")
         if self.repo != ROOT:
             raise GateError("execute the controller from its intended checkout")
@@ -1917,6 +1925,45 @@ def normalize(status, cursor, files, candidate, identity_config=None):
     }
 
 
+def run_campaign_loop(base_config, max_steps=10000):
+    """Run eligible campaign tasks serially, retrying failed probes in place."""
+    campaign_path = Path(base_config.get("campaign_file", "")).resolve()
+    campaign = load_campaign(campaign_path)
+    base_controller = Controller(base_config)
+    common = Path(base_controller.git("rev-parse", "--git-path", "arc-optimizer-lock"))
+    if not common.is_absolute():
+        common = base_controller.repo / common
+    campaign_lock = base_controller.global_store / "campaigns" / campaign["campaign_id"]
+    events = []
+    steps = 0
+    with writer_lock(common), writer_lock(campaign_lock):
+        while steps < max_steps:
+            status = read_campaign_status(campaign, base_controller.global_store)
+            eligible = status.get("eligible_stages") or []
+            if not eligible:
+                blocked = [item for item in status["tasks"] if item["status"] in {"blocked", "probe_failed"}
+                           and not item.get("retryable")]
+                return {"status": "blocked" if blocked else "completed", "steps": steps,
+                        "eligible_stages": [], "tasks": status["tasks"], "events": events}
+            stage = eligible[0]
+            spec = next(item for item in campaign["tasks"] if item["stage"] == stage)
+            controller = Controller(task_config(base_config, spec))
+            while steps < max_steps and controller.state["phase"] not in {"stage_complete", "stopped"}:
+                controller.step()
+                steps += 1
+                events.append({"stage": stage, "task_key": spec["task_key"], "phase": controller.state["phase"],
+                               "round": controller.state.get("round", 0),
+                               "run_id": controller.state.get("candidate", {}).get("run_id")})
+                if controller.state["phase"] in {"running", "ci_wait"}:
+                    time.sleep(max(1, controller.c.get("poll_seconds", 60)))
+            if controller.state["phase"] == "stopped":
+                return {"status": "blocked", "steps": steps, "stage": stage,
+                        "reason": controller.state.get("reason", "task stopped"), "events": events}
+        return {"status": "max_steps", "steps": steps,
+                "eligible_stages": read_campaign_status(campaign, base_controller.global_store).get("eligible_stages", []),
+                "events": events}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, help="external JSON config (never secrets in arguments)")
@@ -1944,6 +1991,8 @@ def main(argv=None):
     campaign_status = sub.add_parser("campaign-status", help="show task-isolated campaign state without side effects")
     campaign_status.add_argument("--campaign-file", required=True)
     campaign_status.add_argument("--state-dir", required=True)
+    campaign_loop = sub.add_parser("campaign-loop", help="run eligible campaign tasks serially with probe retries")
+    campaign_loop.add_argument("--max-steps", type=int, default=10000)
     loop = sub.add_parser("loop")
     loop.add_argument("--max-steps", type=int, default=10000)
     args = parser.parse_args(argv)
@@ -1967,7 +2016,12 @@ def main(argv=None):
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
     try:
-        ctl = Controller(read_json(args.config))
+        config = read_json(args.config)
+        if args.command == "campaign-loop":
+            output = run_campaign_loop(config, args.max_steps)
+            print(json.dumps(output, ensure_ascii=False, indent=2))
+            return 2 if output.get("status") == "blocked" else 0
+        ctl = Controller(config)
         # One lock per checkout as well as state directory; separate configs cannot bypass it.
         common = Path(ctl.git("rev-parse", "--git-path", "arc-optimizer-lock"))
         if not common.is_absolute():

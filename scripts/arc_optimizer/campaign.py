@@ -288,6 +288,21 @@ def eligible_stages(campaign: dict, statuses: dict[str, str]) -> list[str]:
     return result
 
 
+def task_config(base_config: dict, task: dict) -> dict:
+    """Project one campaign task into a Controller config without mutating the base."""
+    result = dict(base_config)
+    result.update({
+        "competition": task["competition"],
+        "task": task["task_key"],
+        "task_requirements_sha256": task["requirements_sha256"],
+        "platform_identity_mode": task["identity_mode"],
+        "suite_key": task.get("suite_key"),
+        "suite_provenance": task.get("suite_provenance"),
+        "estimated_run_cny": task.get("estimated_run_cny", base_config.get("estimated_run_cny")),
+    })
+    return result
+
+
 def validate_task_requirements_binding(config: dict, task: dict) -> None:
     """Reject a single-task config that does not match its campaign registry."""
     _require(config.get("competition") == task["competition"], "competition does not match campaign task")

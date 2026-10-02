@@ -153,3 +153,13 @@ python scripts/arc_optimizer/controller.py `
 每次 `collect` 或 `analyze` 完成后，Controller 会把新证据与上一版 `optimization-plan.json` 对照，生成新的 `plan_version`、`supersedes_plan_sha256` 和 `plan_comparison`，并把版本保存到 Run 私有目录的 `plan-history/`。代码 Agent 的 worker request 会携带当前计划版本和差异；计划的 `decision` 不是 `modify` 时，worker 会拒绝修改代码。
 
 Campaign 任务的 `short_probe` 定义通过状态、最低分数和最大尝试次数。短探针失败时，状态变为 `probe_failed`，当前阶段仍可重试，下一轮会回到证据分析和代码修改；只有通过短探针才变为 `eligible_for_next_stage`，并开放依赖它的下一阶段。达到最大尝试次数后进入 `blocked`，不会自动创建新的 Run。
+需要让 Campaign 自动串行推进时，使用：
+
+```powershell
+python scripts/arc_optimizer/controller.py `
+  --config scripts/arc_optimizer/config.json `
+  campaign-loop `
+  --max-steps 10000
+```
+
+调度器每次只选择 `eligible_stages` 的第一个任务；短探针失败会再次选择当前任务，通过后才选择下一个阶段。它不会绕过 Controller 的授权、预算、身份或候选审查门禁。
