@@ -9,6 +9,12 @@
 
 ## 2026-10-02：CLI 首轮代码生成审查与停止记录
 
+### 连续性修复与新切片准备
+
+用户再次授权继续 Agent 修改，并要求步骤连续。先修复 CLI 续接：`resume-codegen` 验证新的父提交、plan/analysis SHA、TTL 和两份同身份 GO，保留旧 journal 原始字节及 SHA、停止原因、round/成本；每次代码生成使用独立 attempt，不覆盖 `rounds/001`。以已哈希的 plan/analysis 文件作为 worker 输入，避免 summary 缓存与新授权错配。59 项合成控制器测试通过、Python/PowerShell 语法和 diff 检查 exit 0；前一 CI 修复提交 `001323193af245b3b338f67ecfb366583e24dd32` 的 [CI 36971414191](https://github.com/William-zwy/octos-p/actions/runs/36971414191) 全部成功。
+
+下一源码切片仍仅允许 `arc/main.py`、`arc/run_controls.py`：保持 0=off，跨阶段累计实际请求消费并保留 verify 额度，正额度用尽与关闭限额分开；None、触顶、模型 verified、启动 rehearsal 不得单独产生通过，只有独立验收给出 True。两监控需绑定本次真实 parent 和修订计划；旧 override 已消费不重用。此条仅记录准备，不称 Agent 已修复；官方身份和失败明细仍 unknown，打包/上传/新 Run 保持关闭。
+
 本轮在 `codex/hkt-cli-automation` / `235e` 独立推进，不合并 `aeb0` 分支。诊断输入为历史 Sheet Run `12b3dea74607`；代码生成父提交为 `6964fc817d96d2a62230e6d2ee2d5ea7acdc39c4`。当前预算为 `100 CNY`，截止 `2026-10-03 23:59` 北京时间，覆盖本轮原有预算/36h 表述；`hackathon--sheet` suite 仅是用户授权假设，平台身份仍未验证。
 
 Codex provider 实际完成了一次隔离代码生成，但返回 `needs_evidence`；Integrator 裁决 `NO-GO`。观测草稿仍可能将最终检查触顶后的 `None` 升级成通过，并改变 `0=off` 的限额行为，且没有证明跨阶段消费账本。因此 Agent 草稿未合入，未进入候选打包或平台执行；旧 Run 的 `1/100` 不能归因于本轮草稿。官方测试细节、平台 suite/task snapshot 身份继续 unknown。

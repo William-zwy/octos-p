@@ -575,7 +575,9 @@ class ControllerTests(unittest.TestCase):
         root = self.ctl.store / "runs/run-fixture"
         root.mkdir(parents=True)
         mod.atomic_json_write(root / "analysis.json", {"decision": "modify"})
-        mod.atomic_json_write(root / "optimization-plan.json", {"mode": "plan_only"})
+        mod.atomic_json_write(root / "optimization-plan.json", {"mode": "plan_only", "objective": "live-plan"})
+        mod.atomic_json_write(root / "summary.json", {"analysis": {"decision": "stale-analysis"},
+                                                     "optimization_plan": {"objective": "stale-plan"}})
         self.ctl.state["last_run"] = "run-fixture"
         self.ctl.c["git"] = "fixture-git"
         diff = "diff --git a/arc/main.py b/arc/main.py\nfixture source delta\n"
@@ -585,6 +587,9 @@ class ControllerTests(unittest.TestCase):
             (path / "unreported-scratch.txt").write_text("preserve even on rejection\n")
         def command(argv, **kwargs):
             if argv[0] == "fake-codex":
+                self.assertIn("live-plan", kwargs["prompt"])
+                self.assertNotIn("stale-plan", kwargs["prompt"])
+                self.assertNotIn("stale-analysis", kwargs["prompt"])
                 if failed == "timeout":
                     raise mod.GateError("process unavailable or timed out: TimeoutExpired")
                 folder = Path(self.ctl.state["worker_dir"])
@@ -602,7 +607,11 @@ class ControllerTests(unittest.TestCase):
         with ExitStack() as stack:
             stack.enter_context(patch.object(self.ctl, "_codegen_authorization", return_value={
                 "allowed_paths": ["arc/main.py"], "expires_at": "fixture"}))
-            stack.enter_context(patch.object(mod, "reconcile_monitor_inputs", return_value={"decision": "GO"}))
+            stack.enter_context(patch.object(mod, "reconcile_monitor_inputs", return_value={
+                "decision": "GO", "reports": [{"report": {
+                    "run_id": "run-fixture", "reviewed_parent_sha": self.ctl.head,
+                    "plan_sha256": mod.sha256(root / "optimization-plan.json"),
+                    "analysis_sha256": mod.sha256(root / "analysis.json")}} for _ in range(2)]}))
             stack.enter_context(patch.object(self.ctl, "_create_codegen_worktree", side_effect=create))
             stack.enter_context(patch.object(self.ctl, "changed_paths", return_value={"arc/main.py"}))
             stack.enter_context(patch.object(self.ctl, "git", return_value=self.ctl.head))
@@ -665,6 +674,100 @@ class ControllerTests(unittest.TestCase):
         self.assertTrue(self.ctl.state["worktree_preserved"])
         self.assertTrue(Path(self.ctl.state["patch"]).is_file())
         self.assertEqual(self.ctl.calls, [])
+
+    def test_retry_allocates_new_attempt_without_touching_old_evidence(self):
+        original = self.ctl._new_worker_folder(1)
+        evidence = original / "decision.json"
+        evidence.write_bytes(b"original rejected evidence")
+        retry = self.ctl._new_worker_folder(1)
+        third = self.ctl._new_worker_folder(1)
+        self.assertEqual(original.name, "001")
+        self.assertEqual(retry.name, "001-attempt-002")
+        self.assertEqual(third.name, "001-attempt-003")
+        self.assertEqual(evidence.read_bytes(), b"original rejected evidence")
+        self.assertEqual(self.ctl.state["round"], 0)
+
+    def _resume_fixture(self):
+        root = self.ctl.store / "runs/run-fixture"
+        root.mkdir(parents=True)
+        mod.atomic_json_write(root / "analysis.json", {"decision": "modify"})
+        mod.atomic_json_write(root / "optimization-plan.json", {"objective": "current slice"})
+        self.ctl.state.update(phase="stopped", last_run="run-fixture", reason="old rejection",
+                              spent_cny=7, worker_dir=str(self.ctl.store / "rounds/001"))
+        self.ctl.save()
+        return {"decision": "GO", "reports": [{"report": {
+            "run_id": "run-fixture", "reviewed_parent_sha": self.ctl.head,
+            "plan_sha256": mod.sha256(root / "optimization-plan.json"),
+            "analysis_sha256": mod.sha256(root / "analysis.json")}} for _ in range(2)]}
+
+    def test_resume_preserves_journal_and_does_not_reset_round_or_cost(self):
+        monitors = self._resume_fixture()
+        old = copy.deepcopy(self.ctl.state)
+        with patch.object(self.ctl, "_codegen_authorization", return_value={"enabled": True}), \
+                patch.object(mod, "reconcile_monitor_inputs", return_value=monitors):
+            result = self.ctl.resume_codegen()
+        saved = mod.read_json(result["resume_record"])
+        self.assertEqual(saved["previous_state"], old)
+        self.assertEqual(mod.sha256(saved["previous_journal"]), saved["previous_journal_sha256"])
+        self.assertEqual(mod.read_json(saved["previous_journal"]), old)
+        self.assertEqual(self.ctl.state["phase"], "ready")
+        self.assertEqual(self.ctl.state["round"], 0)
+        self.assertEqual(self.ctl.state["spent_cny"], 7)
+        self.assertFalse(result["worker_started"])
+        self.assertFalse(result["cloud_run"])
+        self.assertEqual(self.ctl.calls, [])
+        with self.assertRaisesRegex(mod.GateError, "requires a stopped"):
+            self.ctl.resume_codegen()
+
+    def test_resume_rejects_stale_monitor_binding_without_transition(self):
+        for field in ("run_id", "reviewed_parent_sha", "plan_sha256", "analysis_sha256"):
+            with self.subTest(field=field):
+                root = self.ctl.store / "runs/run-fixture"
+                if not root.exists():
+                    monitors = self._resume_fixture()
+                else:
+                    monitors = {"decision": "GO", "reports": [{"report": {
+                        "run_id": "run-fixture", "reviewed_parent_sha": self.ctl.head,
+                        "plan_sha256": mod.sha256(root / "optimization-plan.json"),
+                        "analysis_sha256": mod.sha256(root / "analysis.json")}} for _ in range(2)]}
+                monitors["reports"][0]["report"][field] = "stale"
+                with patch.object(self.ctl, "_codegen_authorization", return_value={}), \
+                        patch.object(mod, "reconcile_monitor_inputs", return_value=monitors):
+                    with self.assertRaisesRegex(mod.GateError, "binding mismatch"):
+                        self.ctl.resume_codegen()
+                self.assertEqual(self.ctl.state["phase"], "stopped")
+                self.assertFalse((self.ctl.store / "transitions").exists())
+
+    def test_resume_rejects_disabled_authorization_without_replaying_override(self):
+        self._resume_fixture()
+        self.ctl.c.update(allow_package=False, allow_cloud_run=False,
+                          allow_agent_edit=True, codegen_authorization={"enabled": False},
+                          monitor_reconciliation_override={"enabled": True, "run_id": "run-fixture"})
+        with self.assertRaisesRegex(mod.GateError, "authorization is disabled"):
+            self.ctl.resume_codegen()
+        self.assertEqual(self.ctl.state["phase"], "stopped")
+        self.assertFalse((self.ctl.store / "transitions").exists())
+
+    def test_resume_rejects_unreconciled_cloud_receipt(self):
+        self._resume_fixture()
+        folder = Path(self.ctl.state["worker_dir"])
+        folder.mkdir(parents=True)
+        (folder / "upload.json").write_text("{}")
+        with self.assertRaisesRegex(mod.GateError, "cloud outcome"):
+            self.ctl.resume_codegen()
+        self.assertFalse((self.ctl.store / "transitions").exists())
+
+    def test_resume_requires_two_go_reports(self):
+        monitors = self._resume_fixture()
+        for reports, decision in (([], "GO"), (monitors["reports"][:1], "GO"),
+                                  (monitors["reports"], "NEEDS-EVIDENCE")):
+            with patch.object(self.ctl, "_codegen_authorization", return_value={}), \
+                    patch.object(mod, "reconcile_monitor_inputs", return_value={
+                        "decision": decision, "reports": reports}):
+                with self.assertRaisesRegex(mod.GateError, "two bound GO"):
+                    self.ctl.resume_codegen()
+            self.assertEqual(self.ctl.state["phase"], "stopped")
+            self.assertFalse((self.ctl.store / "transitions").exists())
 
 
 if __name__ == "__main__":

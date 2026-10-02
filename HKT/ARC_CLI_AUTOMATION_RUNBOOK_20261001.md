@@ -96,6 +96,10 @@ CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，
 
 ## 中断恢复
 
+- 代码生成停止后使用 `resume-codegen`，而不是手工将 journal 改为 ready。入口在单写入锁下核对干净且同步的父提交、当前 plan/analysis 文件哈希、新的 TTL 授权及两份 GO 报告；报告必须填写 `run_id`、`reviewed_parent_sha`、`plan_sha256`、`analysis_sha256`。不接受旧 monitor override，不恢复不确定的上传/Run 结果。
+- 续接先在外部 `transitions/resume-*.previous.json` 保存旧 journal 的原始字节和 SHA，再写含旧状态、授权来源、监控报告及新身份的 transition，最后原子更新 phase。round、已花费金额和旧停止原因保留；该命令不会直接调用 worker 或 ARC。原授权与旧候选不得重放。
+- 每次 worker 排他创建独立 attempt：首轮 `rounds/001`，重试 `rounds/001-attempt-002`，以此递增；request 记录前一 attempt 与 resume record。失败尝试不计为已完成的付费轮次，所有旧证据目录保留。worker 使用实际计算哈希的 analysis/plan 文件，忽略 summary 中可能过期的副本。
+- 续接示例：`./scripts/arc_optimizer/start.ps1 -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' -Mode resume-codegen`；成功后用一次 `step` 生成候选，Integrator 审查、独立验收和文档更新后才执行 `approve`/同步。关闭 package/cloud 权限时停在 validated，不继续 step/loop。
 - `controller.json` 是当前控制器状态，`runs/<id>/collection.json` 是日志游标；进程退出后锁由系统释放。
 - 状态/日志只读传输错误最多两次，第二次失败保留错误并停止。上传和 run 创建不自动重试。
 - `worker_pending / upload_pending / run_pending` 表示结果可能不确定。先核对工作区、上传回执、平台现有 submission/run，不能直接把状态改回 ready。

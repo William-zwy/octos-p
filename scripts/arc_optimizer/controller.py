@@ -1194,7 +1194,76 @@ class Controller:
         if not allowed or any(_forbidden_codegen_path(path) for path in allowed):
             raise GateError("codegen allowed paths contain forbidden harness/test/requirements files")
         return {"enabled": True, "expires_at": expires_at, "allowed_paths": allowed,
-                "parent_sha": parent, "plan_sha256": plan_sha, "analysis_sha256": analysis_sha}
+                "parent_sha": parent, "plan_sha256": plan_sha, "analysis_sha256": analysis_sha,
+                "source": authorization.get("source", "explicit external codegen authorization")}
+
+    def _check_monitor_binding(self, reconciliation, parent, plan_sha, analysis_sha):
+        if reconciliation.get("decision") != "GO" or len(reconciliation.get("reports", [])) != 2:
+            raise GateError("two bound GO monitor reports are required")
+        for item in reconciliation["reports"]:
+            report = item["report"]
+            if str(report.get("run_id")) != str(self.state.get("last_run")) or \
+                    report.get("reviewed_parent_sha") != parent or \
+                    str(report.get("plan_sha256", "")).lower() != plan_sha.lower() or \
+                    str(report.get("analysis_sha256", "")).lower() != analysis_sha.lower():
+                raise GateError("monitor report Run/parent/plan/analysis binding mismatch")
+
+    def resume_codegen(self):
+        """Begin an explicitly authorized retry while preserving the stopped journal."""
+        if self.state.get("phase") != "stopped":
+            raise GateError("resume-codegen requires a stopped controller")
+        previous_folder = Path(self.state.get("worker_dir", self.store / "rounds/001"))
+        candidate = self.state.get("candidate") or {}
+        if candidate.get("submission_id") or candidate.get("run_id") or \
+                (previous_folder / "upload.json").exists() or (previous_folder / "run.json").exists():
+            raise GateError("cloud outcome must be reconciled before resuming codegen")
+        parent = self.preflight()
+        run_id = identifier(self.state.get("last_run"))
+        root = self.store / "runs" / run_id
+        plan_sha = _hash_json_file(root / "optimization-plan.json")
+        analysis_sha = _hash_json_file(root / "analysis.json")
+        authorization = self._codegen_authorization(parent, plan_sha, analysis_sha)
+        reconciliation = reconcile_monitor_inputs(self.store, run_id)
+        self._check_monitor_binding(reconciliation, parent, plan_sha, analysis_sha)
+        resumed_at = utcnow()
+        record = {"schema_version": 1, "previous_state": dict(self.state),
+                  "parent_sha": parent, "authorization": authorization,
+                  "monitor_reconciliation": reconciliation, "resumed_at": resumed_at}
+        history = self.store / "transitions"
+        history.mkdir(parents=True, exist_ok=True)
+        sequence = 1
+        while (history / f"resume-{sequence:06d}.json").exists() or \
+                (history / f"resume-{sequence:06d}.previous.json").exists():
+            sequence += 1
+        target = history / f"resume-{sequence:06d}.json"
+        previous_journal = history / f"resume-{sequence:06d}.previous.json"
+        if self.journal.exists():
+            raw = self.journal.read_bytes()
+            with previous_journal.open("xb") as handle:
+                handle.write(raw)
+                handle.flush()
+                os.fsync(handle.fileno())
+            record.update(previous_journal=str(previous_journal),
+                          previous_journal_sha256=_sha256_bytes(raw))
+        atomic_json_write(target, record)
+        self.state.update(phase="ready", resume_record=str(target), resumed_at=resumed_at)
+        self.save()
+        return {"phase": "ready", "resume_record": str(target), "parent_sha": parent,
+                "cloud_run": False, "worker_started": False}
+
+    def _new_worker_folder(self, round_id):
+        """Allocate an attempt without overwriting evidence from a failed retry."""
+        root = self.store / "rounds"
+        root.mkdir(parents=True, exist_ok=True)
+        attempt = 1
+        while True:
+            name = f"{round_id:03d}" if attempt == 1 else f"{round_id:03d}-attempt-{attempt:03d}"
+            folder = root / name
+            try:
+                folder.mkdir()
+                return folder
+            except FileExistsError:
+                attempt += 1
 
     def _create_codegen_worktree(self, path, parent):
         path = Path(path).resolve()
@@ -1241,8 +1310,7 @@ class Controller:
     def worker(self):
         parent = self.preflight()
         round_id = self.state["round"] + 1
-        folder = self.store / "rounds" / f"{round_id:03d}"
-        folder.mkdir(parents=True, exist_ok=True)
+        folder = self._new_worker_folder(round_id)
         last = self.state.get("last_run")
         if not last:
             raise GateError("no collected Run is available for codegen")
@@ -1251,8 +1319,8 @@ class Controller:
         evidence = read_json(summary_path) if summary_path.exists() else {}
         analysis_path = run_root / "analysis.json"
         plan_path = run_root / "optimization-plan.json"
-        analysis = evidence.get("analysis") or _read_optional_json(analysis_path)
-        plan = evidence.get("optimization_plan") or _read_optional_json(plan_path)
+        analysis = _read_optional_json(analysis_path)
+        plan = _read_optional_json(plan_path)
         if not isinstance(analysis, dict) or not isinstance(plan, dict):
             raise GateError("analyze and plan this Run before codegen")
         analysis_sha = _hash_json_file(analysis_path)
@@ -1281,6 +1349,9 @@ class Controller:
         atomic_json_write(folder / "reconciled-plan.json", reconciliation)
         if reconciliation["decision"] != "GO":
             raise GateError("monitor reconciliation is " + reconciliation["decision"] + "; codegen stopped")
+        if not reconciliation.get("override_applied"):
+            self._check_monitor_binding(reconciliation, parent, plan_sha, analysis_sha)
+        evidence.update(analysis=analysis, optimization_plan=plan)
         worker_evidence = worker_context(evidence)
         request = {
             "schema_version": 2, "run_id": str(last), "parent_sha": parent,
@@ -1290,6 +1361,8 @@ class Controller:
             "required_checks": ["unit_tests", "syntax", "offline_import", "requirement_to_file_traceability"],
             "execution_policy": "agent_edit", "authorization_expires_at": authorization["expires_at"],
             "monitor_reconciliation": reconciliation, "created_at": utcnow(),
+            "attempt_id": folder.name, "previous_attempt": self.state.get("worker_dir"),
+            "resume_record": self.state.get("resume_record"),
         }
         atomic_json_write(folder / "request.json", request)
         prompt = (
@@ -1675,6 +1748,7 @@ def main(argv=None):
     reconcile = sub.add_parser("reconcile", help="reconcile external monitor reports without starting monitors")
     reconcile.add_argument("--run-id", required=True)
     sub.add_parser("approve", help="apply a reviewed codegen patch and resume commit gates")
+    sub.add_parser("resume-codegen", help="preserve a stopped journal and validate a newly authorized attempt")
     sub.add_parser("step")
     loop = sub.add_parser("loop")
     loop.add_argument("--max-steps", type=int, default=10000)
@@ -1702,6 +1776,8 @@ def main(argv=None):
                 output = ctl.reconcile(args.run_id)
             elif args.command == "approve":
                 output = ctl.approve_candidate()
+            elif args.command == "resume-codegen":
+                output = ctl.resume_codegen()
             elif args.command == "step":
                 output = ctl.step()
             else:

@@ -360,3 +360,4 @@
 - 为 package/upload/run 补显式布尔权限门禁；关闭权限时在打包或 mutation journal/API 请求前停止。53 项模拟控制器测试通过（exit 0），涵盖 strict schema、Skill 范围、拒绝/超时保全、干净清理与权限阶段。
 - 归档 [代码生成审查元数据](../evidence/arc-bench/automation/codegen-12b3dea74607-20261002.json)，只提交文件大小、SHA 和分析。旧清理已移除该次工作树；日志取回的观测 diff 未匹配 worker 声称的最终 SHA，保持未验证，不使用它集成。控制器停为 `stopped`，短期授权关闭，一次性监控例外已消费；未创建候选包、上传或新平台 Run。
 - CI `36970601177` 的控制器、Agent helper、语法和 schema 均通过，合成包门禁失败原因是工作流未加引号的 64 位全零 requirements SHA 被 YAML 解析为数字 `0`。仅给该 CI fixture 加引号，保留真实身份校验门禁；本地 YAML 类型/长度检查通过（exit 0）。新提交的远程 CI 结果由交付回执核验，不改变 Agent 或恢复付费循环。
+- 连续性修复：新增显式 resume-codegen，归档旧 journal 原始字节/哈希与新授权/双监控身份；不重置 round/成本，尝试目录排他分配并保留旧 rounds/001。worker 使用与绑定 SHA 一致的实时 plan/analysis，不读取 summary 过期副本。59 项合成控制器测试、Python/PowerShell 语法和 diff 检查 exit 0；旧修复 CI 36971414191 全部成功。新 Agent 切片待双监控/生成/审查；无候选打包、上传或新 Run。

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Config,
-    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'step', 'loop')][string]$Mode = 'doctor',
+    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'resume-codegen', 'step', 'loop')][string]$Mode = 'doctor',
     [string]$RunId = '',
     [string]$SourceDir = '',
     [string]$Branch = '',
