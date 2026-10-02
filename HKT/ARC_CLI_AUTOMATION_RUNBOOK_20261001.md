@@ -11,6 +11,7 @@
 - `ingest` 只建立外部证据目录的文件名、大小、SHA-256 和类型索引；不复制原始日志、ZIP、截图或凭据。`context` 通过 `git show`/`ls-tree` 记录另一分支的计划与 manifest blob 身份，不合并分支。
 - `analyze` 可从新格式 `summary.json` 运行，也可从旧版 `status.json`、`collection.json`、日志页和 ZIP 断点重建取证；`plan` 输出 `optimization-plan.json`，默认 `plan_only`，不会修改 Agent。
 - [`config.example.json`](../scripts/arc_optimizer/config.example.json)：配置模板；实际配置、凭据、日志、ZIP 均放仓库外。付费循环默认关闭，预算和截止时间不继承历史 36 小时窗口。
+- Codex 中转 API：在仓库外配置的 `codex_env_allowlist` 中显式填写 `RELAY_API_KEY`（或实际 provider key 环境变量），并在启动控制器的同一 PowerShell 会话中注入该变量。worker 默认不会继承任何 `API_KEY`；`ARCBENCH_API_KEY`、Cookie、Token、Password 和 Secret 通道会被拒绝，缺失的 allowlist 变量会在启动 Codex 前阻断。密钥不会写入仓库、request、日志或提交。
 - [`login.py`](../scripts/arc_optimizer/login.py)：读取仓库外账号密码文件，按官网当前 `/api/auth/login` 契约换取 Cookie，既不打印也不提交凭据。会话过期后使用新输出文件重新登录并更新外部配置。
 - [`install.ps1`](../scripts/arc_optimizer/install.ps1)、[`start.ps1`](../scripts/arc_optimizer/start.ps1)：外部 Python 环境安装、Windows 私有目录 ACL、前台/隐藏后台启动。固定 CLI 源提交 `15b0b27da4a4a0d412c79cbfaa318c59da5c3689`（0.4.0），PyYAML 6.0.3，Python 3.10+。
 - [`worker.schema.json`](../scripts/arc_optimizer/worker.schema.json)：Codex 必须返回假设、证据、改动文件、风险和 candidate/stop/needs_evidence；控制器核对真实 Git diff 和允许路径。

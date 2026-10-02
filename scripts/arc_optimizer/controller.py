@@ -34,6 +34,8 @@ REGISTER = "HKT/ARC_BENCH_HACKATHON_PHASE5_DECISION_REGISTER.md"
 PROJECT_LOG = "CHANGELOG.md"
 COORDINATION = "evidence/arc-bench/phase5-coordination.json"
 CLI_REVISION = "15b0b27da4a4a0d412c79cbfaa318c59da5c3689"
+_ENV_NAME = re.compile(r"[A-Z_][A-Z0-9_]*\Z")
+_FORBIDDEN_CODEX_ENV_MARKERS = ("ARC", "COOKIE", "PASSWORD", "SECRET", "TOKEN")
 
 
 class GateError(RuntimeError):
@@ -71,6 +73,44 @@ def identifier(value):
 
 def numeric(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _codex_env_names(config):
+    requested = config.get("codex_env_allowlist", [])
+    if requested is None:
+        requested = []
+    if not isinstance(requested, list):
+        raise GateError("codex_env_allowlist must be a list of environment variable names")
+    names = []
+    for name in requested:
+        if not isinstance(name, str) or not _ENV_NAME.fullmatch(name):
+            raise GateError("codex_env_allowlist contains an invalid environment variable name")
+        if any(marker in name.upper() for marker in _FORBIDDEN_CODEX_ENV_MARKERS):
+            raise GateError("codex_env_allowlist contains a forbidden platform/session variable")
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def codex_worker_environment(config, source=None):
+    """Build the worker environment without leaking platform credentials.
+
+    The inherited environment deliberately excludes every API-key-like name.
+    A private config may opt in to one or more provider key variables, but
+    platform/session/token channels are rejected and missing values stop before
+    starting Codex.
+    """
+    source = dict(os.environ if source is None else source)
+    inherited = {
+        key: value for key, value in source.items()
+        if not any(marker in key.upper() for marker in ("ARC", "COOKIE", "TOKEN", "PASSWORD", "SECRET", "API_KEY"))
+    }
+    names = _codex_env_names(config)
+    missing = [name for name in names if not source.get(name)]
+    if missing:
+        raise GateError("configured Codex environment variables are not set: " + ", ".join(missing))
+    inherited.update({name: source[name] for name in names})
+    return inherited
 
 
 def _sha256_bytes(payload):
@@ -717,6 +757,11 @@ class Controller:
             "rounds": [], "spent_cny": 0, "last_run": config.get("baseline_run")
         }
         self.secrets = []
+        self.codex_env_allowlist = _codex_env_names(config)
+        for name in self.codex_env_allowlist:
+            value = os.environ.get(name)
+            if value:
+                self.secrets.append(value)
         self.github_token = None
         if self.env_file.exists():
             for line in self.env_file.read_text(encoding="utf-8-sig").splitlines():
@@ -1204,8 +1249,7 @@ class Controller:
         try:
             self._create_codegen_worktree(worktree, parent)
             created = True
-            env = {k: v for k, v in os.environ.items()
-                   if not any(s in k.upper() for s in ("ARC", "COOKIE", "TOKEN", "PASSWORD", "SECRET", "API_KEY"))}
+            env = codex_worker_environment(self.c)
             code, out, err = self.command(
                 [self.c["codex"], "-a", "never", "exec", "--sandbox", "workspace-write", "--json",
                  "-C", worktree, "--output-schema", ROOT / "scripts/arc_optimizer/worker.schema.json",

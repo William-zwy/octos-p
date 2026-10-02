@@ -302,3 +302,7 @@ All notable changes to octos will be documented in this file.
 
 - Remove task mode (run/resume/list) and coordinator pattern
 - Deduplicate truncation, configurable threshold, ~user expansion
+
+## 2026-10-02
+
+- `arc_optimizer` codegen worker now accepts only explicitly allowlisted external provider key variables (for example `RELAY_API_KEY`); ARC/platform credentials and other secret channels remain blocked, with missing keys failing before Codex starts.

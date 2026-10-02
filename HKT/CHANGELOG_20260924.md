@@ -349,3 +349,7 @@
 - 将部署最强候选收窄为最终产物 canonical entrypoint/HTTP readiness contract 漂移：实际 `npm start` 的 API-only 入口不服务 `/` 或 frontend，另一个可服务根页面的入口未被启动；平台 probe 细节缺失，故不把候选写成已证实探针路径。
 - 更新只读建议：唯一启动入口、runner-equivalent rehearsal、product-delta/外部验证门禁、分槽预算/vertical slice、task-correct identity；Skill 未打包且无调用证据，不能评价收益。
 - 未修改 Agent、Skill、ZIP、requirements 或官方测试，未重新打包、发布或启动平台 Run。
+
+### 2026-10-02
+
+- CLI 自动化：为代码生成 worker 增加外部配置 `codex_env_allowlist`。默认继续清理所有 API key；只有显式列出的中转 provider key（如 `RELAY_API_KEY`）会传入 `codex exec`，平台 ARC、Cookie、Token、Password、Secret 变量被拒绝，缺失凭据在启动前停止。新增安全回归测试和运行手册说明。

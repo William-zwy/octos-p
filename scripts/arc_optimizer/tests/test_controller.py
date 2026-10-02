@@ -395,6 +395,21 @@ class ControllerTests(unittest.TestCase):
     def test_secrets_redacted(self):
         self.assertNotIn("fixture-secret", self.ctl.safe({"data": "fixture-secret"}))
 
+    def test_codex_worker_environment_requires_explicit_provider_key_allowlist(self):
+        source = {"PATH": "path", "RELAY_API_KEY": "fixture-relay-key",
+                  "ARCBENCH_API_KEY": "platform-key", "OPENAI_API_KEY": "unlisted-key"}
+        inherited = mod.codex_worker_environment({"codex_env_allowlist": ["RELAY_API_KEY"]}, source)
+        self.assertEqual(inherited["RELAY_API_KEY"], "fixture-relay-key")
+        self.assertEqual(inherited["PATH"], "path")
+        self.assertNotIn("ARCBENCH_API_KEY", inherited)
+        self.assertNotIn("OPENAI_API_KEY", inherited)
+
+    def test_codex_worker_environment_rejects_platform_channels_and_missing_keys(self):
+        with self.assertRaises(mod.GateError):
+            mod.codex_worker_environment({"codex_env_allowlist": ["ARCBENCH_API_KEY"]}, {})
+        with self.assertRaises(mod.GateError):
+            mod.codex_worker_environment({"codex_env_allowlist": ["RELAY_API_KEY"]}, {})
+
     def test_run_path_injection_rejected(self):
         with self.assertRaises(mod.GateError):
             self.ctl.collect("../secrets")

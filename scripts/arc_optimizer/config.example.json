@@ -4,6 +4,7 @@
   "git": "ABSOLUTE_GIT_EXECUTABLE",
   "python": "ABSOLUTE_PYTHON_3_10_OR_NEWER",
   "codex": "ABSOLUTE_CODEX_EXECUTABLE",
+  "codex_env_allowlist": [],
   "env_file": "ABSOLUTE_EXTERNAL_ARC_ENV_FILE",
   "state_dir": "ABSOLUTE_EXTERNAL_STATE_DIRECTORY",
   "remote": "octos-p",
