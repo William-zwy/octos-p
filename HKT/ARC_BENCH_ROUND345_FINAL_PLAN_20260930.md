@@ -888,3 +888,13 @@ The compatibility method records `phase=implement,status=ready` and must never m
 node `IMPLEMENTED`; only acceptance-backed `mark_implementation_done` may do that.
 The repair is isolated on `codex/hkt-runtime-compat-3307814` until validated and
 approved for the hackathon integration line. Do not infer hidden test IDs from this run.
+
+### 2026-10-03 — f9e8 deployment-readiness correction
+
+`f9e8bbdae929` completed 12/12 implementation turns but failed before official tests because
+`GET /` never became ready within 120 seconds. The prior runtime compatibility patch is not
+causal: f9e8 reached deployment and used the same repaired EventClient path successfully.
+The first follow-up change strengthens `REHEARSAL_REPAIR_PROMPT` so a repair must run the
+canonical build/start and same-process curl checks on the smoke port for `/` and
+`/api/health`; a claim without those observations is not accepted. This targets the proven
+repair failure where the model said the app served HTTP but rehearsal still timed out.
