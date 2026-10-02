@@ -77,6 +77,24 @@ class CampaignTests(unittest.TestCase):
             self.assertEqual(sheet["status"], "completed")
             self.assertEqual(sheet["state_dir"], str(task_dir))
 
+    def test_failed_probe_is_retryable_but_does_not_open_next_stage(self):
+        task = mod.task_map(self.campaign)["hackathon--sheet"]
+        retry = mod.evaluate_probe(task, {"status": "FAILED", "score": 0}, attempt=1)
+        self.assertFalse(retry["passed"])
+        self.assertTrue(retry["retryable"])
+        blocked = mod.evaluate_probe(task, {"status": "FAILED", "score": 0}, attempt=2)
+        self.assertFalse(blocked["retryable"])
+        with tempfile.TemporaryDirectory() as root:
+            task_dir = mod.task_state_dir(root, "hackathon--sheet")
+            task_dir.mkdir(parents=True)
+            (task_dir / "controller.json").write_text(json.dumps({
+                "phase": "round_complete", "round": 1, "spent_cny": 90,
+                "last_run": "sheet-run", "stage_status": "probe_failed", "probe": retry
+            }), encoding="utf-8")
+            status = mod.campaign_status(self.campaign, root)
+            self.assertEqual(status["eligible_stages"], ["E2"])
+            self.assertTrue(status["tasks"][0]["retryable"])
+
 
 if __name__ == "__main__":
     unittest.main()

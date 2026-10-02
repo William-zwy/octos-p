@@ -43,6 +43,39 @@ def _task_key(value: object) -> str:
     return text
 
 
+def probe_policy(task: dict) -> dict:
+    """Normalize the short-probe gate for one task without touching external state."""
+    raw = task.get("short_probe") or {}
+    _require(isinstance(raw, dict), f"short_probe must be an object for {task.get('task_key')}")
+    minimum_score = raw.get("minimum_score", 1)
+    max_attempts = raw.get("max_attempts", 2)
+    statuses = raw.get("accepted_statuses", ["PASSED"])
+    _require(isinstance(minimum_score, (int, float)) and not isinstance(minimum_score, bool)
+             and minimum_score >= 0, "short_probe.minimum_score must be non-negative")
+    _require(isinstance(max_attempts, int) and not isinstance(max_attempts, bool) and max_attempts >= 1,
+             "short_probe.max_attempts must be a positive integer")
+    _require(isinstance(statuses, list) and statuses and all(isinstance(item, str) for item in statuses),
+             "short_probe.accepted_statuses must be a non-empty list")
+    return {"enabled": bool(raw.get("enabled", True)), "minimum_score": minimum_score,
+            "max_attempts": max_attempts,
+            "accepted_statuses": [item.upper() for item in statuses]}
+
+
+def evaluate_probe(task: dict, result: dict, attempt: int) -> dict:
+    """Evaluate a task's short probe; missing facts fail closed."""
+    policy = probe_policy(task)
+    status = str(result.get("status") or "").upper()
+    score = result.get("score")
+    score_ok = isinstance(score, (int, float)) and not isinstance(score, bool) and score >= policy["minimum_score"]
+    passed = (not policy["enabled"]) or (status in policy["accepted_statuses"] and score_ok)
+    retryable = not passed and attempt < policy["max_attempts"]
+    return {"enabled": policy["enabled"], "passed": passed, "retryable": retryable,
+            "attempt": attempt, "max_attempts": policy["max_attempts"],
+            "status": status or None, "score": score, "minimum_score": policy["minimum_score"],
+            "accepted_statuses": policy["accepted_statuses"],
+            "reason": None if passed else "short probe did not meet status and score gate"}
+
+
 def validate_campaign(campaign: dict) -> dict:
     """Validate and normalize a campaign registry without touching the network."""
     _require(isinstance(campaign, dict), "campaign must be a JSON object")
@@ -95,7 +128,8 @@ def validate_campaign(campaign: dict) -> dict:
         normalized.append({**raw, "task_key": task_key, "stage": stage,
                           "competition": competition, "requirements_sha256": req,
                           "requirements_archive_sha256": archive,
-                          "identity_mode": mode, "depends_on": depends})
+                          "identity_mode": mode, "depends_on": depends,
+                          "short_probe": probe_policy({**raw, "task_key": task_key})})
 
     stage_map = {item["stage"]: item for item in normalized}
     for item in normalized:
@@ -202,8 +236,12 @@ def campaign_status(campaign: dict, state_root: str | Path) -> dict:
             except (OSError, json.JSONDecodeError):
                 state = {"phase": "corrupt"}
         phase = str(state.get("phase") or "planned")
-        if phase == "round_complete":
+        stage_status = state.get("stage_status")
+        if (stage_status == "eligible_for_next_stage" or phase == "stage_complete"
+                or (phase == "round_complete" and not stage_status)):
             status = "completed"
+        elif stage_status == "probe_failed":
+            status = "probe_failed"
         elif phase in {"stopped", "corrupt"}:
             status = "blocked"
         elif phase == "ready":
@@ -211,10 +249,12 @@ def campaign_status(campaign: dict, state_root: str | Path) -> dict:
         else:
             status = "running" if journal.is_file() else "planned"
         statuses[task["stage"]] = status
+        probe = state.get("probe") or {}
         tasks.append({"stage": task["stage"], "task_key": task["task_key"],
                       "status": status, "phase": phase,
                       "round": state.get("round", 0), "spent_cny": state.get("spent_cny", 0),
-                      "last_run": state.get("last_run"), "state_dir": str(journal.parent)})
+                      "last_run": state.get("last_run"), "state_dir": str(journal.parent),
+                      "probe": probe, "retryable": status == "probe_failed" and bool(probe.get("retryable"))})
     eligible = eligible_stages(validated, statuses)
     ledger_path = root / "campaigns" / validated["campaign_id"] / "budget.json"
     ledger = {"spent_cny": 0, "entries": [], "present": False}
@@ -243,7 +283,7 @@ def eligible_stages(campaign: dict, statuses: dict[str, str]) -> list[str]:
         if all(statuses.get(dep) in {"eligible_for_next_stage", "completed"}
                for dep in task["depends_on"]):
             current = statuses.get(task["task_key"], statuses.get(task["stage"], "planned"))
-            if current in {"planned", "ready"}:
+            if current in {"planned", "ready", "probe_failed"}:
                 result.append(task["stage"])
     return result
 

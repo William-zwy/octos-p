@@ -28,11 +28,12 @@ SCRIPT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_ROOT))
 try:
     from campaign import (CampaignError, budget_decision, campaign_status as read_campaign_status,
-                      load_campaign, task_map, task_state_dir, validate_task_requirements_binding)
+                      evaluate_probe, load_campaign, task_map, task_state_dir,
+                      validate_task_requirements_binding)
 except ImportError:  # pragma: no cover - package import fallback
     from scripts.arc_optimizer.campaign import (CampaignError, budget_decision,
-                      campaign_status as read_campaign_status, load_campaign, task_map,
-                      task_state_dir, validate_task_requirements_binding)
+                      campaign_status as read_campaign_status, evaluate_probe, load_campaign,
+                      task_map, task_state_dir, validate_task_requirements_binding)
 
 sys.path.insert(0, str(ROOT / "arc"))
 from run_controls import atomic_json_write
@@ -676,9 +677,51 @@ def _safe_git_ref(value):
     return value
 
 
-def build_optimization_plan(run_id, analysis, forensics=None):
-    """Compile analysis findings into a plan; this never authorizes execution."""
+def _plan_delta(previous_plan, priorities, decision=None):
+    previous_plan = previous_plan or {}
+    old = {str(item.get("code")): item for item in previous_plan.get("priorities") or []
+           if isinstance(item, dict) and item.get("code")}
+    new = {str(item.get("code")): item for item in priorities if item.get("code")}
+    old_signature = canonical_sha256(old)
+    new_signature = canonical_sha256(new)
+    return {"added": sorted(set(new) - set(old)),
+            "retained": sorted(set(new) & set(old)),
+            "resolved": sorted(set(old) - set(new)),
+            "replan_required": old_signature != new_signature or previous_plan.get("decision") != decision,
+            "previous_run_id": previous_plan.get("run_id"),
+            "previous_plan_version": previous_plan.get("plan_version")}
+
+
+def next_plan_version(root, previous_plan=None):
+    previous_plan = previous_plan or {}
+    prior = previous_plan.get("plan_version")
+    if isinstance(prior, int) and prior >= 1:
+        return prior + 1
+    history = Path(root) / "plan-history"
+    versions = []
+    if history.is_dir():
+        for path in history.glob("*.json"):
+            try:
+                versions.append(int(path.stem.rsplit("-", 1)[-1]))
+            except ValueError:
+                continue
+    return max(versions, default=0) + 1
+
+
+def write_plan_artifacts(root, plan):
+    root = Path(root)
+    atomic_json_write(root / "optimization-plan.json", plan)
+    history = root / "plan-history"
+    history.mkdir(parents=True, exist_ok=True)
+    version = int(plan.get("plan_version", 1))
+    atomic_json_write(history / f"plan-{version:03d}.json", plan)
+    return plan
+
+
+def build_optimization_plan(run_id, analysis, forensics=None, previous_plan=None, plan_version=None):
+    """Compile a versioned plan from evidence; this never authorizes execution."""
     analysis = analysis or {}
+    previous_plan = previous_plan or {}
     findings = list(analysis.get("findings") or [])
     severity_rank = {"P0": 0, "P1": 1, "P2": 2}
     findings.sort(key=lambda item: (severity_rank.get(item.get("severity"), 9), item.get("code", "")))
@@ -687,11 +730,14 @@ def build_optimization_plan(run_id, analysis, forensics=None):
     top = priorities[0] if priorities else None
     objective = top["action"] if top else "没有新的高置信问题；保持只读并等待新的证据。"
     run = (forensics or {}).get("run", {})
+    version = plan_version or (int(previous_plan.get("plan_version", 0)) + 1 if previous_plan else 1)
     return {
-        "schema_version": 1, "run_id": identifier(run_id), "generated_at": utcnow(),
+        "schema_version": 2, "run_id": identifier(run_id), "generated_at": utcnow(),
+        "plan_version": version, "supersedes_plan_sha256": canonical_sha256(previous_plan) if previous_plan else None,
         "mode": "plan_only", "authorization_required": True,
         "decision": analysis.get("decision", "needs_evidence"), "objective": objective,
         "priorities": priorities, "comparison": analysis.get("comparison"),
+        "plan_comparison": _plan_delta(previous_plan, priorities, analysis.get("decision", "needs_evidence")),
         "capability_slice": analysis.get("next_slice") or {"scope": "one vertical slice only"},
         "acceptance_contract": {
             "must_prove": (analysis.get("next_slice") or {}).get("must_prove", []),
@@ -708,7 +754,7 @@ def build_optimization_plan(run_id, analysis, forensics=None):
             "second continuation has no new product delta",
         ],
         "authorization": {"agent_edit": False, "harness_edit": False,
-                          "tests_edit": False, "package": False, "cloud_run": False},
+                           "tests_edit": False, "package": False, "cloud_run": False},
         "evidence_refs": {"run_url": run.get("url"), "source": analysis.get("source")},
     }
 
@@ -1162,9 +1208,11 @@ class Controller:
             if previous_path.exists():
                 previous = read_json(previous_path)
         analysis = analyze_forensics(forensics, previous)
-        optimization_plan = build_optimization_plan(run_id, analysis, forensics)
+        previous_plan = previous.get("optimization_plan") if previous else None
+        optimization_plan = build_optimization_plan(run_id, analysis, forensics, previous_plan=previous_plan,
+                                                     plan_version=next_plan_version(root, previous_plan))
         atomic_json_write(root / "analysis.json", analysis)
-        atomic_json_write(root / "optimization-plan.json", optimization_plan)
+        write_plan_artifacts(root, optimization_plan)
         forensics["artifacts"]["state_folder"] = _local_files(root)
         files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
                  for p in sorted(root.rglob("*")) if p.is_file() and p.name != "summary.json"]
@@ -1208,9 +1256,11 @@ class Controller:
             if previous_path.exists():
                 previous = read_json(previous_path)
         analysis = analyze_forensics(forensics, previous)
-        plan = build_optimization_plan(run_id, analysis, forensics)
+        previous_plan = summary.get("optimization_plan") or (previous.get("optimization_plan") if previous else None)
+        plan = build_optimization_plan(run_id, analysis, forensics, previous_plan=previous_plan,
+                                       plan_version=next_plan_version(root, previous_plan))
         atomic_json_write(root / "analysis.json", analysis)
-        atomic_json_write(root / "optimization-plan.json", plan)
+        write_plan_artifacts(root, plan)
         summary["analysis"] = analysis
         summary["optimization_plan"] = plan
         summary["files"] = _run_file_records(root)
@@ -1227,8 +1277,10 @@ class Controller:
         if not isinstance(analysis, dict):
             raise GateError("analyze this run before plan")
         forensics = summary.get("forensics") or {}
-        plan = build_optimization_plan(run_id, analysis, forensics)
-        atomic_json_write(root / "optimization-plan.json", plan)
+        previous_plan = summary.get("optimization_plan")
+        plan = build_optimization_plan(run_id, analysis, forensics, previous_plan=previous_plan,
+                                       plan_version=next_plan_version(root, previous_plan))
+        write_plan_artifacts(root, plan)
         if summary:
             summary["optimization_plan"] = plan
             atomic_json_write(root / "summary.json", summary)
@@ -1425,6 +1477,11 @@ class Controller:
         plan = _read_optional_json(plan_path)
         if not isinstance(analysis, dict) or not isinstance(plan, dict):
             raise GateError("analyze and plan this Run before codegen")
+        plan_decision = plan.get("decision") or analysis.get("decision")
+        if plan_decision != "modify":
+            raise GateError("current optimization plan does not authorize code changes")
+        if plan.get("authorization_required") is False:
+            raise GateError("optimization plan authorization contract is invalid")
         analysis_sha = _hash_json_file(analysis_path)
         plan_sha = _hash_json_file(plan_path)
         authorization = self._codegen_authorization(parent, plan_sha, analysis_sha)
@@ -1732,9 +1789,19 @@ class Controller:
         elif phase == "evidence_publish":
             self.publish()
         elif phase == "round_complete":
-            self.guard()
-            self.state["phase"] = "ready"
-            self.save()
+            stage_status = self.state.get("stage_status")
+            if stage_status == "eligible_for_next_stage":
+                self.state["phase"] = "stage_complete"
+                self.save()
+            elif stage_status == "blocked":
+                self.state.update(phase="stopped", reason="short probe failed and retry limit reached")
+                self.save()
+            else:
+                self.guard()
+                self.state["phase"] = "ready"
+                self.save()
+        elif phase == "stage_complete":
+            return self.state
         elif phase.endswith("_pending"):
             raise GateError("interrupted operation: reconcile journal and platform, no automatic repeat")
         elif phase == "stopped":
@@ -1801,6 +1868,12 @@ class Controller:
         self.state["last_run"] = run_id
         self.state["rounds"].append({"candidate": candidate, "evidence_commit": head, "sync": sync,
                                      "result": result, "finished_at": utcnow()})
+        if self.task_spec:
+            probe = evaluate_probe(self.task_spec, result, self.state["round"])
+            self.state["probe"] = probe
+            self.state["probe_attempts"] = self.state["round"]
+            self.state["stage_status"] = ("eligible_for_next_stage" if probe["passed"]
+                                           else "probe_failed" if probe["retryable"] else "blocked")
         self.state["phase"] = "round_complete"
         self.save()
 

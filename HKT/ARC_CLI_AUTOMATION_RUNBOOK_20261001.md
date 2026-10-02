@@ -148,3 +148,8 @@ python scripts/arc_optimizer/controller.py `
 输出中的 `eligible_stages` 只表示依赖和本地状态允许进入的阶段；真正付费动作仍需通过登录、requirements SHA、任务身份、截止时间、授权 TTL、并发和预算门禁。共享账本位于仓库外的 `campaigns/<campaign_id>/budget.json`，原始日志、ZIP 和凭据不进入仓库。
 
 当前 campaign 总预算为 300 CNY，reserve 为 25%，E2–E6 每阶段保守估算为 90 CNY；可用额度只有 225 CNY，控制器最多允许两个完整 90 CNY 估算阶段后继续评估，不能把 5 阶段计划当成已获预算。
+## 证据驱动的计划版本与短探针重试
+
+每次 `collect` 或 `analyze` 完成后，Controller 会把新证据与上一版 `optimization-plan.json` 对照，生成新的 `plan_version`、`supersedes_plan_sha256` 和 `plan_comparison`，并把版本保存到 Run 私有目录的 `plan-history/`。代码 Agent 的 worker request 会携带当前计划版本和差异；计划的 `decision` 不是 `modify` 时，worker 会拒绝修改代码。
+
+Campaign 任务的 `short_probe` 定义通过状态、最低分数和最大尝试次数。短探针失败时，状态变为 `probe_failed`，当前阶段仍可重试，下一轮会回到证据分析和代码修改；只有通过短探针才变为 `eligible_for_next_stage`，并开放依赖它的下一阶段。达到最大尝试次数后进入 `blocked`，不会自动创建新的 Run。

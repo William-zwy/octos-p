@@ -1,5 +1,11 @@
 # HKT 目录文档更新日志
 
+## 2026-10-02：接入证据驱动计划版本与短探针重试
+
+- 每轮 `collect/analyze` 会比较上一版优化执行计划，生成带 `plan_version`、父计划 SHA 和 `plan_comparison` 的新计划，并在 Run 私有目录保存历史版本。worker request 绑定当前计划版本；计划决策不是 `modify` 时拒绝代码修改。
+- Campaign 任务增加短探针门禁：失败会保留证据并返回同一阶段重试，只有达到状态、分数和尝试次数条件后才开放下一阶段；达到上限后进入 blocked。
+- Campaign 状态命令现在能区分 `completed`、`probe_failed`、`retryable` 和 `blocked`，阶段依赖不会因一次失败提前放行。
+
 ## 2026-10-02：补齐多任务预算与阶段状态门禁
 
 - Controller 为每个 campaign 任务继续使用 `state_dir/tasks/<task_key>/`，并新增仓库外的 `campaigns/<campaign_id>/budget.json` 账本；已记录 Run 的消费不会在其他任务重复计入。

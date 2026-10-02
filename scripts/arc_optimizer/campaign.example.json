@@ -22,7 +22,18 @@
       "depends_on": [],
       "estimated_run_cny": 90,
       "state_namespace": "hackathon--sheet",
-      "port_range": [3100, 3199]
+      "port_range": [
+        3100,
+        3199
+      ],
+      "short_probe": {
+        "enabled": true,
+        "minimum_score": 1,
+        "accepted_statuses": [
+          "PASSED"
+        ],
+        "max_attempts": 2
+      }
     },
     {
       "stage": "E3",
@@ -33,10 +44,23 @@
       "identity_mode": "task_requirements_only",
       "suite_key": null,
       "suite_provenance": "ARC Hackathon tasks/status JSON 未提供 suite 概念",
-      "depends_on": ["E2"],
+      "depends_on": [
+        "E2"
+      ],
       "estimated_run_cny": 90,
       "state_namespace": "hackathon--github-stage-1",
-      "port_range": [3200, 3299]
+      "port_range": [
+        3200,
+        3299
+      ],
+      "short_probe": {
+        "enabled": true,
+        "minimum_score": 1,
+        "accepted_statuses": [
+          "PASSED"
+        ],
+        "max_attempts": 2
+      }
     },
     {
       "stage": "E4",
@@ -47,10 +71,23 @@
       "identity_mode": "task_requirements_only",
       "suite_key": null,
       "suite_provenance": "ARC Hackathon tasks/status JSON 未提供 suite 概念",
-      "depends_on": ["E3"],
+      "depends_on": [
+        "E3"
+      ],
       "estimated_run_cny": 90,
       "state_namespace": "hackathon--github-stage-2",
-      "port_range": [3300, 3399]
+      "port_range": [
+        3300,
+        3399
+      ],
+      "short_probe": {
+        "enabled": true,
+        "minimum_score": 1,
+        "accepted_statuses": [
+          "PASSED"
+        ],
+        "max_attempts": 2
+      }
     },
     {
       "stage": "E5",
@@ -61,10 +98,23 @@
       "identity_mode": "task_requirements_only",
       "suite_key": null,
       "suite_provenance": "ARC Hackathon tasks/status JSON 未提供 suite 概念",
-      "depends_on": ["E4"],
+      "depends_on": [
+        "E4"
+      ],
       "estimated_run_cny": 90,
       "state_namespace": "hackathon--github-stage-3",
-      "port_range": [3400, 3499]
+      "port_range": [
+        3400,
+        3499
+      ],
+      "short_probe": {
+        "enabled": true,
+        "minimum_score": 1,
+        "accepted_statuses": [
+          "PASSED"
+        ],
+        "max_attempts": 2
+      }
     },
     {
       "stage": "E6",
@@ -75,10 +125,23 @@
       "identity_mode": "task_requirements_only",
       "suite_key": null,
       "suite_provenance": "ARC Hackathon tasks/status JSON 未提供 suite 概念",
-      "depends_on": ["E5"],
+      "depends_on": [
+        "E5"
+      ],
       "estimated_run_cny": 90,
       "state_namespace": "hackathon--github",
-      "port_range": [3500, 3599]
+      "port_range": [
+        3500,
+        3599
+      ],
+      "short_probe": {
+        "enabled": true,
+        "minimum_score": 1,
+        "accepted_statuses": [
+          "PASSED"
+        ],
+        "max_attempts": 2
+      }
     }
   ]
 }

@@ -182,6 +182,19 @@ class ControllerTests(unittest.TestCase):
         self.assertFalse(plan["authorization"]["agent_edit"])
         self.assertEqual(plan["budget_policy"]["max_requests_per_slice"], 36)
 
+    def test_optimization_plan_versions_against_prior_evidence(self):
+        previous = {"run_id": "old-run", "plan_version": 1,
+                    "priorities": [{"code": "old-finding", "severity": "P1"}],
+                    "decision": "modify"}
+        plan = mod.build_optimization_plan("run-fixture", {
+            "decision": "modify",
+            "findings": [{"code": "new-finding", "severity": "P0", "action": "fix"}],
+        }, previous_plan=previous)
+        self.assertEqual(plan["plan_version"], 2)
+        self.assertEqual(plan["plan_comparison"]["added"], ["new-finding"])
+        self.assertEqual(plan["plan_comparison"]["resolved"], ["old-finding"])
+        self.assertEqual(plan["supersedes_plan_sha256"], mod.canonical_sha256(previous))
+
     def test_analyze_rebuilds_legacy_run_state_without_arc_call(self):
         root = self.ctl.store / "runs/run-fixture"
         root.mkdir(parents=True, exist_ok=True)
