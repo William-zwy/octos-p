@@ -11,6 +11,7 @@ from acceptance import (
     nodes_for_failures,
     restore_tree,
     restore_worktree,
+    readiness_probe,
     robustness_probe,
     workers_for_memory,
     snapshot_worktree,
@@ -245,3 +246,73 @@ class RobustnessProbeTests(unittest.TestCase):
             s.bind(("127.0.0.1", 0)); free = s.getsockname()[1]
         err = robustness_probe(free, None, timeout=2)
         self.assertIn("no HTTP response", err)
+
+    def test_should_tolerate_only_live_favicon_reset(self):
+        import http.server, threading
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == "/favicon.ico":
+                    self.connection.shutdown(2)
+                    self.connection.close()
+                    return
+                self.send_response(404); self.end_headers()
+            def log_message(self, *a): pass
+
+        class LiveProc:
+            returncode = None
+            def poll(self): return None
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), H); port = srv.server_address[1]
+        th = threading.Thread(target=srv.serve_forever, daemon=True); th.start()
+        try:
+            self.assertIsNone(robustness_probe(
+                port, LiveProc(), timeout=1, tolerate_live_transport_error=True))
+        finally:
+            srv.shutdown()
+
+    def test_should_not_tolerate_transport_error_on_unknown_route(self):
+        import http.server, threading
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == "/this-path-does-not-exist":
+                    self.connection.shutdown(2)
+                    self.connection.close()
+                    return
+                self.send_response(404); self.end_headers()
+            def log_message(self, *a): pass
+
+        class LiveProc:
+            returncode = None
+            def poll(self): return None
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), H); port = srv.server_address[1]
+        th = threading.Thread(target=srv.serve_forever, daemon=True); th.start()
+        try:
+            err = robustness_probe(port, LiveProc(), timeout=1, tolerate_live_transport_error=True)
+            self.assertIn("/this-path-does-not-exist", err)
+        finally:
+            srv.shutdown()
+
+
+class ReadinessProbeTests(unittest.TestCase):
+    def test_requires_root_and_strict_health(self):
+        import http.server, threading
+
+        class H(http.server.BaseHTTPRequestHandler):
+            health_status = 200
+            def do_GET(self):
+                self.send_response(self.health_status if self.path == "/api/health" else 302)
+                self.end_headers()
+            def log_message(self, *a): pass
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), H); port = srv.server_address[1]
+        th = threading.Thread(target=srv.serve_forever, daemon=True); th.start()
+        try:
+            self.assertIsNone(readiness_probe(port, timeout=1, wait_seconds=.4))
+            H.health_status = 302
+            err = readiness_probe(port, timeout=1, wait_seconds=.4)
+            self.assertIn("GET /api/health", err)
+        finally:
+            srv.shutdown()

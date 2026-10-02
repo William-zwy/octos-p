@@ -19,6 +19,14 @@ if (-not (Test-Path -LiteralPath $OutputParent -PathType Container)) {
     New-Item -ItemType Directory -Path $OutputParent -Force | Out-Null
 }
 
+$sourceChanges = @(& git -C $RepoRoot status --porcelain=v1 --untracked-files=all -- arc skills/arc-project-context)
+if ($LASTEXITCODE -ne 0) {
+    throw "Package gate could not inspect the source tree"
+}
+if ($sourceChanges.Count -gt 0) {
+    throw "Refusing to package dirty Agent sources; commit arc/ and skills/arc-project-context first"
+}
+
 $Inputs = @(
     "main.py",
     "octos_stdio.py",
@@ -28,6 +36,8 @@ $Inputs = @(
     "llm_proxy.py",
     "codegen.py",
     "run_controls.py",
+    "seed_isolation.py",
+    "requirement_contract.py",
     "build_identity.py",
     "package_shape.py",
     "hooks",
@@ -92,6 +102,16 @@ try {
     foreach ($input in $Inputs) {
         Copy-InputToStaging -RelativePath $input -StagingRoot $stagingRoot
     }
+    $skillRoot = Join-Path $RepoRoot "skills/arc-project-context"
+    foreach ($skillFile in @("SKILL.md", "manifest.json", "index.js", "main")) {
+        $source = Join-Path $skillRoot $skillFile
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+            throw "Required bundled skill input is missing: skills/arc-project-context/$skillFile"
+        }
+        $destination = Join-Path $stagingRoot ("skills/arc-project-context/" + $skillFile)
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+        Copy-Item -LiteralPath $source -Destination $destination -Force
+    }
 
     $pythonCommand = (Get-Command python -ErrorAction SilentlyContinue).Source
     if ([string]::IsNullOrWhiteSpace($pythonCommand)) {
@@ -124,7 +144,13 @@ try {
         "guard.py",
         "llm_proxy.py",
         "codegen.py",
-        "requirements.txt"
+        "requirements.txt",
+        "seed_isolation.py",
+        "requirement_contract.py",
+        "skills/arc-project-context/SKILL.md",
+        "skills/arc-project-context/manifest.json",
+        "skills/arc-project-context/index.js",
+        "skills/arc-project-context/main"
     )
     foreach ($required in $requiredRootFiles) {
         if ($entryNames -notcontains $required) {
@@ -161,15 +187,23 @@ try {
     } else {
         $env:ARCBENCH_SUITE_KEY
     }
+    $identityMode = if (-not [string]::IsNullOrWhiteSpace($env:ARCBENCH_PLATFORM_IDENTITY_MODE)) {
+        $env:ARCBENCH_PLATFORM_IDENTITY_MODE
+    } else {
+        "suite_required"
+    }
+    $suiteProvenance = $env:ARCBENCH_SUITE_PROVENANCE
     $requirementsSha = if (-not [string]::IsNullOrWhiteSpace($env:ARCBENCH_REQUIREMENTS_SHA256)) {
         $env:ARCBENCH_REQUIREMENTS_SHA256
     } else {
         $env:ARCBENCH_REQUIREMENTS_HASH
     }
     if ([string]::IsNullOrWhiteSpace($taskKey) -or
-        [string]::IsNullOrWhiteSpace($suiteKey) -or
         [string]::IsNullOrWhiteSpace($requirementsSha)) {
-        throw "Package gate requires ARCBENCH_TASK_KEY, ARCBENCH_TEST_SUITE_KEY and ARCBENCH_REQUIREMENTS_SHA256"
+        throw "Package gate requires ARCBENCH_TASK_KEY and ARCBENCH_REQUIREMENTS_SHA256"
+    }
+    if ($identityMode -eq "suite_required" -and [string]::IsNullOrWhiteSpace($suiteKey)) {
+        throw "suite_required packaging needs ARCBENCH_TEST_SUITE_KEY"
     }
     & $pythonCommand (Join-Path $ArcRoot "build_identity.py") embed --archive $temporaryZip --commit $sourceCommit | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -183,17 +217,24 @@ try {
 
     $shapePath = [System.IO.Path]::ChangeExtension($OutputPath, "shape.json")
     $bindingPath = [System.IO.Path]::ChangeExtension($OutputPath, "binding.json")
-    & $pythonCommand (Join-Path $ArcRoot "package_gate.py") bind --archive $OutputPath --shape-output $shapePath --output $bindingPath --source-commit $sourceCommit --task-key $taskKey --suite-key $suiteKey --requirements-sha256 $requirementsSha
+    & $pythonCommand (Join-Path $ArcRoot "package_gate.py") bind --archive $OutputPath --shape-output $shapePath --output $bindingPath --source-commit $sourceCommit --task-key $taskKey --suite-key $suiteKey --suite-provenance $suiteProvenance --identity-mode $identityMode --requirements-sha256 $requirementsSha
     if ($LASTEXITCODE -ne 0) {
         throw "Package shape/binding gate failed"
     }
 
     $hash = (& $pythonCommand -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest().upper())" $OutputPath).Trim()
     $size = (Get-Item -LiteralPath $OutputPath).Length
+    $checksumPath = $OutputPath + ".sha256"
+    [System.IO.File]::WriteAllText(
+        $checksumPath,
+        ($hash.ToLowerInvariant() + "  " + (Split-Path -Leaf $OutputPath) + "`n"),
+        [System.Text.UTF8Encoding]::new($false)
+    )
     Write-Host "Packaging complete: $OutputPath"
     Write-Host ("Entries: {0}" -f $entryNames.Count)
     Write-Host ("Bytes:   {0}" -f $size)
     Write-Host ("SHA256:  {0}" -f $hash)
+    Write-Host ("Checksum: {0}" -f $checksumPath)
 } finally {
     if (Test-Path -LiteralPath $temporaryZip) {
         Remove-Item -LiteralPath $temporaryZip -Force -ErrorAction SilentlyContinue

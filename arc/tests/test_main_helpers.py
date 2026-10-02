@@ -32,6 +32,83 @@ class DescribeNodeTests(unittest.TestCase):
         self.assertIn("Depends on: REQ-1", text)
 
 
+class RequirementOnlyContextTests(unittest.TestCase):
+    def test_outline_is_bounded_and_uses_harness_parsed_nodes(self):
+        tree = {"id": "ROOT", "type": "FOLDER", "children": [
+            node(f"REQ-{i}", "word " * 30) for i in range(1, 12)
+        ]}
+        text = m.requirement_outline(tree, max_chars=240)
+        self.assertLessEqual(len(text), 240)
+        self.assertIn("REQ-1", text)
+
+    def test_requirement_only_prompt_forbids_test_search_and_keeps_shell(self):
+        import argparse
+        from pathlib import Path
+        from types import SimpleNamespace
+        flow = m.Flow(argparse.Namespace(web_port=3000), Path("."), Path("."))
+        flow.llm_proxy = SimpleNamespace(extra_drop_tools={"shell"})
+        text = flow.verify_text(1, has_specs=False).lower()
+        self.assertIn("do not search", text)
+        self.assertIn("not an official test verdict", text)
+        self.assertIn("npm run build", text)
+        self.assertEqual(flow.llm_proxy.extra_drop_tools, set())
+
+    def test_requirement_only_execution_writes_before_more_exploration(self):
+        text = m.REQUIREMENT_ONLY_EXECUTION_GUIDANCE.lower()
+        self.assertIn("tool call 3", text)
+        self.assertIn("first product write", text)
+        self.assertIn("do not search", text)
+
+
+class ProductFingerprintTests(unittest.TestCase):
+    def test_counts_product_source_but_ignores_build_lock_and_runtime_db(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "frontend" / "src").mkdir(parents=True)
+            (root / "frontend" / "dist").mkdir()
+            (root / "backend").mkdir()
+            (root / "frontend" / "src" / "app.tsx").write_text("export const x=1")
+            (root / "backend" / "server.js").write_text("module.exports={}")
+            baseline = m.product_fingerprint(root)
+            (root / "frontend" / "dist" / "bundle.js").write_text("generated")
+            (root / "frontend" / "package-lock.json").write_text("{}")
+            (root / "backend" / "db.json").write_text('{"mutated":true}')
+            self.assertEqual(m.product_fingerprint(root), baseline)
+            (root / "frontend" / "src" / "app.tsx").write_text("export const x=2")
+            self.assertNotEqual(m.product_fingerprint(root), baseline)
+
+    def test_cap_hit_or_missing_write_evidence_never_counts_as_complete(self):
+        self.assertEqual(
+            m.product_turn_incomplete_reason(wrote=True, budget_exhausted=True),
+            "request_budget_exhausted")
+        self.assertEqual(
+            m.product_turn_incomplete_reason(wrote=False, budget_exhausted=False),
+            "untracked_product_write")
+        self.assertIsNone(m.product_turn_incomplete_reason(wrote=True, budget_exhausted=False))
+
+
+class BundledSkillStagingTests(unittest.TestCase):
+    def test_stages_context_skill_and_registers_parent_path(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bundle = root / "bundle"
+            skill = bundle / "skills" / "arc-project-context"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("---\nname: arc-project-context\n---\n")
+            (skill / "manifest.json").write_text(json.dumps({"name": "arc-project-context"}))
+            (skill / "index.js").write_text("process.exit(0)")
+            (skill / "main").write_text("#!/bin/sh\n")
+            data = root / "data"
+            staged = m.stage_bundled_skills(data, bundle)
+            self.assertEqual(staged, data / "skills")
+            self.assertTrue((data / "skills" / "arc-project-context" / "main").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -200,7 +277,7 @@ class RewriteBudgetTests(unittest.TestCase):
         flow.n_nodes = 1
         os.environ.pop("OCTOS_ARC_IMPLEMENT_REQUESTS", None)
         os.environ.pop("OCTOS_ARC_REWRITE_REQUESTS", None)
-        self.assertEqual(flow.implement_request_budget(), 20)
+        self.assertEqual(flow.implement_request_budget(), 22)
         self.assertLessEqual(flow.rewrite_request_budget(), 8)
 
     def test_should_give_multi_node_implement_enough_requests_to_write_code(self):
@@ -213,7 +290,24 @@ class RewriteBudgetTests(unittest.TestCase):
         flow = self._flow()
         flow.n_nodes = 32
         os.environ.pop("OCTOS_ARC_IMPLEMENT_REQUESTS", None)
-        self.assertGreaterEqual(flow.implement_request_budget(), 18)
+        self.assertEqual(flow.implement_request_budget(), 22)
+        self.assertEqual(flow.continuation_request_budget(), 12)
+        self.assertLessEqual(flow.max_node_request_budget(), 36)
+
+    def test_should_give_large_tree_implement_enough_requests_to_finish_a_node(self):
+        """Platform run 3d6713b1 (prestashop, 87 tests / 47 implement nodes)
+        scored 13/100: 92 nodes hit "request budget 18 hit" and ended
+        wrote=False/verified=False across the whole second half of the tree.
+        A feature node must implement + `npm run build` + curl-verify in one
+        turn; 18 requests runs out before the node is written and verified on a
+        large app, so the multi-node default is raised to give that headroom.
+        Env OCTOS_ARC_IMPLEMENT_REQUESTS still overrides for cost control."""
+        import os
+        flow = self._flow()
+        flow.n_nodes = 47
+        os.environ.pop("OCTOS_ARC_IMPLEMENT_REQUESTS", None)
+        self.assertEqual(flow.implement_request_budget(), 22)
+        self.assertEqual(flow.continuation_request_budget(), 12)
 
     def test_should_give_skeleton_room_to_scaffold_both_ends(self):
         """The skeleton turn writes a whole app shell (frontend + backend
@@ -242,7 +336,8 @@ class SharedFoundationTests(unittest.TestCase):
     already exists so they do not re-discover it."""
 
     def test_skeleton_prompt_asks_for_shared_router_and_seed_foundation(self):
-        text = m.SKELETON_PROMPT.format(req_dir="/r", port=3000, smoke=3001, tests="")
+        text = m.SKELETON_PROMPT.format(req_dir="/r", port=3000, smoke=3001, tests="",
+                                         requirements_outline="- REQ-1: base", requirement_contract="{}")
         lowered = text.lower()
         self.assertIn("router", lowered)
         self.assertIn("seed", lowered)
@@ -284,7 +379,8 @@ class SingleOriginContractTests(unittest.TestCase):
         self.assertTrue("never hardcode" in text or "never" in text and "api_base" in text)
 
     def test_skeleton_prompt_mandates_single_port_relative_fetch(self):
-        text = m.SKELETON_PROMPT.format(req_dir="/r", port=3000, smoke=3001, tests="").lower()
+        text = m.SKELETON_PROMPT.format(req_dir="/r", port=3000, smoke=3001, tests="",
+                                         requirements_outline="- REQ-1: base", requirement_contract="{}").lower()
         self.assertIn("same-origin", text)
         self.assertIn("/api/", text)
 
@@ -330,7 +426,7 @@ class CreateResultContractTests(unittest.TestCase):
                     preamble="", node_spec=description,
                     design=m.INLINE_DESIGN_NOTE.format(node_id="item"), ancestors="",
                     tests="", ui=flow.ui_contract(), performance="", verify="",
-                    smoke=3001, port=3000)
+                    smoke=3001, port=3000, execution="")
                 self.assertEqual(prompt.count(m.CREATE_RESULT_CONTRACT), 1)
 
     def test_should_require_persisted_success_and_preserve_navigation_without_duplicate_text(self):
@@ -390,7 +486,8 @@ class WorkflowStateContractTests(unittest.TestCase):
                                                spec="", port=3000, ports="", size_rule=""),
             "implementation": m.NODE_PROMPT.format(
                 preamble="", node_spec="Edit a record", design="", ancestors="", tests="",
-                ui=flow.ui_contract(), performance="", verify="", smoke=3001, port=3000),
+                ui=flow.ui_contract(), performance="", verify="", smoke=3001, port=3000,
+                execution=""),
             "repair": m.REPAIR_PROMPT.format(node_id="record", passed=0, total=1,
                                              failures="missing action", corrections="", slow="",
                                              sources="", smoke=3001, port=3000),

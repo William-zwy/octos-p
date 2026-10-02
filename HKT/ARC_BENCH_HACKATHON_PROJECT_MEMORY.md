@@ -285,6 +285,24 @@ The durable record is [`ARC_BENCH_WEB_KEEP_RUN_C68BEF1A6343_HANDOFF_20260930.md`
 - 快照差异判断优先使用规范化文本哈希和 YAML 语义比较；原始字节哈希只能证明文件字节不同，不能单独证明需求变化。
 - 远程同步完成前，不声称“已同步”；若网络或凭据不可用，应明确报告本地提交和远程同步状态。
 
+### 7.1 官方需求包更新（2026-10-02）
+
+官方新需求包已从用户提供的 `arcbench-hackathon-requirements (4).zip` 镜像到仓库：
+
+- [需求包 v4（远程镜像）](https://github.com/William-zwy/octos-p/raw/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.zip)
+- [需求包 v4 机器清单](https://github.com/William-zwy/octos-p/blob/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.manifest.json)
+- ZIP SHA-256：`8F07E80BE1DB82F68F7AB373ACBD3AF28B735D719B83751D0A378C1043960BF9`
+
+归一化比较结论：
+
+- `hackathon--sheet` 仍为 `24` 个 atomic、`100` 个 scenario；与 v3 的 YAML 字节和规范化语义均一致，只有新包归档资产随 ZIP 一并更新。
+- `hackathon--github` 仍为 `47` 个 atomic、`100` 个 scenario，但 `46/47` 个 atomic 的描述或 scenario 发生变化，不能继续使用 v3 的需求 SHA 或共享旧 fixture 叙事。
+- 新包新增渐进式 GitHub 阶段：Stage 1=`12/30`（REQ-1/2），Stage 2=`14/29`（REQ-3/4），Stage 3=`21/41`（REQ-5/6）。三阶段合计仍为 `47/100`，但 stage task key 是独立输入，不能与主任务身份混用。
+- GitHub 新文本更明确要求按场景隔离预置账号、组织、仓库、PR 和权限关系；生成应用必须按当前场景恢复 fixture，不能把历史 run 的 `alice-dev`、`Improve onboarding` 等共享状态当成稳定官方数据。
+- 新文本继续把精确 accessible name/role、实体作用域、session/permission、服务端原子持久化和 reload 状态作为权威契约。官方测试细节仍不随 ZIP 提供，需求场景可以用于本地 contract/smoke，不得冒充官方测试结果。
+
+机器可读哈希、节点/场景计数和比较方法见 `evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.manifest.json`。v3 保留为历史输入，不删除、不覆盖。
+
 ## 8. 安全记录
 
 外部交接资料曾包含明文 API Key。本项目记忆不复制该 Key，也不记录其值。应确认它没有进入 Git、日志、截图或公开文档；如曾暴露到不可信位置，应在平台轮换，并继续使用环境变量管理。

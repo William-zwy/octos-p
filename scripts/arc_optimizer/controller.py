@@ -24,6 +24,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPT_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_ROOT))
+try:
+    from campaign import (CampaignError, budget_decision, campaign_status as read_campaign_status,
+                      load_campaign, task_map, task_state_dir, validate_task_requirements_binding)
+except ImportError:  # pragma: no cover - package import fallback
+    from scripts.arc_optimizer.campaign import (CampaignError, budget_decision,
+                      campaign_status as read_campaign_status, load_campaign, task_map,
+                      task_state_dir, validate_task_requirements_binding)
+
 sys.path.insert(0, str(ROOT / "arc"))
 from run_controls import atomic_json_write
 
@@ -764,15 +774,36 @@ class Controller:
         self.c = config
         self.repo = Path(config["repo"]).resolve()
         self.store = Path(config["state_dir"]).resolve()
+        self.global_store = Path(config["state_dir"]).resolve()
+        self.store = self.global_store
+        self.campaign = None
+        self.task_spec = None
+        self.campaign_ledger = None
+        campaign_file = config.get("campaign_file")
+        if campaign_file:
+            campaign_path = Path(campaign_file).resolve()
+            try:
+                self.campaign = load_campaign(campaign_path)
+                self.task_spec = task_map(self.campaign).get(str(config.get("task")))
+                if self.task_spec is None:
+                    raise GateError("configured task is missing from campaign registry")
+                validate_task_requirements_binding(config, self.task_spec)
+                self.campaign_ledger = self.global_store / "campaigns" / self.campaign["campaign_id"] / "budget.json"
+                self.store = task_state_dir(self.global_store, self.task_spec["task_key"])
+            except CampaignError as exc:
+                raise GateError(str(exc)) from exc
         self.env_file = Path(config["env_file"]).resolve()
-        if self.store.is_relative_to(self.repo) or self.env_file.is_relative_to(self.repo):
+        if self.global_store.is_relative_to(self.repo) or self.env_file.is_relative_to(self.repo):
             raise GateError("credentials and state must be outside the repository")
         if self.repo != ROOT:
             raise GateError("execute the controller from its intended checkout")
         self.journal = self.store / "controller.json"
         self.state = read_json(self.journal) if self.journal.exists() else {
             "schema_version": 1, "phase": "ready", "round": 0, "no_improvement": 0,
-            "rounds": [], "spent_cny": 0, "last_run": config.get("baseline_run")
+            "rounds": [], "spent_cny": 0, "last_run": config.get("baseline_run"),
+            "campaign_id": self.campaign.get("campaign_id") if self.campaign else None,
+            "task_key": self.task_spec.get("task_key") if self.task_spec else config.get("task"),
+            "task_stage": self.task_spec.get("stage") if self.task_spec else None
         }
         self.secrets = []
         self.codex_env_allowlist = _codex_env_names(config)
@@ -801,6 +832,38 @@ class Controller:
     def save(self):
         self.state["updated_at"] = utcnow()
         atomic_json_write(self.journal, self.state)
+
+    def campaign_ledger_data(self):
+        if self.campaign is None or self.campaign_ledger is None:
+            return {"schema_version": 1, "campaign_id": None, "spent_cny": 0, "entries": []}
+        if not self.campaign_ledger.exists():
+            return {"schema_version": 1, "campaign_id": self.campaign["campaign_id"],
+                    "spent_cny": 0, "entries": []}
+        try:
+            data = read_json(self.campaign_ledger)
+        except (OSError, ValueError) as exc:
+            raise GateError("campaign budget ledger is unreadable") from exc
+        if data.get("campaign_id") != self.campaign["campaign_id"]:
+            raise GateError("campaign budget ledger campaign mismatch")
+        if not numeric(data.get("spent_cny", 0)) or data.get("spent_cny", 0) < 0:
+            raise GateError("campaign budget ledger spent_cny is invalid")
+        if not isinstance(data.get("entries", []), list):
+            raise GateError("campaign budget ledger entries are invalid")
+        return data
+
+    def campaign_spent_cny(self):
+        return self.campaign_ledger_data().get("spent_cny", 0)
+
+    def record_campaign_spend(self, run_id, amount):
+        if self.campaign is None or self.campaign_ledger is None:
+            return
+        data = self.campaign_ledger_data()
+        if any(str(item.get("run_id")) == str(run_id) for item in data["entries"]):
+            return
+        data["entries"].append({"task_key": self.c.task, "run_id": str(run_id),
+                                 "amount_cny": amount, "recorded_at": utcnow()})
+        data["spent_cny"] += amount
+        atomic_json_write(self.campaign_ledger, data)
 
     def command(self, argv, *, env=None, prompt=None, timeout=120, cwd=None):
         try:
@@ -965,7 +1028,11 @@ class Controller:
         except GateError as exc:
             report["arc_error"] = str(exc)
         report["paid_loop_enabled"] = bool(self.c.get("enabled"))
-        report["pending"] = [key for key in ("budget_cny", "deadline", "suite_key", "suite_provenance")
+        report["campaign_id"] = self.campaign.get("campaign_id") if self.campaign else None
+        report["state_namespace"] = str(self.store)
+        report["task_stage"] = self.task_spec.get("stage") if self.task_spec else None
+        report["identity_mode"] = self.identity_mode()
+        report["pending"] = self.identity_pending_fields() + [key for key in ("budget_cny", "deadline")
                              if not self.c.get(key)]
         report["status"] = "blocked" if ("git_error" in report or "arc_error" in report
                                           or not report.get("arc_logged_in")
@@ -973,11 +1040,29 @@ class Controller:
         atomic_json_write(self.store / "doctor.json", report)
         return report
 
+    def identity_mode(self):
+        mode = str(self.c.get("platform_identity_mode", "suite_required")).strip().lower()
+        if mode not in {"suite_required", "task_requirements_only"}:
+            raise GateError("platform_identity_mode must be 'suite_required' or 'task_requirements_only'")
+        return mode
+
+    def identity_pending_fields(self):
+        mode = self.identity_mode()
+        if mode == "suite_required":
+            return [key for key in ("suite_key", "suite_provenance") if not self.c.get(key)]
+        required = ("task", "competition", "requirements_file",
+                    "task_requirements_sha256" if self.campaign else "requirements_sha256",
+                    "suite_provenance")
+        return [key for key in required if not self.c.get(key)]
+
     def guard(self):
         c = self.c
         if not c.get("enabled"):
             raise GateError("paid loop disabled in external config")
-        budget, estimate = c.get("budget_cny"), c.get("estimated_run_cny")
+        campaign = getattr(self, "campaign", None)
+        task_spec = getattr(self, "task_spec", None)
+        budget = campaign.get("budget_cny") if campaign else c.get("budget_cny")
+        estimate = task_spec.get("estimated_run_cny") if task_spec else c.get("estimated_run_cny")
         if not numeric(budget) or budget <= 0 or not numeric(estimate) or estimate <= 0:
             raise GateError("explicit positive budget and conservative estimated_run_cny required")
         reserve = c.get("reserve_fraction", .25)
@@ -991,17 +1076,34 @@ class Controller:
             raise GateError("no-improvement limit reached")
         if self.state["spent_cny"] + estimate > budget * (1 - reserve):
             raise GateError("local spending allowance exhausted; preserve reserve")
+        if campaign:
+            decision = budget_decision(campaign, self.campaign_spent_cny(), estimate)
+            if not decision["allowed"]:
+                raise GateError(decision["reason"])
         registration = self.arc("registration", c["competition"])
         remaining = registration.get("remaining_budget_cny")
         if not registration.get("registered") or not numeric(remaining) or remaining < budget * reserve + estimate:
             raise GateError("official remaining balance missing/too low")
         if not c.get("official_evaluation"):
             raise GateError("v1 supports official-evaluation budget only")
-        if not c.get("suite_key") or not c.get("suite_provenance"):
-            raise GateError("platform suite identity/provenance required; do not guess")
+        mode = self.identity_mode()
+        if mode == "suite_required":
+            if not c.get("suite_key") or not c.get("suite_provenance"):
+                raise GateError("platform suite identity/provenance required; do not guess")
+        else:
+            if c.get("competition") not in set(c.get("task_requirements_only_competitions") or []):
+                raise GateError("task_requirements_only is not enabled for this competition")
+            if c.get("suite_key") not in (None, "", "unknown", "未知"):
+                raise GateError("task_requirements_only must not invent a suite_key")
+            provenance = str(c.get("suite_provenance") or "")
+            if ("not provide" not in provenance.lower() and "不提供" not in provenance
+                    and "未提供" not in provenance and "无 suite" not in provenance.lower()):
+                raise GateError("task_requirements_only requires explicit platform suite-unavailable provenance")
         requirements = self.repo / c["requirements_file"]
         if sha256(requirements).lower() != c["requirements_sha256"].lower():
             raise GateError("requirements archive SHA mismatch")
+        if getattr(self, "task_spec", None):
+            validate_task_requirements_binding(c, self.task_spec)
 
     def collect(self, run_id):
         """Read every log page using saved payloads, never CLI's truncated tail."""
@@ -1066,7 +1168,7 @@ class Controller:
         forensics["artifacts"]["state_folder"] = _local_files(root)
         files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
                  for p in sorted(root.rglob("*")) if p.is_file() and p.name != "summary.json"]
-        summary = normalize(status, cursor, files, self.state.get("candidate", {}))
+        summary = normalize(status, cursor, files, self.state.get("candidate", {}), self.c)
         summary["forensics"] = forensics
         summary["analysis"] = analysis
         summary["optimization_plan"] = optimization_plan
@@ -1097,7 +1199,7 @@ class Controller:
             files = [{"path": p.relative_to(root).as_posix(), "bytes": p.stat().st_size, "sha256": sha256(p)}
                      for p in sorted(root.rglob("*")) if p.is_file() and p.name not in {"summary.json", "analysis.json", "optimization-plan.json"}]
             forensics = build_forensics(status, cursor, files, self.state.get("candidate", {}), root, self.repo)
-            summary = normalize(status, cursor, files, self.state.get("candidate", {}))
+            summary = normalize(status, cursor, files, self.state.get("candidate", {}), self.c)
             summary["forensics"] = forensics
         previous = None
         last_run = self.state.get("last_run")
@@ -1542,8 +1644,11 @@ class Controller:
             raise GateError("package already exists without journal entry; verify manually")
         env = dict(os.environ)
         env["PATH"] = str(Path(self.c["python"]).parent) + os.pathsep + str(Path(self.c["git"]).parent) + os.pathsep + env.get("PATH", "")
-        env.update(ARCBENCH_TASK_KEY=self.c["task"], ARCBENCH_TEST_SUITE_KEY=self.c["suite_key"],
-                   ARCBENCH_REQUIREMENTS_SHA256=self.c["requirements_sha256"])
+        env.update(ARCBENCH_TASK_KEY=self.c["task"], ARCBENCH_TEST_SUITE_KEY=self.c.get("suite_key") or "",
+                   ARCBENCH_PLATFORM_IDENTITY_MODE=self.identity_mode(),
+                   ARCBENCH_SUITE_PROVENANCE=self.c.get("suite_provenance") or "",
+                   ARCBENCH_REQUIREMENTS_SHA256=self.c.get("task_requirements_sha256")
+                   or self.c["requirements_sha256"])
         argv = (["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", self.repo / "arc/pack.ps1", "-OutputPath", archive]
                 if os.name == "nt" else ["bash", self.repo / "arc/pack.sh", archive])
         code, out, err = self.command(argv, env=env, timeout=300)
@@ -1685,11 +1790,13 @@ class Controller:
             self.state["no_improvement"] = 0
         cost = result["cost"]
         if cost and cost.get("currency") == "CNY" and numeric(cost.get("amount")):
-            self.state["spent_cny"] += cost["amount"]
+            spend_amount = cost["amount"]
         else:
             # Unknown billing conservatively spends the reservation and stops.
-            self.state["spent_cny"] += self.c["estimated_run_cny"]
+            spend_amount = self.task_spec.get("estimated_run_cny") if self.task_spec else self.c["estimated_run_cny"]
             self.state["no_improvement"] = self.c["max_no_improvement"]
+        self.state["spent_cny"] += spend_amount
+        self.record_campaign_spend(run_id, spend_amount)
         self.state["round"] += 1
         self.state["last_run"] = run_id
         self.state["rounds"].append({"candidate": candidate, "evidence_commit": head, "sync": sync,
@@ -1698,7 +1805,7 @@ class Controller:
         self.save()
 
 
-def normalize(status, cursor, files, candidate):
+def normalize(status, cursor, files, candidate, identity_config=None):
     names = {item["path"] for item in files}
     missing = [name for name in ("workspace.zip", "submission.zip") if name not in names]
     if not cursor.get("logs_drained"):
@@ -1709,6 +1816,14 @@ def normalize(status, cursor, files, candidate):
     amount, currency = status.get("token_cost_usd"), status.get("token_cost_currency")
     archive = next((item for item in files if item["path"] == "submission.zip"), None)
     closed = bool(archive and candidate.get("package_sha256") and archive["sha256"].lower() == candidate["package_sha256"].lower())
+    identity_config = identity_config or {}
+    identity_mode = str(identity_config.get("platform_identity_mode", "suite_required")).strip().lower()
+    if identity_mode == "task_requirements_only":
+        platform_identity = "task_requirements_bound"
+        identity_basis = ["competition", "task_key", "requirements_sha256", "cli_revision", "submission_id", "run_id"]
+    else:
+        platform_identity = "platform_identity_inconclusive"
+        identity_basis = ["suite_key", "suite_provenance"]
     return {
         "schema_version": 1, "run_id": status["id"], "status": str(status["status"]).upper(),
         "score": status.get("score"), "passed": status.get("passed_count"), "failed": status.get("failed_count"),
@@ -1720,7 +1835,8 @@ def normalize(status, cursor, files, candidate):
         "task_key": status.get("requirement_id"), "submission_id": status.get("submission_id"),
         "source_commit": candidate.get("source_commit") if closed else None,
         "package_sha256": candidate.get("package_sha256") if closed else None,
-        "candidate_identity_closed": closed, "platform_identity": "platform_identity_inconclusive",
+        "candidate_identity_closed": closed, "platform_identity": platform_identity,
+        "identity_basis": identity_basis, "identity_mode": identity_mode,
         "hidden_suite_identity": None, "strict_ab": False,
         "logs_drained": bool(cursor.get("logs_drained")), "log_pages": len(cursor["pages"]),
         "log_next_offset": cursor["offset"], "files": files, "missing_evidence": missing,
@@ -1750,9 +1866,33 @@ def main(argv=None):
     sub.add_parser("approve", help="apply a reviewed codegen patch and resume commit gates")
     sub.add_parser("resume-codegen", help="preserve a stopped journal and validate a newly authorized attempt")
     sub.add_parser("step")
+    campaign_validate = sub.add_parser("campaign-validate", help="validate a task-aware campaign registry")
+    campaign_validate.add_argument("--campaign-file", required=True)
+    campaign_status = sub.add_parser("campaign-status", help="show task-isolated campaign state without side effects")
+    campaign_status.add_argument("--campaign-file", required=True)
+    campaign_status.add_argument("--state-dir", required=True)
     loop = sub.add_parser("loop")
     loop.add_argument("--max-steps", type=int, default=10000)
     args = parser.parse_args(argv)
+    if args.command in {"campaign-validate", "campaign-status"}:
+        try:
+            campaign = load_campaign(args.campaign_file)
+        except CampaignError as exc:
+            print(json.dumps({"status": "blocked", "reason": str(exc)}, ensure_ascii=False), file=sys.stderr)
+            return 2
+        if args.command == "campaign-status":
+            print(json.dumps(read_campaign_status(campaign, args.state_dir), ensure_ascii=False, indent=2))
+            return 0
+        output = {"status": "ok", "campaign_id": campaign["campaign_id"],
+                  "tasks": [{"stage": item["stage"], "task_key": item["task_key"],
+                             "depends_on": item["depends_on"],
+                             "requirements_sha256": item["requirements_sha256"]}
+                            for item in campaign["tasks"]],
+                  "max_parallel_remote_runs": campaign["max_parallel_remote_runs"],
+                  "max_parallel_readonly_collect": campaign["max_parallel_readonly_collect"],
+                  "max_parallel_codegen": campaign["max_parallel_codegen"]}
+        print(json.dumps(output, ensure_ascii=False, indent=2))
+        return 0
     try:
         ctl = Controller(read_json(args.config))
         # One lock per checkout as well as state directory; separate configs cannot bypass it.

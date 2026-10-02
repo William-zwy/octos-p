@@ -19,6 +19,24 @@
 - [`worker.schema.json`](../scripts/arc_optimizer/worker.schema.json)：Codex 必须返回假设、证据、改动文件、风险和 candidate/stop/needs_evidence；控制器核对真实 Git diff 和允许路径。
 - [CI 工作流](../.github/workflows/arc-optimizer-check.yml)：只运行模拟控制器测试、Agent helper tests、语法/空白检查；不跑题、不调用 ARC、不接触凭据。
 
+## 多任务 Campaign 模式
+
+需求 v4 现在按任务级身份编排，而不是把整个 requirements ZIP 当作一个任务。示例注册表见 [`campaign.example.json`](../scripts/arc_optimizer/campaign.example.json)，它为 E2 Sheet、E3/E4/E5 GitHub Stage 和 E6 完整 GitHub 分别记录 task key、任务级 requirements SHA、归档 SHA、阶段依赖、独立状态命名空间和端口范围。
+
+先验证注册表，不会登录 ARC、调用 Codex 或修改仓库：
+
+```powershell
+./scripts/arc_optimizer/start.ps1 `
+  -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' `
+  -Mode campaign-validate
+```
+
+启用实际配置时，将 `campaign_file` 指向仓库外的只读注册表副本或经过审查的受控文件。控制器会把状态隔离到 `state_dir/tasks/<task_key>/`，因此不同任务不会共享 `last_run`、日志游标、分析、计划、候选或预算状态。代码生成并发固定为 1；远程 Run 默认并发为 1；只读采集可以由上层调度器并发，但每个任务必须使用自己的状态目录。
+
+推荐晋级顺序是 E2 完成基础 generation/build/health/smoke 后再启动 E3，随后 E4、E5、E6 串行推进。若平台和余额允许并行，仍只能并行远程 Run；代码生成、候选审批、分支同步、上传和创建 Run 保持单写入串行。每个任务的结果必须绑定 `competition`、`task_key`、任务级 requirements SHA、requirements 归档 SHA、Run ID、submission ID、Agent commit、Agent ZIP SHA 和 CLI revision；不同任务的结果禁止直接混比。
+
+当前示例预算为每个阶段 90 CNY，总预算 300 CNY、保留 25% 余额。五阶段完整计划估算 450 CNY，超过可用额度 225 CNY，因此控制器应在预算不足时停止，而不是自动消耗其他阶段的预算。要完整执行 E2→E6，需要提高总预算，或把后续阶段改为基于正向门禁的选择性探针。
+
 ## 本机操作
 
 部署使用独立工作区中的脚本。实际配置在 `D:/DataMove/codex/runtimes/arc-optimizer/private/config.json`，Python 在同目录运行环境的 `Scripts/python.exe`。这些个人路径只供本次部署交接；跨机器应通过 install.ps1 和配置模板生成新路径。
@@ -115,3 +133,18 @@ CLI 下载的 workspace 未必包含完整 screenshots/traces/逐测试明细，
 - 实际只读复采 Sheet Run `f1ff68f69dac`：FAILED，0/100；日志游标 110124，workspace/提交 ZIP 和仓库 manifest 均已取得。分析层确认 24 个生成节点、27 次预算触顶、部署与评测阶段到达；官方逐测试明细和身份绑定保持 unknown，生成的 `analysis.json` 供后续实现 Agent 读取。
 - CLI 流程演练：`a7964e4411af` 外部目录索引 59 个文件、原始文件未复制；从旧格式 summary 断点重建取证并生成 `optimization-plan.json`，默认授权状态为 `agent_edit=false/package=false/cloud_run=false`。
 - 付费循环未启动。最终 Git 提交 SHA 和 CI 结果以交付回执及 Git 记录为准，不在同一提交内制造自引用 SHA。
+## 多任务 Campaign 状态与预算
+
+E2–E6 使用同一 campaign 注册表、不同 task key 和独立状态目录。查看阶段状态时运行：
+
+```powershell
+python scripts/arc_optimizer/controller.py `
+  --config scripts/arc_optimizer/config.example.json `
+  campaign-status `
+  --campaign-file scripts/arc_optimizer/campaign.example.json `
+  --state-dir D:\DataMove\codex\runtimes\arc-optimizer\state
+```
+
+输出中的 `eligible_stages` 只表示依赖和本地状态允许进入的阶段；真正付费动作仍需通过登录、requirements SHA、任务身份、截止时间、授权 TTL、并发和预算门禁。共享账本位于仓库外的 `campaigns/<campaign_id>/budget.json`，原始日志、ZIP 和凭据不进入仓库。
+
+当前 campaign 总预算为 300 CNY，reserve 为 25%，E2–E6 每阶段保守估算为 90 CNY；可用额度只有 225 CNY，控制器最多允许两个完整 90 CNY 估算阶段后继续评估，不能把 5 阶段计划当成已获预算。

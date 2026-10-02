@@ -2,6 +2,7 @@
 
 All notable changes to octos will be documented in this file.
 ## [Unreleased]
+- Integrate the latest `codex/hkt-round345-integration` Agent improvements into the CLI automation branch: requirement contract compilation, seed isolation, vertical-slice planning, v4 requirement identity, and package gates. Preserve the CLI controller and keep raw release archives out of the branch; suite identity remains fail-closed until the platform provides verifiable binding.
 
 - Archive the second isolated ARC codegen attempt without integrating its Agent draft. Evidence continuity and 50 existing helper tests pass, but independent completeness and budget checks reject the candidate; preserve its worktree and disable further generation pending the user's requested exception handoff.
 - Add an explicit ARC codegen resume gate with a preserved journal, fresh monitor/hash/TTL bindings, separate retry attempts, and authoritative plan inputs; retain costs and failed evidence across retries. Synthetic controller checks: 59 passed. Agent generation and cloud actions remain separate stages.

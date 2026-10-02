@@ -356,6 +356,37 @@ class ControllerTests(unittest.TestCase):
             self.ctl.step()
         self.assertEqual(self.ctl.calls, [])
 
+    def test_task_requirements_identity_mode_accepts_explicit_hackathon_policy(self):
+        self.ctl.c.update({
+            "platform_identity_mode": "task_requirements_only",
+            "task_requirements_only_competitions": ["fixture"],
+            "suite_key": None,
+            "suite_provenance": "tasks/status JSON 明确记录平台不提供 suite 概念",
+        })
+        self.ctl.guard()
+
+    def test_task_requirements_identity_mode_rejects_unapproved_competition(self):
+        self.ctl.c.update({
+            "platform_identity_mode": "task_requirements_only",
+            "task_requirements_only_competitions": ["other"],
+            "suite_key": None,
+            "suite_provenance": "平台不提供 suite 概念",
+        })
+        with self.assertRaises(mod.GateError):
+            self.ctl.guard()
+
+    def test_normalize_records_task_requirements_identity_basis(self):
+        summary = mod.normalize(
+            self.ctl.status,
+            {"logs_drained": True, "pages": [], "offset": 0, "errors": {}},
+            [],
+            {"source_commit": "a" * 40, "package_sha256": "b" * 64},
+            {"platform_identity_mode": "task_requirements_only"},
+        )
+        self.assertEqual(summary["platform_identity"], "task_requirements_bound")
+        self.assertEqual(summary["identity_mode"], "task_requirements_only")
+        self.assertIn("requirements_sha256", summary["identity_basis"])
+
     def test_paid_gates_fail_before_worker(self):
         for key, value in (("enabled", False), ("budget_cny", None), ("deadline", None),
                            ("reserve_fraction", .1), ("suite_key", None), ("suite_provenance", None)):

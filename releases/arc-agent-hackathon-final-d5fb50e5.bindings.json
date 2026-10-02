@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "artifact": {
+    "filename": "arc-agent-hackathon-final-d5fb50e5.zip",
+    "sha256": "4d524eed2093ee21dc5538facbcc7e9b28c05397489b345dda4c63f8baa3a7c9",
+    "size_bytes": 369390
+  },
+  "build": {
+    "id": "arc-agent-v1-416e719a37dea6ce04d4afb9",
+    "source_commit": "d5fb50e5fc2a9adc85321210113b6e88c5f21978",
+    "payload_tree_sha256": "7AFBEBCCA2DE538043589B7FBB227CCFC2D17C9C36AE9168666CD303C3775CDA"
+  },
+  "checks": {
+    "package_shape": true,
+    "offline_import": true,
+    "placeholder_identity_rejected": true
+  },
+  "bindings": [
+    {
+      "task_key": "hackathon--sheet",
+      "suite_key": "hackathon--sheet",
+      "requirements_sha256": "9cddf67be50748106289ed158648629a6c50c30a490d0eda5bd570c557440b96"
+    },
+    {
+      "task_key": "hackathon--github-stage-1",
+      "suite_key": "hackathon--github-stage-1",
+      "requirements_sha256": "a5f347673348eb9502286640f1eb62a54836ffed6787cdd302173226d7810e79"
+    }
+  ]
+}

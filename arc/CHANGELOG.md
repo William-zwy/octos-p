@@ -1,4 +1,26 @@
+- 2026-10-02：截止前修复：requirement-only 任务默认跳过独立 design turn，把调用预算留给可运行垂直切片；新增共享入口、语义角色、seed、持久化、刷新恢复和错误原子性约束，避免 `implement ok` 只代表写入而没有完整用户行为链。可通过 `OCTOS_REQUIREMENT_DESIGN=1` 显式恢复需求设计轮。
 # arc/ 适配层改动记录（工作流 A，分支 `wf-adapter`）
+
+## 2026-10-02｜v4 需求契约与有界续作（平台未验证）
+
+- 新增领域无关 `requirement_contract.py`：从动态 requirements YAML 提取 GIVEN/WHEN/THEN、精确文本/fixture、作用域、权限和 reload/persistence 信号，并保留 evidence/confidence；contract hash 与 requirements hash 写入 `.arc/requirement-contract.json`，不把推导 smoke 冒充官方测试。
+- skeleton 与 node/codegen prompt 使用有界契约摘要，requirement-only 节点不再重复注入完整 YAML prose；官方 spec 存在时仍以 spec 为 ground truth。
+- 实现轮默认改为统一 `22 + 一次 12-request continuation`（单节点最多 34，环境变量可覆盖 base），timeout/request-cap 仅在真实产品 fingerprint 发生变化且保留 final reserve 时续作一次；第二次失败保持 inconclusive。
+- turn 日志与 checkpoint 将模型自报改为 `turn_smoke_hint`，官方/local acceptance 仍只由真实验收判定；retry 与新模块同步进入 PowerShell/Git Bash/package-shape 打包门禁。
+- 验证：`arc/` 内定向单元测试 62 项 `OK`；`python -m py_compile main.py requirement_contract.py package_shape.py` exit 0；`git diff --check` exit 0。云端平台 Run 尚未执行。
+
+## 2026-10-02｜需求合同进度证据与计划收敛（平台未验证）
+
+- Requirement contract 继续输出 folder-based capability clusters、refresh/seed/failure-atomicity invariants 和逐节点 acceptance contract（fixture、入口、动作、API、可见结果、错误、刷新结果）。
+- 节点 checkpoint 增加 `contract_items`、`completed_contract_items`、`missing_contract_items` 和 `last_real_verification`；这些字段只记录 Harness 证据，不把模型自报提升为 official verdict。
+- 计划同步标明：contract/预算/truthful state 已完成基础版；能力优先调度、需求派生浏览器 smoke、seed/runtime 隔离仍未完成并保留为下一阶段。
+- 验证：需求契约/主流程/打包定向测试 63 项 `OK`；v4 五个需求 YAML 的 atomic/scenario 计数和 capability summary 均可解析为合法有界 JSON。
+
+## 2026-10-02｜D-lite seed 隔离 helper（尚未接入 Harness）
+
+- 新增领域无关 `seed_isolation.py`：对普通文件生成 SHA-256 baseline manifest，创建 disposable workspace，比较前后树并从副本恢复；路径逃逸、symlink、缺失路径和非普通文件返回 `inconclusive`。
+- 当前 helper 仅有单元测试覆盖，尚未接入 `main.py`/`acceptance.py` 的运行路径；不能据此宣称平台 Run 已具备 seed/runtime 隔离。
+- 覆盖源目录祖先作为临时复制父目录，以及恢复时删除 smoke 新增文件的边界行为。
 
 ## 2026-09-30｜Round 3/4/5 运行时与提交包门禁（平台未验证）
 
@@ -472,3 +494,19 @@ Remaining first-pass misses are model sampling (invented validation rules, messa
 twice server-side, cookie/redirect details). With the leaderboard scoring the MOST RECENT run and the current
 TB entry at ¥0.251 (a 3-request run), a rerun has negative expected value (median 3 requests ≈ ¥0.3, tail
 ¥0.6+): recommendation — do not rerun TB; keep the entry. Cloud: 未评测 for round 28.
+
+## Round 29 — truthful product delta, canonical readiness, bundled context skill
+
+Requirement-only hackathon runs exposed three generic control failures: cap-forced summaries could still be
+recorded as implemented, model-side smoke data could look like source progress, and favicon resets consumed
+repair turns even when the platform-facing root server later started successfully. The harness now records a
+bounded requirement outline, distinguishes deployable source delta from mutable backend JSON, keeps cap-hit
+turns inconclusive, and checks `/` plus `/api/health` before treating favicon reset as advisory.
+
+The existing `arc-project-context` plugin is now bundled instead of reimplemented. It is staged into the
+disposable profile with a portable launcher; both packers and package shape require its four runtime files,
+and the offline package gate executes `project_map`. Skill failure remains non-critical: quota, checkpoint,
+process and acceptance truth stay in the harness.
+
+Local targeted gate: 78 passed, 1 skipped, 3 known Windows-baseline tests deselected; context skill 8
+assertions passed. Platform: pending user-operated probe.

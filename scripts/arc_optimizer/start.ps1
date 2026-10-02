@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Config,
-    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'resume-codegen', 'step', 'loop')][string]$Mode = 'doctor',
+    [ValidateSet('doctor', 'ingest', 'collect', 'analyze', 'plan', 'context', 'reconcile', 'approve', 'resume-codegen', 'campaign-validate', 'campaign-status', 'step', 'loop')][string]$Mode = 'doctor',
     [string]$RunId = '',
     [string]$SourceDir = '',
     [string]$Branch = '',
@@ -23,6 +23,9 @@ if ($Mode -eq 'ingest') {
     if (-not $SourceDir) { throw 'ingest requires -SourceDir' }
     if (-not $MetadataOnly) { throw 'ingest requires -MetadataOnly; raw files are never copied' }
     $arguments += @('--run-id', $RunId, '--source-dir', ([System.IO.Path]::GetFullPath($SourceDir)), '--metadata-only')
+}
+if ($Mode -eq 'campaign-status') {
+    $arguments += @('--campaign-file', ([System.IO.Path]::GetFullPath($settings.campaign_file)), '--state-dir', ([System.IO.Path]::GetFullPath($settings.state_dir)))
 }
 if ($Mode -eq 'context') {
     if (-not $Branch) { throw 'context requires -Branch' }

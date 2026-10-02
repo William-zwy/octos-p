@@ -6,7 +6,7 @@ script_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 repo_root=$(git -C "$script_dir" rev-parse --show-toplevel)
 cd "$script_dir"
 
-if ! git -C "$repo_root" diff --quiet || ! git -C "$repo_root" diff --cached --quiet; then
+if [ -n "$(git -C "$repo_root" status --porcelain=v1 --untracked-files=all -- arc skills/arc-project-context)" ]; then
   echo "error: refusing to package a dirty source tree; commit the release first" >&2
   exit 2
 fi
@@ -46,7 +46,7 @@ trap cleanup EXIT HUP INT TERM
 commit=$(git -C "$repo_root" rev-parse HEAD)
 git -c core.autocrlf=false -C "$repo_root" archive --format=zip --output="$temp_archive" HEAD:arc -- \
   main.py octos_stdio.py requirement_order.py acceptance.py guard.py llm_proxy.py codegen.py \
-  run_controls.py build_identity.py package_shape.py hooks requirements.txt \
+  run_controls.py seed_isolation.py requirement_contract.py build_identity.py package_shape.py hooks requirements.txt \
   arcbench_agent_runtime public-tests
 
 identity_script="$script_dir/build_identity.py"
@@ -58,6 +58,14 @@ to_python_path() {
     printf '%s\n' "$1"
   fi
 }
+skill_archive="$temp_dir/skill.zip"
+git -c core.autocrlf=false -C "$repo_root" archive --format=zip \
+  --prefix=skills/arc-project-context/ --output="$skill_archive" \
+  HEAD:skills/arc-project-context -- SKILL.md manifest.json index.js main
+temp_archive_native=$(to_python_path "$temp_archive")
+skill_archive_native=$(to_python_path "$skill_archive")
+"$python_cmd" -c 'import sys,zipfile; dst=zipfile.ZipFile(sys.argv[1],"a"); src=zipfile.ZipFile(sys.argv[2]); [(dst.writestr(i,src.read(i.filename))) for i in src.infolist() if not i.is_dir()]; src.close(); dst.close()' \
+  "$temp_archive_native" "$skill_archive_native"
 identity_script_native=$(to_python_path "$identity_script")
 gate_script_native=$(to_python_path "$gate_script")
 temp_archive_native=$(to_python_path "$temp_archive")
@@ -65,9 +73,15 @@ temp_archive_native=$(to_python_path "$temp_archive")
 
 task_key="${ARCBENCH_TASK_KEY:-${ARCBENCH_TASK:-}}"
 suite_key="${ARCBENCH_TEST_SUITE_KEY:-${ARCBENCH_SUITE_KEY:-}}"
+identity_mode="${ARCBENCH_PLATFORM_IDENTITY_MODE:-suite_required}"
+suite_provenance="${ARCBENCH_SUITE_PROVENANCE:-}"
 requirements_sha="${ARCBENCH_REQUIREMENTS_SHA256:-${ARCBENCH_REQUIREMENTS_HASH:-}}"
-if [ -z "$task_key" ] || [ -z "$suite_key" ] || [ -z "$requirements_sha" ]; then
-  echo "error: ARCBENCH_TASK_KEY, ARCBENCH_TEST_SUITE_KEY and ARCBENCH_REQUIREMENTS_SHA256 are required" >&2
+if [ -z "$task_key" ] || [ -z "$requirements_sha" ]; then
+  echo "error: ARCBENCH_TASK_KEY and ARCBENCH_REQUIREMENTS_SHA256 are required" >&2
+  exit 4
+fi
+if [ "$identity_mode" = "suite_required" ] && [ -z "$suite_key" ]; then
+  echo "error: suite_required packaging needs ARCBENCH_TEST_SUITE_KEY" >&2
   exit 4
 fi
 
@@ -79,7 +93,8 @@ shape_output_native=$(to_python_path "$shape_output")
 binding_output_native=$(to_python_path "$binding_output")
 "$python_cmd" "$gate_script_native" bind --archive "$output_native" --shape-output "$shape_output_native" \
   --output "$binding_output_native" --source-commit "$commit" --task-key "$task_key" \
-  --suite-key "$suite_key" --requirements-sha256 "$requirements_sha"
+  --suite-key "$suite_key" --suite-provenance "$suite_provenance" --identity-mode "$identity_mode" \
+  --requirements-sha256 "$requirements_sha"
 sha256=$("$python_cmd" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$output_native")
 printf '%s  %s\n' "$sha256" "$(basename "$output")" > "$checksum_output"
 echo "Packaging complete: $output"

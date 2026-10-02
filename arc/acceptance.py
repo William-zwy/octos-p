@@ -468,21 +468,75 @@ def restore_worktree(git_run: Callable[[list[str]], object], parts: tuple[str, .
     git_run(["clean", "-fdq", "-e", "node_modules", "-e", "dist", "--", *parts])
 
 
-def robustness_probe(port: int, proc: subprocess.Popen | None = None, timeout: float = 5.0) -> str | None:
+def readiness_probe(port: int, proc: subprocess.Popen | None = None,
+                    timeout: float = 3.0, wait_seconds: float = 5.0) -> str | None:
+    """Require the same single-origin surface the platform must be able to load.
+
+    A listening socket is not readiness: b4e114e9c001 bound port 3000 but its
+    canonical entrypoint returned 404 at ``/`` and never reached evaluation.
+    Retry briefly because the socket can open before route/data initialization.
+    """
+    import http.client
+    for path in ("/", "/api/health"):
+        deadline = time.time() + wait_seconds
+        last = "no response"
+        while time.time() < deadline:
+            if proc is not None and proc.poll() is not None:
+                return f"backend process exited (rc={proc.returncode}) before readiness GET {path}"
+            try:
+                conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
+                conn.request("GET", path)
+                resp = conn.getresponse()
+                status = resp.status
+                resp.read()
+                conn.close()
+                healthy = 200 <= status < 400 if path == "/" else 200 <= status < 300
+                if healthy:
+                    break
+                last = f"HTTP {status}"
+            except Exception as exc:  # noqa: BLE001
+                last = exc.__class__.__name__
+            time.sleep(0.2)
+        else:
+            return (f"readiness GET {path} did not return 2xx/3xx within {wait_seconds:.0f}s "
+                    f"(last result: {last}); canonical npm start must serve the app and health on one port")
+    return None
+
+
+def robustness_probe(port: int, proc: subprocess.Popen | None = None, timeout: float = 5.0,
+                     tolerate_live_transport_error: bool = False) -> str | None:
     """Hit paths a browser or grader will request; the server must answer
     (any status) and stay alive. Cloud f9f0026819f1: an unhandled ENOENT on
     GET /favicon.ico killed the backend and 8 of 10 tests saw ECONNREFUSED."""
     import http.client
     for path in ("/favicon.ico", "/this-path-does-not-exist", "/api/this-route-does-not-exist"):
-        try:
-            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
-            conn.request("GET", path)
-            resp = conn.getresponse()
-            resp.read()
-            conn.close()
-        except Exception as exc:  # noqa: BLE001
+        last_exc: Exception | None = None
+        for attempt in range(2):
+            try:
+                conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
+                conn.request("GET", path)
+                resp = conn.getresponse()
+                resp.read()
+                conn.close()
+                last_exc = None
+                break
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                if proc is not None and proc.poll() is not None:
+                    break
+                if attempt == 0:
+                    time.sleep(0.2)
+        if last_exc is not None:
             alive = proc is None or proc.poll() is None
-            return (f"GET {path} got no HTTP response ({exc.__class__.__name__}); "
+            # Requirement-only runs 877ac3bb19e7/f1ff68f69dac repeatedly reset
+            # favicon while the canonical root+health server stayed alive and
+            # the platform proceeded.  Once readiness passed, do not burn two
+            # model repair turns on an advisory unknown-path transport warning.
+            if (tolerate_live_transport_error and path == "/favicon.ico"
+                    and proc is not None and alive
+                    and last_exc.__class__.__name__ in ("ConnectionResetError", "RemoteDisconnected")):
+                continue
+            return (f"GET {path} got no HTTP response ({last_exc.__class__.__name__}); "
                     f"backend {'still running' if alive else 'CRASHED (process exited)'} — unknown paths must "
                     f"return 404, never throw")
         time.sleep(0.2)
@@ -568,7 +622,9 @@ class AppServer:
                 return (f"backend `npm start` exited early (rc={self.proc.returncode}):\n"
                         f"{self.log_file.read_text(errors='replace')[-1500:]}")
             if port_open(self.port):
-                err = robustness_probe(self.port, self.proc)
+                err = readiness_probe(self.port, self.proc)
+                if not err:
+                    err = robustness_probe(self.port, self.proc, tolerate_live_transport_error=True)
                 if not err and self.grader_like and self.extra_ports:
                     # Cloud 3f0124e82113: the specs default to :3301, the grader sets only PORT,
                     # the backend bound PORT alone -> 10x ERR_CONNECTION_REFUSED. Same handler on both.

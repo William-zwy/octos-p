@@ -17,7 +17,17 @@ def fixture_archive(path: Path) -> None:
         for name in AGENT_REQUIRED_FILES:
             if name == "agent-build.json":
                 continue
-            payload = "import sys\n" if name == "main.py" else "# fixture\n"
+            if name == "main.py":
+                payload = "import sys\n"
+            elif name.endswith("/manifest.json"):
+                payload = '{"name":"arc-project-context","version":"1.0.0","tools":[]}'
+            elif name.endswith("/index.js"):
+                payload = ('process.stdin.resume();process.stdin.on("end",()=>'
+                           'process.stdout.write(JSON.stringify({success:true,project_map_hash:"fixture"})));')
+            elif name.endswith("/main"):
+                payload = '#!/bin/sh\nexec node "$(dirname "$0")/index.js" "$@"\n'
+            else:
+                payload = "# fixture\n"
             archive.writestr(name, payload)
         for name in AGENT_REQUIRED_DIRS:
             archive.writestr(f"{name}/fixture.txt", "fixture")
@@ -32,6 +42,7 @@ class PackageGateTests(unittest.TestCase):
             report = validate_archive(archive)
             self.assertTrue(report["ok"])
             self.assertEqual(report["offline_import"]["status"], "passed")
+            self.assertEqual(report["offline_import"]["context_skill"]["status"], "passed")
             self.assertEqual(report["agent_build"]["commit_sha"], COMMIT)
 
     def test_binding_contains_full_artifact_identity(self):

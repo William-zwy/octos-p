@@ -1,0 +1,89 @@
+{
+  "source_archive": "arcbench-hackathon-requirements (4).zip",
+  "archived_path": "evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.zip",
+  "source_provenance": "E:/飞书下载/arcbench-hackathon-requirements (4).zip",
+  "archive_sha256": "8F07E80BE1DB82F68F7AB373ACBD3AF28B735D719B83751D0A378C1043960BF9",
+  "archive_bytes": 11817434,
+  "previous_archive": {
+    "path": "evidence/arc-bench/inputs/arcbench-hackathon-requirements-3.zip",
+    "sha256": "9884F23EA10C3DFEEE170D1EED57966C8FCE9A5CE18A0AC43B3D7942EBA8C414"
+  },
+  "tasks": {
+    "hackathon--github": {
+      "requirements_sha256": "9480921CB3B7FFDC5F32CB76011ECC1D5BF9BFBF2CBA38E3A092355AC88A54F8",
+      "bytes": 172653,
+      "lines": 2532,
+      "atomic_nodes": 47,
+      "scenarios": 100,
+      "reference_assets": 27,
+      "canonical_yaml_sha256": "3195CE431F728DF9B266AFD7007F7183F788702FA6F04394F6E41FAD8781DE56",
+      "previous_requirements_sha256": "BDC17D23265A6B1948AEC150E69D0B2ACCFA37DB4C569305C97BE7FF7F3B0B8F",
+      "previous_canonical_yaml_sha256": "7822C558A0D5FEF7C25A162F825471D77EA25E8E4BC9976AD33041781488675F",
+      "semantic_diff": {
+        "atomic_ids_added": 0,
+        "atomic_ids_removed": 0,
+        "atomic_nodes_changed": 46,
+        "atomic_nodes_unchanged": 1,
+        "scenario_count_changed": false,
+        "notes": [
+          "Descriptions and scenario setup now use isolated, scenario-specific accounts and entities instead of relying on one shared fixture narrative.",
+          "The main task keeps the same 47 atomic IDs and 100 scenarios, but its contract text is not byte- or semantically identical to requirements-3."
+        ]
+      }
+    },
+    "hackathon--github-stage-1": {
+      "requirements_sha256": "A5F347673348EB9502286640F1EB62A54836FFED6787CDD302173226D7810E79",
+      "bytes": 61824,
+      "lines": 837,
+      "atomic_nodes": 12,
+      "scenarios": 30,
+      "reference_assets": 5
+    },
+    "hackathon--github-stage-2": {
+      "requirements_sha256": "42D2869C0787CA22F7DF4C41C6A49181EF8745C00806AB638C873FDFA4394C80",
+      "bytes": 51318,
+      "lines": 703,
+      "atomic_nodes": 14,
+      "scenarios": 29,
+      "reference_assets": 27
+    },
+    "hackathon--github-stage-3": {
+      "requirements_sha256": "902CE9DC84E6719F370BA4F325C02892FFFB2F385154C9A6E420585FBF697A92",
+      "bytes": 63804,
+      "lines": 1043,
+      "atomic_nodes": 21,
+      "scenarios": 41,
+      "reference_assets": 27
+    },
+    "hackathon--sheet": {
+      "requirements_sha256": "9CDDF67BE50748106289ED158648629A6C50C30A490D0EDA5BD570C557440B96",
+      "bytes": 202240,
+      "lines": 3022,
+      "atomic_nodes": 24,
+      "scenarios": 100,
+      "reference_assets": 9,
+      "canonical_yaml_sha256": "0CD43ED5E40610FEE702CA65F4CC8ACF876A146F494EC8EDD69B296964EF5B99",
+      "previous_requirements_sha256": "9CDDF67BE50748106289ED158648629A6C50C30A490D0EDA5BD570C557440B96",
+      "semantic_diff": {
+        "byte_identical_to_previous": true,
+        "canonical_yaml_identical_to_previous": true,
+        "atomic_nodes_changed": 0,
+        "scenario_count_changed": false
+      }
+    }
+  },
+  "stage_partition": {
+    "atomic_nodes": 47,
+    "scenarios": 100,
+    "stages": [
+      {"task": "hackathon--github-stage-1", "modules": ["REQ-1", "REQ-2"]},
+      {"task": "hackathon--github-stage-2", "modules": ["REQ-3", "REQ-4"]},
+      {"task": "hackathon--github-stage-3", "modules": ["REQ-5", "REQ-6"]}
+    ]
+  },
+  "comparison_method": [
+    "YAML parsed with safe_load and compared by canonical JSON serialization.",
+    "Atomic IDs and scenario counts were compared independently of archive byte order and line endings.",
+    "Reference images were counted as assets and were not interpreted as executable instructions."
+  ]
+}

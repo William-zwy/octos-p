@@ -1,0 +1,30 @@
+{
+  "artifact": {
+    "filename": "arc-agent-hackathon-github-stage-1-final-d5fb50e5.zip",
+    "sha256": "4d524eed2093ee21dc5538facbcc7e9b28c05397489b345dda4c63f8baa3a7c9",
+    "size_bytes": 369390
+  },
+  "build": {
+    "id": "arc-agent-v1-416e719a37dea6ce04d4afb9",
+    "payload_tree_sha256": "7AFBEBCCA2DE538043589B7FBB227CCFC2D17C9C36AE9168666CD303C3775CDA"
+  },
+  "checks": {
+    "offline_import": true,
+    "package_shape": true,
+    "placeholder_identity_rejected": true
+  },
+  "requirements": {
+    "sha256": "a5f347673348eb9502286640f1eb62a54836ffed6787cdd302173226d7810e79"
+  },
+  "schema_version": 1,
+  "source": {
+    "commit_sha": "d5fb50e5fc2a9adc85321210113b6e88c5f21978"
+  },
+  "status": "verified",
+  "suite": {
+    "key": "hackathon--github-stage-1"
+  },
+  "task": {
+    "key": "hackathon--github-stage-1"
+  }
+}

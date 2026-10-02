@@ -1,9 +1,15 @@
 # ARC-Bench Round 3/4/5 Agent 优化协作计划
 
 日期：2026-09-30
-状态：`READY_FOR_PLATFORM_IDENTITY`（Agent 与本协作文档改动已完成） 仅修改 Agent 与本协作文档；官方测试、需求 ZIP 和平台 Run 未修改。
+状态：`REQUIREMENTS_V4_INTEGRATED + CLI_AUTOMATION_READY_FOR_REVALIDATION`
 
-2026-10-01 部署补充：用户授权实现 [CLI 云端优化闭环](ARC_CLI_AUTOMATION_RUNBOOK_20261001.md)。部署分支 `codex/hkt-cli-automation` 从本计划最新基线 `8f2af28713a336e90a61996dff21661ea3f30c70` 创建，独立工作区单写入。控制器读取本计划、日志、决策台账与既有 Run；优化候选经 Git 三方 SHA/CI/既有打包门禁后上传，云端执行，完整分页取证后回写这些文档。默认关闭付费循环，等待本轮预算、绝对截止时间和平台 suite 绑定；历史预算/36h 窗口不重新起算。本次未修改 Agent、官方测试或需求包，未上传/创建新 Run。原 aeb0 Integrator 工作区仍须交接后才能集成。
+源分支已完成官方需求 v4 输入、需求契约、seed isolation、垂直切片与发布证据归档；当前集成分支同时保留 CLI 云端优化闭环。两套变更均只修改 Agent、协作文档与证据元数据，未修改官方测试或平台 Run；合并后必须重新执行 CLI 候选验收、打包门禁和远程 Run 身份核验。
+
+2026-10-01 部署补充：用户授权实现 [CLI 云端优化闭环](ARC_CLI_AUTOMATION_RUNBOOK_20261001.md)。控制器读取本计划、日志、决策台账与既有 Run；优化候选经 Git 三方 SHA/CI/既有打包门禁后上传，云端执行，完整分页取证后回写这些文档。默认关闭付费循环，等待本轮预算、绝对截止时间和平台 suite 绑定；历史预算/36h 窗口不重新起算。本次未修改官方测试或平台 Run。
+
+当前集成分支：`codex/hkt-cli-automation`
+来源分支：`codex/hkt-round345-integration` @ `087423e60e5500147aab3225937a442038fd33eb`
+原计划目标分支：`codex/hkt-round345-integration`
 目标分支：`codex/hkt-round345-integration`
 基线：`codex/urgent-bookstack-contract-fix-r2` @ `f10bd9f42429c09672c9a68b79f486c44cc41e9f`
 
@@ -85,7 +91,7 @@ Round 3/4/5 的运行时保护只有在交付包不丢文件、身份不漂移�
 - `arc/pack.ps1` 与 `arc/pack.sh` 都纳入 `run_controls.py`、构建身份和包形状门禁；Windows 使用 Python ZIP 写入，Git Bash 通过 `cygpath` 将 Python 参数转换为原生路径。
 - `agent-build.json` 绑定源提交、payload tree SHA 和 build id；sidecar 绑定 task key、suite key、需求包 SHA 与最终 ZIP SHA。
 - 离线解包后执行 `import main` smoke，并拒绝危险/重复/禁止条目、缺失身份和 placeholder identity。
-- 当前 [需求包远程镜像](https://github.com/William-zwy/octos-p/raw/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-3.zip) 的 SHA-256 为 `9884F23EA10C3DFEEE170D1EED57966C8FCE9A5CE18A0AC43B3D7942EBA8C414`。它同时包含 `hackathon--sheet` 和 `hackathon--github`；正式上传前必须使用平台实际分配的 suite key，不能用本地猜测值冒充官方绑定。
+- 当前 [需求包 v4 远程镜像](https://github.com/William-zwy/octos-p/raw/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.zip) 的 SHA-256 为 `8F07E80BE1DB82F68F7AB373ACBD3AF28B735D719B83751D0A378C1043960BF9`；完整差异见 [v4 manifest](https://github.com/William-zwy/octos-p/blob/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.manifest.json)。v3 的 SHA-256 `9884F23EA10C3DFEEE170D1EED57966C8FCE9A5CE18A0AC43B3D7942EBA8C414` 仅保留作历史输入。正式上传前必须使用平台实际分配的 suite key，不能用本地猜测值冒充官方绑定。
 - 当前 ZIP 仍包含 `public-tests` 作为本地回归夹具；它不是新题私有官方 suite，也不能作为官方成绩证据。若发布流程要求最小包，应在平台契约明确后再单独裁剪并重新计算所有 SHA。
 
 门禁验证：从 `arc/` 运行定向测试共 `60`（`OK, skipped=1`；唯一跳过项是本机没有独立 `sh` 命令的语法测试）；递归 `py_compile`、`git diff --check`、`node skills/arc-project-context/test.js`（8 assertions）通过。PowerShell 和 Windows Git Bash 两条打包链路均使用真实需求包 SHA 完成结构/离线导入检查；Git Bash 自动跳过无 PyYAML 的 Windows Store `python3` shim，选择可用解释器。修复提交为 `a77443c0c960adf23eb0a01f5e87f4c31453e2e5`，已由 Integrator 接入。
@@ -285,13 +291,26 @@ Sheet 更适合作为第一主探针：原子节点较少，先验证 workbook/w
 
 记录摘要：三次额度中断均出现 timeout/proxy/repair guard 后仍继续计费；项目归纳分别报告约 `71/86`、`32/117`、`83/125`，并确认没有 OOM 作为主因。具体金额、请求数和哈希在最终 Run 前应重新从原文核验。
 
-### 8.5 新题 requirements ZIP
+### 8.5 新题 requirements ZIP（v4 当前输入）
 
-- [新题 requirements ZIP（远程镜像）](https://github.com/William-zwy/octos-p/raw/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-3.zip)
+- [新题 requirements ZIP v4（远程镜像）](https://github.com/William-zwy/octos-p/raw/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.zip)
+- [v4 机器清单与差异摘要](https://github.com/William-zwy/octos-p/blob/codex/hkt-round345-integration/evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.manifest.json)
+- ZIP SHA-256：`8F07E80BE1DB82F68F7AB373ACBD3AF28B735D719B83751D0A378C1043960BF9`
 - `hackathon--sheet/requirements.yaml`：Workbook、Worksheet、Grid、Formula、CSV、排序/过滤、验证、Pivot 等能力。
 - `hackathon--sheet/reference/`：9 张界面参考图。
-- `hackathon--github/requirements.yaml`：Identity、Organization、Repository、Version Control、Issue、Pull Request、Review、Merge、权限等能力。
-- `hackathon--github/reference/`：27 张界面参考图。
+- `hackathon--github/requirements.yaml`：Identity、Organization、Repository、Version Control、Issue、Pull Request、Review、Merge、权限等能力；`47/100` 计数不变，但 `46/47` 个 atomic 的描述或 scenario 已更新。
+- `hackathon--github-stage-1/requirements.yaml`：REQ-1/REQ-2，`12/30` atomic/scenario。
+- `hackathon--github-stage-2/requirements.yaml`：REQ-3/REQ-4，`14/29` atomic/scenario。
+- `hackathon--github-stage-3/requirements.yaml`：REQ-5/REQ-6，`21/41` atomic/scenario。
+- `hackathon--github/reference/`：27 张界面参考图；Stage 1 有 5 张，Stage 2/3 各有 27 张。
+
+#### 8.5.1 v4 对下一版 Agent 的直接约束
+
+1. **需求身份必须升级**：所有候选包和 Run 侧车必须绑定 v4 ZIP SHA、具体 task key 和 stage key；不能复用绑定 v3 的候选 ZIP。
+2. **GitHub fixture 不得共享复用**：v4 将多个场景改为独立账号/实体/权限 fixture。contract 编译器应按 scenario 提取 fixture variant，并在每次本地 smoke 前恢复对应副本。
+3. **阶段优先级应可配置**：默认先用 Stage 1 做短探针，再按预算选择 Stage 2 或 Stage 3；完整 `hackathon--github` 仅在 stage 输入和身份门禁通过后运行。
+4. **语义契约重编译**：精确 role/name、route、scope、permission、persist/reload 和 atomic mutation 必须从 v4 YAML 重新生成，不能使用 v3 缓存；Sheet 虽语义未变，也要在 sidecar 中记录其与 v4 的相同哈希。
+5. **禁止把阶段拆分当成官方 A/B**：Stage 1/2/3 是新的官方需求输入和测试边界，不代表同一应用的可直接分数分解；每个 stage 的结果单独标识为 `exploratory`，不能与主任务成绩混算。
 
 ### 8.6 Agent 源码与运行时材料
 
@@ -558,6 +577,243 @@ submission ZIP 不含 `skills/`/`arc-project-context`，日志无 `project_map`�
 
 本节不授权任何 Agent/Skill 修改、重新打包、发布或平台 Run。Phase 4 仍为 pending，只允许只读诊断；本次授权仅覆盖分析与归一化证据的仓库同步。
 
+## 18. 截止前下一版 Agent 有效性最大化方案（2026-10-02）
+
+> **PLAN STATUS UPDATED 2026-10-02**：本节合并 `a7964e4411af` 产物审计、历史 Run 证据、当前源码审查和 Agent 实现经验。P0-A 的结构化合同、P0-C 的有界预算/续作和 truthful state 已落地；本次继续补齐合同的不变量/能力聚合/验收合同证据。P0-B 的稳定优先调度、P0-D seed 隔离和 P0-E 浏览器执行器仍未完成，下面明确保留为待办。
+
+### 18.1 决策更新
+
+`65c381d2` 的 request cap `18 → 50` 不是“过程上完全无效”，但作为全局默认提分手段已经失效：`a7964e4411af` 的 cap-hit 从近乎全节点降至 `14/24`，实现段没有 900 秒 timeout；与此同时结果仍为 `1/100`、feature `0/24`，相对同为 `1/100` 的 `12b3dea74607`，requests/provider tokens/费用约为 `2.43× / 3.74× / 3.94×`。因此下一版不得继续把固定 cap 50 当作完成率修复，也不得简单退回已证实普遍饥饿的固定 cap 18。
+
+`65c381d2` 的提交依据还存在日志去重错误：所谓“92 nodes hit cap”来自 stdout/stderr 重复行；正确口径是 49 个独立事件，其中 feature 46/47、skeleton 1、rehearsal repair 2。后续所有预算决策必须按 Run、阶段、节点、product delta 和唯一事件分层统计。
+
+本轮确认的最大得分阻断并非“代码量不足”，而是实现工作单元和验收入口错误：
+
+- Agent 平均遍历 atomic node，持续向巨型 `server.js` / `editor.js` 追加局部实现，后端 API 与可见 UI、ARIA、持久化之间没有闭环。
+- 交付 seed 被 Agent 自测污染；`Q3 Sales` 的活动 worksheet、关键 cell 和更新时间在官方测试启动前已经漂移。
+- 共享语义入口缺失：命名 `Worksheet grid` 的元素没有 `role="grid"`，`Formula bar` 实际标记为 `Formula`。
+- Sort、Validation、Pivot、Undo/Redo 存在“只有 API 或局部数据结构、没有完整可见工作流”的确定性缺口。
+- cap-hit、缺 UI、未跑浏览器 smoke 的 turn 仍被旧版本标成 `implement ok/verified=True`，内部标签不能代表完成率。
+- 日志没有官方 Playwright 用例名、断言或逐项 timeout；`requirements.yaml` 的 100 个公开 scenario 和测试后 `pw-*` 数据只能用于需求派生验收与行为推断，不能冒充官方测试明细。
+
+现有 `0d580c74` 候选已修复 cap-hit 状态真实性、product delta、readiness 和 Skill 入包；当前 `97bf3087` 进一步将默认实现预算收敛为 `22 + 12`，并接入需求合同编译。seed 隔离、需求派生浏览器验收和能力级调度仍未完成，不能把当前版本描述为完整能力切片 Agent。
+
+### 18.2 下一版唯一目标和三层职责
+
+截止前不进行完整架构重写。唯一目标是：用最少改动把 Agent 从“平均生成很多局部代码”切换为“优先交付少数可由浏览器完整验收的共享能力”，同时把单次 Run 成本压回可控区间。
+
+```text
+Runtime / Harness
+  预算、seed 隔离、状态真实性、浏览器门禁、续作队列
+        +
+Requirement contract / Skill
+  短结构化合同、project map、source cache；失败不影响硬门禁
+        +
+Prompt
+  当前 capability、精确 role/name/fixture/postcondition、相关源码片段
+```
+
+Skill 继续只负责减少重复读取和提供结构化摘要；quota、checkpoint、seed、完成状态与验收仍由 Runtime 强制控制。
+
+### 18.3 截止前必须完成的 P0 修改
+
+#### P0-A：高置信 Requirement Contract（基础版已完成，fixture variants 待完成）
+
+在 `arc/main.py` 旁新增小型、确定性的 contract 编译层（建议独立为 `arc/requirement_contract.py`），从解析后的 tree/description/scenarios 提取：
+
+```text
+fixture / GIVEN
+page / route
+role + accessible name
+visible action
+exact error text
+success postcondition
+failure atomicity
+refresh / reopen invariant
+scenario_count
+```
+
+截止前只处理高置信规则：显式 role/name、错误原文、GIVEN、refresh/reopen 和显式 route；每项必须保留 `evidence/source/confidence`。不能把所有引号都当 locator，也不能把 `the requested workflow` 等占位句解析成合同。当前已落地 `arc/requirement_contract.py`：输出短 JSON、`invariants`、folder-based `capabilities` 和逐节点 `acceptance_contract`，写入 `.arc/requirement-contract.json` 并注入当前节点 prompt；checkpoint 同步记录合同完成/缺失项。互相冲突的 fixture variants 和 seed 映射仍待完成。
+
+#### P0-B：从 atomic node 改为 capability vertical slice（合同聚合已完成，调度仍待完成）
+
+截止前只做 `B-lite`：当前 contract 已为每个 node 生成 capability cluster，但运行时仍保留“一 atomic node 一 turn / 一事件 / 一 verdict”，尚未启用稳定优先拓扑排序。下一步只允许在不重写 traceability 和 acceptance 生命周期的前提下启用优先级；完整的多节点合并 capability executor 会牵动 spec owner、folder state、checkpoint 与 verdict，继续延期。
+
+Sheet 的首轮优先序：
+
+1. 首页、干净 seed、editor 直达、grid/tab/formula bar 语义；
+2. cell 编辑、矩形选择、公式、错误和重算；
+3. worksheet 与行列生命周期；
+4. copy/paste/cut、undo/redo、公式复制；
+5. CSV import/export；
+6. filter、sort、validation、pivot。
+
+Prompt 仍要求每个 node 服务于所属 capability 的 `可见入口 → UI → handler → API → storage → 页面结果` 闭环，但首版不合并 turn。共享入口失败时降低高级节点优先级和预算，不硬跳过所有后续节点，以免丢失低成本可得分项。
+
+#### P0-C：自适应预算与 completion continuation（已完成基础版）
+
+取消固定 50 默认：
+
+- 基础 implement cap 默认 `22`（可配置 `18–24`）；
+- 已产生真实 product delta、没有重复读取/失败且属于高优先级 capability 时，允许一次 `12` 的 continuation；
+- 单节点默认总上限 `36`；`50` 只保留为显式 override；
+- cap-hit、无 delta、没有成功写证据、连续读取或相同 failure digest 使用同策略时立即停止当前 turn；
+- 全局至少保留 25% 时间给最终浏览器验收与针对性修复；本切片先真正扣除 time reserve，完整 run-level request 账本延期。
+
+cap-hit 后已保存 contract 条目、合同完成/缺失项、cap 原因和 `last_real_verification`；模型声明不能充当 verdict。续作只包含当前合同与相关源码；第二次 cap-hit 或仍未通过门禁则降级，不无限重开。`work_remaining = remaining - final_reserve`，进入 reserve 后不再启动新实现，只允许 final gates。build/start/health 由 Harness 执行；完整 run-level request 账本仍待补齐。
+
+#### P0-D：seed 不可变与自测隔离（未完成，保留为下一项）
+
+截止前采用 `D-lite`，不把所有生成应用立即支持 `seed.json/runtime.json/ARC_DATA_FILE` 作为硬前提。Harness 在 skeleton 后记录生成工作区和数据目录 baseline digest；build/start/smoke 在 disposable workspace/data copy 中运行，结束后比较交付目录前后 hash。已有应用若支持 `ARC_DATA_FILE`，可优先指向临时副本；忽略该环境变量时仍由工作区副本保证隔离。
+
+对新生成应用，Prompt 建议区分不可变 seed 与 runtime，并支持 `ARC_DATA_FILE`，但首版 strict 只保护明确的 `seed.json`。遗留单一 `db.json` 发生变化时，Harness 恢复 baseline 并将 turn 标为 inconclusive；不能无条件删除模型为新需求合法添加的 fixture。完整 fixture-variant 到运行数据路径的自动映射延期。
+
+#### P0-E：requirements-derived browser smoke（未完成，保留为下一项）
+
+在 `arc/acceptance.py` 或小型新模块中加入明确标记为 `requirement_smoke` 的 `E-surface` 浏览器验收；它不能冒充 official acceptance。首版只验证确定性、只读的公共 surface：canonical root/editor 可达；高置信 role/name 在可达页面唯一可见；公开 seed 值可观察；页面无启动级异常。它应捕获缺 `role="grid"` 和 `Formula bar` 名称错误，但不得从自然语言自动猜复杂 mutation 动作。
+
+复杂 Sort/Pivot/Validation 首版只做合同、DOM action 和 route parity；完整成功/失败/refresh/reopen 动作生成延期。若 Playwright 不可用，结果必须为 `unknown`，绝不能用静态 grep 代替通过。节点状态改为 `source_changed → requirement_surface_passed → official_acceptance_unknown`；只有 Harness 可以产生本地 surface verdict，模型的 `verified` 文本只保留为备注。
+
+### 18.4 截止前有余量再做的 P1
+
+- Harness 主动运行已打包的 `project-map`，而不是等待模型选择 Skill；按 `path + SHA + range` 缓存 source，只注入当前 capability 的符号、route、DOM 控件和片段。
+- 在 contract 明确提供安全动作 DSL 后，再逐步启用成功 mutation、失败原子性和 refresh/reopen 浏览器流；截止前不做任意自然语言工作流生成器。
+- 将 `seed.json/runtime.json + ARC_DATA_FILE` 升级为生成架构强制协议；截止前仅使用 disposable workspace/data copy 与可选环境变量。
+- 为共享热点设置软上限（建议 600 LOC 或 25–35 KB）；超限后先拆 router/store/workbook/cells/formula/data-actions 与 grid/worksheet/data-dialogs，再继续功能。截止前只做生成规则和软门禁，不手工重构历史产物。
+- 将当前基于字符串距离的 handler 检查降为 advisory；最终产物中的 Import/Data handler 已证明其存在 false positive。优先用真实浏览器行为；若做静态 parity，采用 AST/DOM 索引并区分置信度。
+- 修正 identity：`agent_source_commit` 从包内 build metadata 或显式环境取得，`product_workspace_head` 单独记录，禁止用生成产品 `self.head()` 冒充 Agent commit。
+- 每个 smoke server 使用独立进程组并强制回收；记录 stray process 数，但无 OOM 时不得把它写成 OOM 根因。
+
+### 18.5 明确延期，防止截止前失控
+
+- 完整六 Skill 架构、change-impact 强阻断；
+- 跨 Run 通用 resume 重构；
+- 全量 AST/数据流分析器；
+- 为全部 100 scenario 自动生成完整 Playwright suite；
+- 大规模手工模块化和框架替换；
+- 猜测或硬编码官方隐藏测试、旧题 locator、REQ ID 或领域实体。
+
+### 18.6 代码修改地图与单写入边界
+
+| 文件/模块 | 截止前改动 | 完成证据 |
+| --- | --- | --- |
+| `arc/main.py` | base 22 + continuation 12、truthful states、真实 time reserve、合同进度 checkpoint | cap-hit 不完成；合同完成/缺失项可追溯；能力优先调度仍待接入 |
+| `arc/requirement_contract.py` | 高置信合同、不变量、能力聚合和逐节点验收合同 | Sheet/GitHub 计数、evidence/confidence、capability cluster 可解析；fixture variants 待完成 |
+| `arc/acceptance.py` / `arc/semantic_smoke.py` | disposable workspace/data copy、只读 requirement surface smoke | 缺 grid role、错误 Formula bar 时稳定失败；无浏览器为 unknown |
+| `arc/tests/test_main_helpers.py` | budget、contract、cap continuation、seed guard | 单元测试覆盖所有状态边界 |
+| `arc/tests/test_acceptance.py` | 语义 locator、持久化、失败原子性、进程清理 | 浏览器/集成回归通过 |
+| `arc/pack.sh`、`arc/pack.ps1`、`arc/package_shape.py`、`arc/package_gate.py` | 新模块入包、shape 与 smoke import | ZIP 离线 import、Skill、contract/smoke 模块可执行 |
+| 本计划与 changelog | 决策、门禁、候选身份 | 与代码在同一逻辑提交更新 |
+
+### 18.6.1 当前完成度（2026-10-02）
+
+| 项目 | 当前状态 | 后续动作 |
+| --- | --- | --- |
+| Requirement compiler | ✅ 已完成基础版 | 补 fixture variants 与冲突 fixture 的运行时映射 |
+| Invariants / capability map / acceptance contract | ✅ 已生成并落盘 | 接入稳定优先拓扑，但暂不合并多节点 turn |
+| Budget / continuation / truthful state | ✅ 已完成基础版 | 补 run-level request ledger 与重复策略切换 |
+| Capability-priority scheduler | ⚠️ 未完成 | 在保留依赖拓扑和现有 verdict 生命周期前提下实现 B-lite |
+| Requirement-derived browser smoke | ❌ 未完成 | 新增只读高置信 surface smoke，结果标记 `inferred_non_official` |
+| Seed/runtime 隔离 | ⚠️ helper 已完成，runtime 接入未完成 | `seed_isolation.py` 已提供 disposable copy/baseline hash/restore；仍需接入 Harness 并记录每轮 seed verdict |
+| 完整 project-map/source-cache/change-impact | ⚠️ 部分已有 | Harness 主动生成 map，按 path+SHA+range 注入当前 capability |
+
+仍维持单写入者：只有 Integrator 修改代码、提交和打包；代码风险、浏览器验收、包门禁可由子 Agent 只读并行审查。
+
+### 18.7 本地验收与 go/no-go
+
+下一包必须通过以下门禁：
+
+1. `a7964e4411af` 继续作为一次性人工/本地负样本，必须检出缺 `role="grid"`、`Formula bar` 名称不符和高级可见路径缺失；持续 CI 的 seed guard 使用通用合成 fixture 验证前后 hash，不能假装从任意历史 JSON schema 自动推断正确业务 seed。
+2. contract parser 对 Sheet YAML 稳定得到 24 atomic / 100 scenarios，并提取公开 role/name/error/refresh 合同；不得生成旧题专用硬编码。
+3. capability plan 每个 node 恰好归属一个 cluster；稳定优先拓扑不违反 node 依赖，共享入口 node 优先，但首版仍一 node 一 turn。
+4. cap-hit 即使 wrote/product delta 也只能 partial；一次 continuation 仍不通过 semantic smoke 时停止。
+5. Agent smoke 在 disposable workspace/data copy 中运行，交付目录前后 hash 一致；strict `seed.json` 不得漂移。
+6. build、canonical start、`/`、`/api/health` 和浏览器高置信 role/name surface smoke 全通过；浏览器不可用为 no-go，不能降级成静态通过。
+7. 可见 mutation action 与 backend route 建立 parity；static finding 不得对现有外部 JS handler产生已知 false positive。
+8. 记录 `requests / product delta / requirement_smoke_pass / cap-hit / repeated reads / seed restores / first runnable time / total cost`，不能只记录平台分数。
+9. 全量测试相对冻结基线零新增失败；三个既知 Windows 路径/权限失败只能按测试 ID + 错误指纹 allowlist，指纹变化即失败。package shape、offline import、Skill smoke、binding 和 checksum 全通过。
+
+建议 feature flags：`OCTOS_ARC_REQUIREMENT_CONTRACT=1`、`OCTOS_ARC_ADAPTIVE_BUDGET=1`、`OCTOS_ARC_BASE_REQUESTS=22`、`OCTOS_ARC_CONTINUATION_REQUESTS=12`、`OCTOS_ARC_MAX_REQUESTS=36`、`OCTOS_ARC_CAPABILITY_PLAN=priority|off`、`OCTOS_ARC_SEED_ISOLATION=1`、`OCTOS_ARC_SEED_STRICT=1|0`、`OCTOS_ARC_REQUIREMENT_SMOKE=surface|off`、`OCTOS_ARC_REQUIREMENT_SMOKE_STRICT=1|0`。contract/capability/smoke 异常可记录 checkpoint 后回退旧路径；只有显式 strict 的 seed 或 semantic gate 失败才 no-go，不得静默称 verified。
+
+任何 P0 门禁失败即 no-go，不用平台预算验证半成品。只有本地 P0 全绿后才生成新 ZIP；第一轮仍只跑 Sheet 短探针，并保留至少 25% 预算作最终 Run reserve。
+
+### 18.8 相对时间计划
+
+硬截止：**北京时间 2026-10-03 23:59**。所有代码、包、平台探针和最终提交均以该时间倒排；任何阶段延误都只能裁剪低优先级工作，不得压缩最后一小时的上传与校验缓冲。
+
+| 时间 | 工作 | 停止条件 |
+| --- | --- | --- |
+| T+0–1.5h | adaptive cap、真实 final reserve、状态边界与定向测试 | reserve 或 cap truth 不可信则停止 |
+| T+1.5–4h | contract-lite 解析、JSON/Prompt 注入、24/100 纯解析测试 | 不能过滤占位场景或保留证据则回退 |
+| T+4–6.5h | disposable seed/workspace 隔离与 hash 恢复 | 交付数据仍会被 smoke 污染则 no-go |
+| T+6.5–9.5h | high-confidence semantic surface smoke | 无真实浏览器则 no-go；不扩展复杂动作生成 |
+| T+9.5–11h | B-lite 稳定优先拓扑 | 时间不足先砍 B-lite，保留 A/C/D/E |
+| T+11–14h | 集成、相对基线全量回归、包门禁、只读复核 | 新增回归、dirty binding 或身份不闭合则不打包 |
+
+若剩余时间不足，按顺序保留 P0-D seed 隔离、P0-E 核心浏览器门禁、P0-C 状态/预算真实性，再保留最小 capability 聚合；先延期完整调度器和 P1，不以大重构换取不可验证的新风险。
+
+绝对倒排门禁：
+
+| 最晚时间（北京时间） | 必须完成 | 超时处置 |
+| --- | --- | --- |
+| 10月2日 13:00 | 功能范围冻结 | 砍完整 scheduler、任意动作生成和 P1，只保 A-lite/C/D-lite/E-surface |
+| 10月2日 16:30 | 定向测试、负样本和核心浏览器 smoke go/no-go | 任何核心红项均不烧平台预算 |
+| 10月2日 18:30 | 相对基线回归、package gate、候选 1 冻结 | 新增回归即退回最后全绿候选 |
+| 10月2日 19:00 | 最晚启动第一轮 Sheet 探针 | 不等待到次日上午 |
+| 10月2日 23:00 | Sheet 结果硬回收截止 | 未终态只存中态，不并发新代码或新 Run |
+| 10月3日 00:30 | 唯一一次直接证据补丁/第二探针 go/no-go | 只修 90–120 分钟内可本地复核的问题 |
+| 10月3日 04:30 | 最终源码冻结 | 禁止架构重构和非阻断修复 |
+| 10月3日 05:30 | 候选 2 task-correct 打包完成 | ZIP/sidecar/binding 任一不一致即 no-go |
+| 10月3日 06:00 | 最晚启动唯一第二探针 | Sheet 重跑与 GitHub 二选一，不并行 |
+| 10月3日 11:00 | 第二探针结果硬回收截止 | 11:30 前完成原始附件与哈希归档 |
+| 10月3日 12:30 | 停止全部探索 Run 和业务修复 | 之后仅处理包、身份、上传阻断 |
+| 10月3日 15:00 | 最终包冻结并重跑 package gate | 不再改变 Agent 字节 |
+| 10月3日 17:00 | 上传前 dry-run、本地复制/下载后哈希完成 | 下载链不闭合则使用已验证本地包 |
+| 10月3日 20:59（D-3h） | 完成最终上传/提交 | 保留 3 小时应对网络、排队与手工回滚 |
+| 10月3日 23:59 | 比赛提交截止 | 不接受任何最后一分钟重打包 |
+
+平台预算门禁：先核算完整历史账本，`200–300 CNY` 是总预算而非新增预算。第一轮 Sheet soft/hard 为 `15–20 / 25 CNY`，硬墙 4h；可选 GitHub soft/hard 为 `20–25 / 35 CNY`，硬墙 5h。发现 quota/402、无 product delta 长循环、核心 semantic gate 未执行或同一 failure digest 重复三次时立即止损。若剩余预算 `<100 CNY`，取消第二探针；`<75 CNY`，取消全部探索探针，只保最终包与正式评估。无实时精确计费时以 requests、provider tokens、wall-clock 和 cap-hit 联合止损。
+
+并行协作采用三个只读审查 lane，不扩大写入面：
+
+- Lane A：requirement contract、seed 与状态真实性审查；
+- Lane B：浏览器 semantic smoke、回归与平台结果诊断；
+- Lane C：package/binding/checksum/下载链门禁；
+- Integrator：唯一代码与文档写入者、合并者和最终 go/no-go 决策者。
+
+子 Agent 任务必须使用最小上下文和明确输出格式，不重复读取全项目记忆；任何子 Agent quota/usage-limit 失败均降级为主会话只读复核，不得阻塞关键路径或触发重复派发。本次计划复核已实际观察到三个子 Agent 同时因额度不足失败，故多 Agent 只用于加速审查，不能成为正确性前提。
+
+### 18.9 预期收益与不能承诺的事项
+
+预期直接收益：防止测试前 seed 污染；在平台前捕获共享 ARIA/可见 UI 缺口；把预算集中到能端到端得分的核心能力；阻止 cap-hit/仅 API/模型口头自验被记录为完成；降低同分成本与重复读取。
+
+不能承诺：隐藏 suite 逐项行为、分数必然上涨、所有 100 scenario 一次覆盖、Skill 必然降低 provider token。下一版的成功标准先是“本地合同真实性 + 核心浏览器能力 + 成本受控”，平台得分作为随后验证，而不是替代这些门禁。
+
+## 17. 下一轮平台候选的三层联动实现（2026-10-02）
+
+> **IMPLEMENTATION AUTHORIZED / PLATFORM RUN USER-OPERATED**：用户随后明确要求“根据建议修改一版，由用户提交平台测试”。本节取代前述各 Run 归档段落中的 analysis-only 限制，但授权仅覆盖 Agent 源码、回归测试、候选 ZIP 和协作记录；本会话不代替用户启动平台 Run。
+
+本次切片坚持 `Runtime/Harness 强制控制 + 通用 Skill 结构化摘要 + Prompt 短规则`，不把六个候选 Skill 一次性重构为系统依赖：
+
+- Runtime 状态真实性：节点前后计算 frontend/backend 产品指纹；无 product delta 不得发出 `implementation_done`。命中 request cap 或没有成功写工具证据时，即使源文件有变化，也只保留并提交 partial source，节点状态为 inconclusive。
+- 无 spec 收敛：Harness 将已解析需求树压缩为有界 skeleton outline；requirement-only 节点禁止寻找不存在的 tests/report/history，并要求在第三个工具调用前产生产品写入。此路径保留 build/start/curl 所需 shell，避免 Prompt 与工具策略自相矛盾。
+- 部署契约：rehearsal 先验证 canonical `GET /` 和严格 2xx 的 `GET /api/health`，再做未知路径健壮性检查。仅存活进程上的 favicon connection reset 可降级为 advisory；未知页面/API、timeout 或进程退出仍失败。
+- 通用 Skill：复用仓库已有 `arc-project-context`，不新造缓存框架。候选 ZIP 强制携带 `SKILL.md`、manifest、实现和 Linux launcher；运行时复制到一次性 profile 的 `skills/` 并 `chmod`，设置 `OCTOS_SKILLS_PATH` 到父目录。Skill 失败不影响 quota/checkpoint/readiness 等硬约束。
+- 打包身份：PowerShell 与 POSIX 打包链均拒绝 dirty Agent 源码；package shape 强制要求 Skill 四件套，offline gate 实际执行 `project_map`，防止再次出现“ZIP gate 通过但 Skill 未入包”。
+
+明确不在本切片内：`change-impact` 强阻断、完整 repair strategy switch、跨 Run resume 重构、隐藏测试猜测、题目专用 locator/实体名。Skill 不会被逐节点强制调用；首轮只验证工具真实注册和可调用，收益仍需以后用 `project_map/source_read` 调用次数、返回字符、provider prompt tokens 与重复读取量衡量。
+
+协作分支在实现期间出现远程提交 `65c381d2`，把多节点 implement request cap 从 18 提至 50。该变更必须通过正常合并保留其历史，不得覆盖；同时本切片把任何 cap-hit 明确传导为 inconclusive，且继续保留时间型 final reserve。平台 Run 需单独记录成本与 cap-hit，不能仅因分数上涨就认定全局抬高 cap 正确。
+
+### 17.1 Sheet-first 候选包与身份门禁
+
+- 候选包：`releases/arc-agent-hackathon-sheet-0d580c74.zip`（359,305 bytes）。
+- Agent 源码提交：`0d580c748bf67d2425a49733e5a592ade21ebe4d`；Build ID：`arc-agent-v1-30a08860f96969acadc74e1f`。
+- ZIP SHA-256：`3f18da678504e147ce3748f23a829a63fc055fb61c056e53b03c1b0b2e3f79db`；payload tree SHA-256：`9FC208DB0ADF47977F906233FF90CF2CF23EC346EAFB015BBCE98AD3E3151793`。
+- requirements SHA-256 继续绑定现有已知值 `9884f23ea10c3dfeee170d1eed57966c8fce9a5ce18a0ac43b3d7942eba8c414`；平台未提供新 snapshot，因此此字段仅表示候选侧绑定，不能冒充平台侧 generation identity。
+- package shape、offline import、Skill 行为烟测、placeholder identity 拒绝和侧车 checksum 均已通过。候选先用于 `hackathon--sheet` 探索性 Run；平台成绩、隐藏 suite 身份和当前 task snapshot 仍需用户上传后回填，不能提前宣称收益。
+- 远程下载：`https://github.com/William-zwy/octos-p/raw/codex/hkt-round345-integration/releases/arc-agent-hackathon-sheet-0d580c74.zip`；绑定与 shape 侧车位于同一远程目录。
+
 ## 16. `877ac3bb19e7` 本地只读归档与阶段 3 结论（2026-10-01）
 
 > **ANALYSIS-ONLY / REPOSITORY-SYNC AUTHORIZED（2026-10-01）**：用户已授权将本节及对应归一化证据同步到协作分支，并与 `f1ff68f69dac`、`b4e114e9c001` 的分析一并提交。
@@ -617,3 +873,9 @@ P0 统一唯一 canonical start 入口，使其同时满足 SPA root、health、
 本 Run 的 958 requests、26.139M tokens、18.864285 CNY 均在 deployment gate 前耗尽，没有产生官方测试信号；不能由 `0/0` 评价代码质量。Skill 未打包、未调用，prompt cache hit 不能作为 Skill 生效证据。
 
 本节不授权任何 Agent/Skill 修改、重新打包、发布或平台 Run。Phase 4 仍为 pending，只允许只读诊断；本次授权仅覆盖分析与归一化证据的仓库同步。
+
+## 17. 2026-10-02 两次负收益 Run 的修订结论
+
+`6ad28fd0ab3d` 与 `7616a1cdbddd` 的 Stage 1 需求契约相同，但 template ZIP 与 agent commit 不同；因此两次结果不是纯 request budget A/B。应将结论写为：外层 cap 提升未带来收益，`7616` 出现 900 秒超时并从 5/30 退化到 0/30，但预算与代码版本同时变化，不能证明 cap 单变量造成退化。Sheet 的 `6e04e0ff14dc`（budget 30，0/100）与 `9fee9a825b32`（budget 12，0/100）进一步说明预算没有触及正确性瓶颈。
+
+下一实验必须固定 canonical ZIP、requirements SHA、task/suite、模型和需求契约，只改变预算策略；优先比较 `12 + 一次 8` 与固定 12，并保留 final smoke/打包 reserve。P0 仍为需求合同驱动的 browser semantic smoke、product delta + live acceptance 的 truthful completion、无进展/重复 failure stop；P1 为 capability slice 与平台身份回传门禁。平台不回传 tests[] 时，不得推断具体隐藏断言。

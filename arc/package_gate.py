@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -65,7 +66,7 @@ def _payload_tree_sha(archive: Path) -> str:
 
 
 def offline_import_smoke(archive: Path) -> dict:
-    """Extract to a disposable directory and import the packaged entrypoint."""
+    """Import the entrypoint and execute the bundled context skill offline."""
     with tempfile.TemporaryDirectory(prefix="arc-agent-smoke-") as tmp:
         root = Path(tmp)
         with zipfile.ZipFile(archive) as handle:
@@ -80,10 +81,36 @@ def offline_import_smoke(archive: Path) -> dict:
             text=True,
             timeout=30,
         )
+        node = shutil.which("node")
+        skill_proc = None
+        skill_payload = None
+        if node:
+            skill_proc = subprocess.run(
+                [node, str(root / "skills" / "arc-project-context" / "index.js"), "project_map"],
+                cwd=root,
+                input=json.dumps({"workspace_root": str(root), "max_files": 100}),
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            try:
+                skill_payload = json.loads(skill_proc.stdout)
+            except json.JSONDecodeError:
+                skill_payload = None
+        skill_ok = bool(node and skill_proc and skill_proc.returncode == 0
+                        and isinstance(skill_payload, dict)
+                        and skill_payload.get("success") is True
+                        and skill_payload.get("project_map_hash"))
+        passed = proc.returncode == 0 and skill_ok
         return {
-            "status": "passed" if proc.returncode == 0 else "failed",
+            "status": "passed" if passed else "failed",
             "returncode": proc.returncode,
             "stderr": proc.stderr[-2000:],
+            "context_skill": {
+                "status": "passed" if skill_ok else "failed",
+                "returncode": skill_proc.returncode if skill_proc else None,
+                "stderr": skill_proc.stderr[-2000:] if skill_proc else "node executable not found",
+            },
         }
 
 
@@ -120,9 +147,10 @@ def validate_archive(archive: Path, shape_output: Path | None = None,
     return report
 
 
-def make_binding(archive: Path, source_commit: str, task_key: str, suite_key: str,
+def make_binding(archive: Path, source_commit: str, task_key: str, suite_key: str | None,
                  requirements_sha256: str, build_id: str | None,
-                 shape_output: Path | None = None) -> dict:
+                 shape_output: Path | None = None, identity_mode: str = "suite_required",
+                 suite_provenance: str | None = None) -> dict:
     report = validate_archive(archive, shape_output=shape_output, run_smoke=True)
     try:
         require_report(report)
@@ -133,7 +161,18 @@ def make_binding(archive: Path, source_commit: str, task_key: str, suite_key: st
     identity = report.get("agent_build") or {}
     source_commit = _identity_value("source_commit", source_commit, HEX_40).lower()
     task_key = _identity_value("task_key", task_key)
-    suite_key = _identity_value("suite_key", suite_key)
+    identity_mode = str(identity_mode or "suite_required").strip().lower()
+    if identity_mode not in {"suite_required", "task_requirements_only"}:
+        raise PackageGateError("identity_mode must be suite_required or task_requirements_only")
+    if identity_mode == "suite_required":
+        suite_key = _identity_value("suite_key", suite_key)
+    else:
+        if suite_key not in (None, "", "unknown", "未知"):
+            raise PackageGateError("task_requirements_only must not invent suite_key")
+        suite_provenance = str(suite_provenance or "").strip()
+        if ("not provide" not in suite_provenance.lower() and "不提供" not in suite_provenance
+                and "未提供" not in suite_provenance and "无 suite" not in suite_provenance.lower()):
+            raise PackageGateError("task_requirements_only requires suite-unavailable provenance")
     requirements_sha256 = _identity_value(
         "requirements_sha256", requirements_sha256, HEX_64
     ).lower()
@@ -147,7 +186,9 @@ def make_binding(archive: Path, source_commit: str, task_key: str, suite_key: st
         "status": "verified",
         "source": {"commit_sha": source_commit},
         "task": {"key": task_key},
-        "suite": {"key": suite_key},
+        "identity_mode": identity_mode,
+        "suite": {"key": suite_key, "provenance": suite_provenance,
+                  "available": bool(suite_key)},
         "requirements": {"sha256": requirements_sha256},
         "build": {"id": build_id, "payload_tree_sha256": _payload_tree_sha(archive)},
         "artifact": {
@@ -176,7 +217,10 @@ def _parser() -> argparse.ArgumentParser:
     bind.add_argument("--shape-output", type=Path)
     bind.add_argument("--source-commit", required=True)
     bind.add_argument("--task-key", required=True)
-    bind.add_argument("--suite-key", required=True)
+    bind.add_argument("--suite-key")
+    bind.add_argument("--suite-provenance")
+    bind.add_argument("--identity-mode", default="suite_required",
+                      choices=("suite_required", "task_requirements_only"))
     bind.add_argument("--requirements-sha256", required=True)
     bind.add_argument("--build-id")
     return parser
@@ -197,7 +241,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             binding = make_binding(
                 args.archive, args.source_commit, args.task_key, args.suite_key,
-                args.requirements_sha256, args.build_id, shape_output=args.shape_output
+                args.requirements_sha256, args.build_id, shape_output=args.shape_output,
+                identity_mode=args.identity_mode, suite_provenance=args.suite_provenance
             )
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(

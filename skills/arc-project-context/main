@@ -1,0 +1,3 @@
+#!/bin/sh
+# Portable executable entrypoint expected by the Octos plugin loader.
+exec node "$(dirname "$0")/index.js" "$@"

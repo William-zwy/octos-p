@@ -1,5 +1,26 @@
 # HKT 目录文档更新日志
 
+## 2026-10-02：补齐多任务预算与阶段状态门禁
+
+- Controller 为每个 campaign 任务继续使用 `state_dir/tasks/<task_key>/`，并新增仓库外的 `campaigns/<campaign_id>/budget.json` 账本；已记录 Run 的消费不会在其他任务重复计入。
+- `guard()` 在启动付费动作前同时检查任务本地预算和 campaign 共享预算，保留 25% reserve；五阶段估算合计 450 CNY，而 300 CNY campaign 的可用额度为 225 CNY，因此 E2 之后会按账本安全停止，不能误跑完整 E2→E6。
+- Hackathon 的 `suite_key` 仍不猜测；`suite_provenance` 允许明确说明平台未提供 suite。打包门禁现在支持 `task_requirements_only` 身份模式，打包环境变量改用任务级 requirements SHA，不再把整个需求归档 SHA 当作任务身份。
+- 新增只读 `campaign-status` 命令，输出各阶段状态、下一可启动阶段、任务命名空间和共享账本；它不登录 ARC、不调用 Codex、不上传、不创建 Run。
+- CLI 预算与状态单元测试共 `69` 项通过；完整 Agent 测试仍有 Windows 临时 Git 工作树权限和路径分隔符兼容失败，未将这些环境问题归因于本轮 CLI 改动。
+
+## 2026-10-02：增加多任务 Campaign 编排骨架
+
+- 新增 task-aware campaign registry：为 E2 Sheet、E3/E4/E5 GitHub Stage 和 E6 完整 GitHub 分别保存任务级 requirements SHA、归档 SHA、阶段依赖、独立状态命名空间和端口范围。
+- 控制器在提供 `campaign_file` 时把状态放入 `state_dir/tasks/<task_key>/`；远程 Run、代码生成和上传仍分别受并发和单写入门禁约束。
+- 增加 `campaign-validate` 只读命令和 5 阶段注册表测试；默认远程并发为 1、只读采集并发上限为 2、代码生成并发固定为 1。
+- 预算按任务和阶段隔离；当前 300 CNY 预算与五阶段各 90 CNY 的估算不足以覆盖完整 E2→E6 计划，预算门禁会安全停止。
+
+## 2026-10-02：将需求 v4 Agent 资产合入 CLI 自动化分支
+
+- 从 `codex/hkt-round345-integration` @ `087423e60e5500147aab3225937a442038fd33eb` 合入需求契约、seed isolation、垂直切片、打包门禁和对应测试；保留 `codex/hkt-cli-automation` 的控制器、运行手册、自动化证据和授权门禁。
+- CLI 示例配置切换到需求 v4 归档：`evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.zip`，SHA-256 为 `8F07E80BE1DB82F68F7AB373ACBD3AF28B735D719B83751D0A378C1043960BF9`；suite 身份继续保持未猜测状态。
+- 只保留发布绑定、形状和 SHA 元数据，未把源分支的原始 Agent release ZIP 复制到目标分支；需求 v4 输入 ZIP 作为后续 CLI 编译所需的受控输入保留。
+- 合并后需重新执行候选验收、打包门禁和远程 Run 身份核验，不能把历史发布 sidecar 当作新 Run 证明。
 ## 2026-10-02：控制器续改与 CI 认证核验
 
 - 增加受显式授权保护的 CLI 代码生成编排：Codex worker 仅在 disposable Git worktree 中运行，父提交、plan/analysis SHA、TTL 和 `execution_policy=agent_edit` 绑定；真实 diff、结果 `changed_files`、diff SHA、测试/构建记录均由控制器复核。候选结果只写仓库外 state 并停在 `candidate_review`，不自动应用、打包或启动 Run。
@@ -25,6 +46,28 @@
 > 最后更新：2026-09-24
 
 ---
+
+## 2026-10-02：官方需求包 v4 归档与计划更新
+
+- 镜像用户提供的 `arcbench-hackathon-requirements (4).zip` 到 `evidence/arc-bench/inputs/arcbench-hackathon-requirements-4.zip`，SHA-256 为 `8F07E80BE1DB82F68F7AB373ACBD3AF28B735D719B83751D0A378C1043960BF9`，并新增机器可读 manifest。
+- 归一化比较确认 `hackathon--sheet` 仍为 `24/100` 且 YAML 与 v3 完全一致；`hackathon--github` 仍为 `47/100`，但 `46/47` 个 atomic 的描述或 scenario 已变化，不能复用 v3 需求身份、fixture 叙事或 contract cache。
+- 记录新增官方阶段输入：GitHub Stage 1=`12/30`、Stage 2=`14/29`、Stage 3=`21/41`；计划改为支持 stage-specific task identity、scenario fixture variant、阶段优先级和单独 exploratory 结果。
+- 更新项目记忆和 Round 3/4/5 终版计划：优先重新编译 v4 requirement contract，隔离场景 seed，先用 Stage 1 做短探针；Sheet 仅作为相同需求哈希的兼容性回归，不把阶段结果与主任务分数混算。
+- 本次只更新官方需求证据、项目记忆、计划和变更日志；未修改 Agent 源码、官方测试或平台 Run。
+
+## 2026-10-02：截止前下一版 Agent 有效性最大化计划
+
+- 基于 `a7964e4411af` 只读审计，裁决 cap `18 → 50` 仅改善过程吞吐，未证明完成率收益；相对历史同分 Run 成本约扩大四倍，不再作为全局默认提分策略。
+- 纠正 `65c381d2` 提交依据中的计数口径：`92` 是 stdout/stderr 重复行，去重后为 49 个 cap 事件，不是 92 个节点。
+- 将下一版 P0 收敛为：高置信 requirement contract、capability vertical slice、自适应预算与 continuation、seed 隔离、requirements-derived browser smoke。
+- 明确现有 `0d580c74` 解决状态真实性/readiness/Skill 入包，但仍保留 cap 50 且未闭合 seed 与语义浏览器门禁；`c01437c9` 发布物保留为可追溯基线，不作为下一次最终提交的默认推荐包。
+- 新增截止前代码修改地图、8 小时相对计划、go/no-go 门禁和降级顺序；完整六 Skill、跨 Run resume、全量 AST 和大规模模块化明确延期。
+- 将硬截止固定为北京时间 `2026-10-03 23:59`，增加 D-18h 代码冻结、D-16h 包门禁、Sheet-first 探针、唯一一次证据驱动补丁、D-3h 停止新 Run 和 D-1h 最终上传缓冲。
+- 增加平台软/硬成本止损和三条只读子 Agent 审查 lane；子 Agent quota/usage-limit 失败不得阻塞 Integrator，不能把多 Agent 可用性作为系统正确性的前提。
+- 两个恢复额度后的子 Agent 完成截止倒排与源码可实施性复核：将完整 capability executor、双文件 seed 强协议和任意动作测试生成器裁为 A-lite/C/D-lite/E-surface/B-lite；默认预算改为 22 + 单次续作 12、上限 36，并增加 feature flags 与回退边界。
+- 第一轮 Sheet 前移至 `2026-10-02 19:00` 前，唯一第二探针前移至 `2026-10-03 06:00` 前；`12:30` 停止探索、`15:00` 冻结最终包、`20:59` 完成最终上传，保留 3 小时灾备。
+- seed 隔离首版改为 disposable workspace/data copy 与前后 hash，生成应用的 `seed.json/runtime.json + ARC_DATA_FILE` 强协议延期；semantic smoke 首版只做高置信只读 surface，完整动作/失败/refresh 生成延期。
+- 本次只修改协作计划与变更日志，不修改 Agent、Skill、ZIP 或平台测试；远程推送继续暂停。
 
 ## 2026-09-30
 
@@ -325,6 +368,16 @@
 - 记录 skeleton/业务节点的 wrote/verified 假阳性、空 traceability、无写入 repair 后重试恢复，以及 `1/100 → 0/100` 只能作为 observed regression、不能归因为新包。
 - 更新只读建议优先级：product delta 与 harness 外部验证、vertical slice、分预算槽、requirement-derived probes；Skill 未打包且无调用证据，不能评价收益。
 - 未修改 Agent、Skill、ZIP、requirements 或官方测试，未重新打包、发布或启动平台 Run。
+
+## 2026-10-02：下一轮平台候选的 Runtime / Skill / Prompt 联动
+
+- 依据 `877ac3bb19e7` 等 requirement-only Run 的假完成、重复探索和 rehearsal 信号，增加产品源码 delta 门禁；无 delta、request cap-hit 或缺少成功写工具证据均不得记录为实现完成。
+- requirement-only 路径改用 Harness 解析的有界需求摘要，禁止搜索不存在的测试和历史，并修正小任务 shell 被移除却要求 npm/curl 的契约冲突。
+- rehearsal 增加 `/` 与 `/api/health` readiness；仅 favicon reset 可在核心路径健康且进程存活时降级，其他连接错误仍失败。
+- 将现成 `skills/arc-project-context` 真正纳入 ZIP 和运行时 profile，增加 Linux launcher、父级 `OCTOS_SKILLS_PATH`、shape 强制项与行为烟测；不把 Skill 作为正确性前提。
+- PowerShell 打包链新增 dirty-source 拒绝，与 POSIX 打包链共同防止工作树字节伪绑定旧 HEAD。
+- 子 Agent 分别完成代码风险、测试覆盖和打包门禁的只读审查；本会话保持唯一写入者。
+- 发布 Sheet-first 候选 `releases/arc-agent-hackathon-sheet-0d580c74.zip`：绑定源码 `0d580c748bf67d2425a49733e5a592ade21ebe4d`，ZIP SHA-256 `3f18da678504e147ce3748f23a829a63fc055fb61c056e53b03c1b0b2e3f79db`，Build ID `arc-agent-v1-30a08860f96969acadc74e1f`；package gate、offline import 和 Skill 行为烟测通过，平台 Run 仍由用户执行。
 
 ## 2026-10-01：归档 GitHub Run `877ac3bb19e7`（证据同步）
 
