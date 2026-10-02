@@ -12,9 +12,45 @@
     "analysis_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
     "diff_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
     "changed_files": {"type": "array", "items": {"type": "string"}},
-    "tests": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
-    "build": {"type": "object", "additionalProperties": true},
-    "skill_invocations": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "command", "status", "exit_code", "notes"],
+        "properties": {
+          "name": {"type": "string"},
+          "command": {"type": "string"},
+          "status": {"type": "string", "enum": ["passed", "failed", "skipped", "inconclusive"]},
+          "exit_code": {"type": ["integer", "null"]},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "command", "exit_code", "notes"],
+      "properties": {
+        "status": {"type": "string", "enum": ["passed", "failed", "skipped", "inconclusive"]},
+        "command": {"type": "string"},
+        "exit_code": {"type": ["integer", "null"]},
+        "notes": {"type": "string"}
+      }
+    },
+    "skill_invocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["skill", "purpose", "status"],
+        "properties": {
+          "skill": {"type": "string"},
+          "purpose": {"type": "string"},
+          "status": {"type": "string", "enum": ["not_used", "used"]}
+        }
+      }
+    },
     "stop_reason": {"type": ["string", "null"]},
     "risks": {"type": "array", "items": {"type": "string"}}
   }
