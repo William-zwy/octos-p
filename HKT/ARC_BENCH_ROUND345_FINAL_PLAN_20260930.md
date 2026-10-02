@@ -983,3 +983,44 @@ reused across task or requirements identities.
 归档最低字段：`run_id`、`task_key`、`submission_id`、`requirements_sha`、`contract_hash`、`agent_commit_sha`、`agent_zip_sha`、`template_zip_sha`、报告 SHA、来源路径、采集时间、命令和结论等级。
 
 本轮 `dc1468f35580` 已证明：template ZIP 内嵌报告可以恢复 28 个 timeout 与 2 个 failed；后续所有 hackathon 终态分析默认执行 ZIP 内嵌报告检查，再下结论。
+
+## 2026-10-03 双 Run 终态证据与分支修改建议（dc1468f35580 + c025a8c26405）
+
+### 已核验身份与结果
+
+- `dc1468f35580`：`hackathon--github-stage-1`，submission `779a965024b6`，0/30、feature 0/12。template ZIP SHA-256：`7e3979fefbc14fe1ea43ffab41e1c52ba8c825434e1a635153e30594fe42d55d`；内嵌 `.arc/playwright-report.json`，28 timedOut、2 failed。前端入口引用 `/app.js`，而脚本位于 `scripts/app.js`；本地构建/HTTP 复现另见 `evidence/arcbench-dc1468f35580-analysis-20261003.md`。
+- `c025a8c26405`：`hackathon--sheet`，submission `779a965024b6`，0/100、feature 0/24。Agent ZIP SHA-256：`BA6267C28B98DE6074E99AB3CE3DEA31E11B1677B5F66A492D1D4175F14BCFD3`；template ZIP SHA-256：`fa1b37f7388c3ea0df73886bf4cc9e136a5344a04f2453653502ad8bb2eb810f`；内嵌报告 SHA-256：`16842a11b13baf2aa48a8b78ea376e508ae18454127ee00a14b84856f17e5db6`。报告统计 100 timedOut、0 failed；所有场景首个公共检查均找不到 `role=tab, name=Sheet1`。归档模板 `frontend/src/app.js` 为 2,667 bytes，仅含 workbook list / health 基础壳，没有 worksheet tab/grid/formula bar。
+- c025 template 报告路径为 `template/.arc/playwright-report.json`，所以平台 source 端点 404 不等同于归档 ZIP 没有报告。
+
+### 根因区分与结论边界
+
+- dc 的直接故障是 SPA 脚本资源路径错配，导致脚本加载失败；
+- c025 的直接故障是生成前端停留在 stub，缺少 Sheet 公共 UI，所有场景卡在 `Sheet1` tab 公共断言；
+- 两者共同点是生成流程/部署可完成，但产品验收未通过。`wrote=True`、`implement ok`、server listening、postflight 通过，都不能作为完整功能完成证据。
+- c025 中 guard 高频预算耗尽、completion-without-build/start/request 警告与 stub 产物同时存在，是强风险关联；不能仅凭相关性断言预算是唯一因果，也不应把“盲目提高 request cap”作为修复。
+- 因平台测试报告在 template bundle 才被找到，终态采集流程必须默认扫描 ZIP 内 `.arc/playwright-report.json`，并记录 ZIP/report SHA 与路径。
+
+### 主分支 `main` 建议
+
+1. 保留并扩展已加入的静态资源闭环门禁：构建后核对 HTML script/link 引用，启动后对引用资源做真实 HTTP 请求；对 dc 类资源错配在进入浏览器测试前 fail-closed。
+2. 增加“入口可执行性” smoke：至少加载首页和核心任务路由，捕获 JS console/pageerror，并验证应用主要根节点非空。对 API-only 空壳不得仅以 server health 通过。
+3. 计划纳入有限的 task-agnostic 屏幕语义检查：由 requirement contract 提供 route/role/name 期望；缺失时状态必须是 `unknown/inconclusive`，不能臆造 Sheet 专属检查。
+4. 加入最终包回归：解包 agent ZIP 后运行 package shape/offline import；对生成应用模板产物执行 build + 资源探测 + 浏览器基础 smoke。Agent ZIP 检查与生成应用检查必须分开，不能把模板前端文件要求混入 Agent 包契约。
+5. 不把 100 场景统计整体硬编码为 Sheet 专用全局门禁；采用通用契约 + 按任务派生 smoke，防止误伤 GitHub 等其他题目。
+
+### 分支 `codex/hkt-runtime-compat-3307814` 建议
+
+1. 保持需求编译、capability plan、capability judge 为 shadow/advisory：只给出合同、smoke checklist 和证据摘要，暂不替换 atomic scheduler，不设置 `verified` / `implemented_nodes`。
+2. 增加切片 checkpoint 的“真实验证命令证据”字段：区分 command attempted/result 与模型声明；缺少真实 build/start/request 时只能 `inconclusive`，并在当前 slice 记录缺失项。
+3. 将连续 request-budget hit 与前置共享入口未验收作为“暂停扩散/输出 checkpoint”的信号；本轮只建议阻止依赖该未完成入口的后续高风险覆盖，不建议全面停掉所有无关节点，以免降低可用覆盖。
+4. 需求派生 smoke 先只覆盖高扇出共享面（入口、核心路由、角色/可访问名、关键 tab/grid/formula bar、刷新恢复），不可执行则报告 unknown，不另建 Playwright runner。
+5. 降低“claimed completion without build/start/request”告警的噪声：记录成审计事实，提示当前 slice pending，而不是仅靠增加 prompt 警告；不要用其取代真实 acceptance。
+6. 不提高统一 request cap；优先保留独立验证预算和 continuation checkpoint，并用固定身份（task/requirements/source/ZIP）做单变量实验。
+
+### 推荐实施顺序
+
+P0：template ZIP 内嵌报告自动提取；静态资源构建/HTTP 闭环；真实命令证据与 truthful completion。
+P1：轻量核心入口/ARIA smoke 与 disposable seed/workspace；前置能力不完整时对依赖节点做范围化阻塞。
+P2：更广的 requirement-only 场景生成、完整能力级调度替换、扩大评估矩阵。
+
+本节是证据与建议，不代表 P0/P1 已全部实现。`dc` 的静态资源门禁已在本轮相关代码提交中实现；c025 的 Sheet UI 缺失仍需通过通用垂直切片和需求派生 smoke 改善，不能宣称本轮已修复所有 Sheet 能力。
