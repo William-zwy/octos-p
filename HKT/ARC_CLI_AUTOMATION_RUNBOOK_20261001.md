@@ -12,6 +12,7 @@
 - `analyze` 可从新格式 `summary.json` 运行，也可从旧版 `status.json`、`collection.json`、日志页和 ZIP 断点重建取证；`plan` 输出 `optimization-plan.json`，默认 `plan_only`，不会修改 Agent。
 - [`config.example.json`](../scripts/arc_optimizer/config.example.json)：配置模板；实际配置、凭据、日志、ZIP 均放仓库外。付费循环默认关闭，预算和截止时间不继承历史 36 小时窗口。
 - Codex 中转 API：将仓库外配置的 `codex_auth_mode` 设为 `provider`，在 `codex_env_allowlist` 中显式填写 `RELAY_API_KEY`（或实际 provider key 环境变量），并在启动控制器的同一 PowerShell 会话中注入该变量。`doctor` 不再要求 OAuth 登录；worker 默认不会继承任何 `API_KEY`，仍会实际调用 provider。`ARCBENCH_API_KEY`、Cookie、Token、Password 和 Secret 通道会被拒绝，缺失的 allowlist 变量会在启动 Codex 前阻断。密钥不会写入仓库、request、日志或提交。
+- 推荐通过 [`run-with-provider.ps1`](../scripts/arc_optimizer/run-with-provider.ps1) 启动。它在同一父进程中提示输入 API Key（或读取仓库外 `RELAY_API_KEY=...` 文件），再调用 `start.ps1`；`step` 与 `loop -Background` 都继承该变量，结束时清除。示例：`./scripts/arc_optimizer/run-with-provider.ps1 -Config 'D:/DataMove/codex/runtimes/arc-optimizer/private/config.json' -Mode step`。不要把 Key 放进命令参数、仓库或日志。
 - 本轮仅对用户明确指定的既有 Run 使用一次性 `monitor_reconciliation_override`；它必须精确匹配 Run ID、带原因和过期时间，控制器会保存原始 `NEEDS-EVIDENCE` 与外部 marker，后续 Run 不继承该例外。默认值为关闭，下一轮仍必须提供 `monitor-doc.json` 与 `monitor-runtime.json`。
 - [`login.py`](../scripts/arc_optimizer/login.py)：读取仓库外账号密码文件，按官网当前 `/api/auth/login` 契约换取 Cookie，既不打印也不提交凭据。会话过期后使用新输出文件重新登录并更新外部配置。
 - [`install.ps1`](../scripts/arc_optimizer/install.ps1)、[`start.ps1`](../scripts/arc_optimizer/start.ps1)：外部 Python 环境安装、Windows 私有目录 ACL、前台/隐藏后台启动。固定 CLI 源提交 `15b0b27da4a4a0d412c79cbfaa318c59da5c3689`（0.4.0），PyYAML 6.0.3，Python 3.10+。

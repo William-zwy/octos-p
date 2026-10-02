@@ -353,3 +353,4 @@
 ### 2026-10-02
 
 - CLI 自动化：为代码生成 worker 增加外部配置 `codex_auth_mode`、`codex_env_allowlist` 与一次性 `monitor_reconciliation_override`。provider 模式不再把 OAuth 登录状态误判为阻断；默认继续清理所有 API key，只有显式列出的中转 provider key（如 `RELAY_API_KEY`）会传入 `codex exec`，平台 ARC、Cookie、Token、Password、Secret 变量被拒绝，缺失凭据在启动前停止。监控例外精确绑定一个 Run、带 TTL、写入外部 marker，下一轮恢复双监控门禁。新增安全回归测试和运行手册说明。
+- 新增 `run-with-provider.ps1`，在同一父进程中注入并清理 `RELAY_API_KEY`，确保前台 worker 和后台 loop 继承同一凭据来源；Key 文件必须位于仓库外。
