@@ -870,3 +870,21 @@ P0 统一唯一 canonical start 入口，使其同时满足 SPA root、health、
 下一次实验固定 canonical ZIP、requirements SHA、task/suite key、模型/prompt 版本和 seed/runtime 初始状态，只改变一个明确运行时变量。提交前必须输出并校验 source SHA、requirements SHA、package identity、ZIP SHA；身份不匹配时 fail-closed。
 
 本阶段不引入完整 Spec Kit、全量工具 API 重构或多模型 Plan & Execute。`project-map`、`source-cache`、`acceptance-smoke` 可继续作为低风险辅助，但不能替代 Harness 的真实门禁。
+
+### 2026-10-03 — P0 runtime compatibility correction
+
+Run `3307814a18ea` exposed a higher-priority blocker than budget or requirement
+compilation: after `REQ-1-1-1` returned successfully, the flow called
+`EventClient.mark_implementation_ready`, which was absent from the bundled runtime.
+The run therefore aborted after 1/24 nodes and scored 0/100 despite a healthy server.
+
+First-step policy is now fixed:
+
+1. runtime API compatibility preflight;
+2. single-node flow smoke through the intermediate `ready` state;
+3. only then requirement compilation, capability scheduling, and semantic/persistence smoke.
+
+The compatibility method records `phase=implement,status=ready` and must never mark a
+node `IMPLEMENTED`; only acceptance-backed `mark_implementation_done` may do that.
+The repair is isolated on `codex/hkt-runtime-compat-3307814` until validated and
+approved for the hackathon integration line. Do not infer hidden test IDs from this run.
