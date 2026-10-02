@@ -217,7 +217,14 @@ try {
 
     $shapePath = [System.IO.Path]::ChangeExtension($OutputPath, "shape.json")
     $bindingPath = [System.IO.Path]::ChangeExtension($OutputPath, "binding.json")
-    & $pythonCommand (Join-Path $ArcRoot "package_gate.py") bind --archive $OutputPath --shape-output $shapePath --output $bindingPath --source-commit $sourceCommit --task-key $taskKey --suite-key $suiteKey --suite-provenance $suiteProvenance --identity-mode $identityMode --requirements-sha256 $requirementsSha
+    $bindingArgs = @("bind", "--archive", $OutputPath, "--shape-output", $shapePath,
+        "--output", $bindingPath, "--source-commit", $sourceCommit,
+        "--task-key", $taskKey, "--suite-provenance", $suiteProvenance,
+        "--identity-mode", $identityMode, "--requirements-sha256", $requirementsSha)
+    if (-not [string]::IsNullOrWhiteSpace($suiteKey)) {
+        $bindingArgs += @("--suite-key", $suiteKey)
+    }
+    & $pythonCommand (Join-Path $ArcRoot "package_gate.py") @bindingArgs
     if ($LASTEXITCODE -ne 0) {
         throw "Package shape/binding gate failed"
     }
