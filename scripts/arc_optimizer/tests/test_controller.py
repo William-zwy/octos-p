@@ -410,6 +410,12 @@ class ControllerTests(unittest.TestCase):
         with self.assertRaises(mod.GateError):
             mod.codex_worker_environment({"codex_env_allowlist": ["RELAY_API_KEY"]}, {})
 
+    def test_codex_auth_mode_accepts_provider_without_oauth_login(self):
+        self.assertEqual(mod.codex_auth_mode({"codex_auth_mode": "provider"}), "provider")
+        self.assertEqual(mod.codex_auth_mode({}), "login")
+        with self.assertRaises(mod.GateError):
+            mod.codex_auth_mode({"codex_auth_mode": "invalid"})
+
     def test_run_path_injection_rejected(self):
         with self.assertRaises(mod.GateError):
             self.ctl.collect("../secrets")

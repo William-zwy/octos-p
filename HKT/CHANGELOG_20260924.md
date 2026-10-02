@@ -352,4 +352,4 @@
 
 ### 2026-10-02
 
-- CLI 自动化：为代码生成 worker 增加外部配置 `codex_env_allowlist`。默认继续清理所有 API key；只有显式列出的中转 provider key（如 `RELAY_API_KEY`）会传入 `codex exec`，平台 ARC、Cookie、Token、Password、Secret 变量被拒绝，缺失凭据在启动前停止。新增安全回归测试和运行手册说明。
+- CLI 自动化：为代码生成 worker 增加外部配置 `codex_auth_mode` 与 `codex_env_allowlist`。provider 模式不再把 OAuth 登录状态误判为阻断；默认继续清理所有 API key，只有显式列出的中转 provider key（如 `RELAY_API_KEY`）会传入 `codex exec`，平台 ARC、Cookie、Token、Password、Secret 变量被拒绝，缺失凭据在启动前停止。新增安全回归测试和运行手册说明。

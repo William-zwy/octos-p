@@ -305,4 +305,4 @@ All notable changes to octos will be documented in this file.
 
 ## 2026-10-02
 
-- `arc_optimizer` codegen worker now accepts only explicitly allowlisted external provider key variables (for example `RELAY_API_KEY`); ARC/platform credentials and other secret channels remain blocked, with missing keys failing before Codex starts.
+- `arc_optimizer` now supports explicit `codex_auth_mode=provider` for API-backed Codex CLI use, while codegen workers accept only explicitly allowlisted provider key variables (for example `RELAY_API_KEY`); ARC/platform credentials and other secret channels remain blocked, with missing keys failing before Codex starts.

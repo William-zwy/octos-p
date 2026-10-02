@@ -92,6 +92,13 @@ def _codex_env_names(config):
     return names
 
 
+def codex_auth_mode(config):
+    mode = str(config.get("codex_auth_mode", "login")).lower()
+    if mode not in {"login", "provider"}:
+        raise GateError("codex_auth_mode must be 'login' or 'provider'")
+    return mode
+
+
 def codex_worker_environment(config, source=None):
     """Build the worker environment without leaking platform credentials.
 
@@ -920,12 +927,19 @@ class Controller:
 
     def doctor(self):
         report = {"repo": str(self.repo), "branch": self.c["branch"], "cli_revision": CLI_REVISION}
-        for label, args in (("python", [self.c["python"], "--version"]),
-                            ("arcbench", [self.c["python"], "-m", "arcbench_cli", "--version"]),
-                            ("codex", [self.c["codex"], "--version"]),
-                            ("codex_auth", [self.c["codex"], "login", "status"])):
+        auth_mode = codex_auth_mode(self.c)
+        checks = (("python", [self.c["python"], "--version"]),
+                  ("arcbench", [self.c["python"], "-m", "arcbench_cli", "--version"]),
+                  ("codex", [self.c["codex"], "--version"]))
+        for label, args in checks:
             code, out, err = self.command(args)
             report[label] = {"exit_code": code, "detail": self.safe((out + err).strip())}
+        if auth_mode == "provider":
+            report["codex_auth"] = {"exit_code": 0,
+                                    "detail": "provider mode; codex login status is not required"}
+        else:
+            code, out, err = self.command([self.c["codex"], "login", "status"])
+            report["codex_auth"] = {"exit_code": code, "detail": self.safe((out + err).strip())}
         try:
             report["sync"] = self.verify_sync(self.preflight())
         except GateError as exc:
