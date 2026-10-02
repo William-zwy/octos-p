@@ -19,6 +19,8 @@ $start = Join-Path $scriptRoot 'start.ps1'
 $key = $null
 $secure = $null
 $ptr = [IntPtr]::Zero
+$hadPreviousKey = -not [string]::IsNullOrWhiteSpace($env:RELAY_API_KEY)
+$previousKey = $env:RELAY_API_KEY
 
 function Assert-ExternalPath([string]$Path, [string]$Label) {
     $full = [System.IO.Path]::GetFullPath($Path)
@@ -31,7 +33,9 @@ function Assert-ExternalPath([string]$Path, [string]$Label) {
 }
 
 try {
-    if ($ApiKeyFile) {
+    if ($hadPreviousKey) {
+        $key = $previousKey
+    } elseif ($ApiKeyFile) {
         $keyPath = Assert-ExternalPath $ApiKeyFile 'ApiKeyFile'
         if (-not (Test-Path -LiteralPath $keyPath -PathType Leaf)) {
             throw "ApiKeyFile does not exist: $keyPath"
@@ -61,7 +65,11 @@ try {
     & $start @forward
     exit $LASTEXITCODE
 } finally {
-    Remove-Item Env:RELAY_API_KEY -ErrorAction SilentlyContinue
+    if ($hadPreviousKey) {
+        $env:RELAY_API_KEY = $previousKey
+    } else {
+        Remove-Item Env:RELAY_API_KEY -ErrorAction SilentlyContinue
+    }
     if ($ptr -ne [IntPtr]::Zero) {
         [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
     }
