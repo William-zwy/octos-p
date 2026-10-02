@@ -8,6 +8,8 @@
 
 本轮仅提交 CLI 修复、模拟安全测试和分析元数据：strict schema、只读必需技能、保全失败工作树及 diff、拒绝修改 worker 父提交、package/cloud 显式权限门禁。控制器测试 `53/53`、exit 0；原始输出在仓库外，索引见 [首轮代码生成记录](../evidence/arc-bench/automation/codegen-12b3dea74607-20261002.json)。当前 `stopped`、短期代码生成授权关闭；一次性监控例外已消费并保留原 `NEEDS-EVIDENCE`，下一 Run 不继承。重新生成前需修订切片验收、两份监控报告和新的 hash/TTL 授权；未修改正式 Agent、官方测试或需求包，未打包候选、上传或创建平台 Run。
 
+CI 复核补充：`049d3ab824a41e4da033aee70db66e60787fc702` 的控制器、Agent helper、语法/schema 检查已在 Linux 通过；合成包 gate 因 CI fixture 的 64 位零 SHA 被 YAML 转成 `0` 而失败。已仅加引号修复类型并本地核对长度，不绕过 requirements 身份校验；后续 CI 成功也只代表 CLI/包结构验收，不会改变 Agent 草稿的 `NO-GO` 或开启云端动作。
+
 ## 2026-10-01 独立控制器部署补充
 
 用户授权部署 CLI 取证和 Codex 云端优化闭环；handoff `arc-cli-controller-deploy-20261001`，基线/父提交 `8f2af28713a336e90a61996dff21661ea3f30c70`，分支 `codex/hkt-cli-automation`，单写入工作区 `235e`。这项授权仅部署控制器，不变更原阶段 5 各线程的职责或自动派发权限。原 aeb0 Integrator 尚待停止交接。

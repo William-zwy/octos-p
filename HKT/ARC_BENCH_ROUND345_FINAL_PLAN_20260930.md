@@ -17,6 +17,8 @@ Codex provider 实际完成了一次隔离代码生成，但返回 `needs_eviden
 
 控制器现为 `stopped`，短期代码生成授权已关闭；一次性双监控例外已消费，保留原 `NEEDS-EVIDENCE`，不能继承给下一 Run。下一步须先针对零额度、连续预算账本及 `None` 不得判通过形成新切片，完成双监控复核后绑定新的 parent/plan/analysis SHA，重新生成并审查；不直接重置 journal 或重放旧授权。`allow_harness_edit/allow_tests_edit/allow_package/allow_cloud_run` 仍为 false。
 
+CI 补充：提交 `049d3ab824a41e4da033aee70db66e60787fc702` 的四组代码检查通过，合成包检查因 YAML 将未加引号的全零 SHA 转为数字 `0` 而失败（[CI 36970601177](https://github.com/William-zwy/octos-p/actions/runs/36970601177)）。已为 CI fixture 加引号，本地验证其为 64 位字符串；不修改真实包门禁或 Agent。下一提交的 CI 结果以回执为准，控制器仍 stopped。
+
 ## 1. 历史决策（2026-09-30）
 
 用户已接受新分支名，并要求在方案形成后直接开始 Agent 修改。新的硬约束是：
